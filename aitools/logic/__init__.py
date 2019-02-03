@@ -2,6 +2,9 @@ from __future__ import annotations
 from copy import copy
 from typing import FrozenSet, Dict
 
+def __fail(exception):
+    raise exception
+
 class LogicObject:
     """An object with a unique ID"""
     _lastID = 0
@@ -51,7 +54,7 @@ class Expression(LogicObject):
     def __init__(self, *children:LogicObject):
         if len(children) == 0:
             raise ValueError("There must be at least one child for an expression")
-        self.children = [c if isinstance(c, LogicObject) else LogicWrapper(c) for c in children]
+        self.children = [c if isinstance(c, LogicObject) else __fail(ValueError(f"{c} is not a logic object, wrap it if you want to put it in an expression")) for c in children]
 
         super().__init__()
 

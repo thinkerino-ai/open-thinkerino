@@ -10,11 +10,12 @@ from aitools.logic import Substitution
 
 # you can create a variable with v = Variable(), or use the utility 'variables()' that returns a generator
 v1, v2 = variables(2)
-# 
-a, b, c, d = logicObjects(4) # more verbose syntax
+# create "anonymous logic objects", equivalent to calling LogicObject() 4 times
+a, b, c, d = logicObjects(4)
 e1 = (a, (b, c), [d]) >> expr # alternative syntax: (a, (b, c), (d,)) >> expr
 e2 = (a, (v1, c), v2) >> expr
-Substitution.unify(e1,e2)
+# unification
+unifier = Substitution.unify(e1,e2)
 # Result: Substitution({Variable(0): Binding(frozenset({Variable(0)}), head=o3), Variable(1): Binding(frozenset({Variable(1)}), head=(o5))})
 ```
 

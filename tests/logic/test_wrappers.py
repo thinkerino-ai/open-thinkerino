@@ -1,7 +1,7 @@
 import unittest
 
-from aitools.logic import LogicObject, Variable
-from aitools.logic.utils import expr
+from aitools.logic import LogicObject, LogicWrapper, Variable, Expression
+from aitools.logic.utils import expr, logicObjects, wrap
 
 
 class TestLogicWrappers(unittest.TestCase):
@@ -10,4 +10,20 @@ class TestLogicWrappers(unittest.TestCase):
         v1 = Variable()
         a = LogicObject()
 
-        (v1, a, "ciao") >> expr
+        (v1, a, "hello") >> expr
+
+    def testArrayConstantInDSL(self):
+        src = ["hello", 2]
+        e1 = src >> expr
+
+        self.assertIsInstance(e1, Expression, f"{e1} should be an Expression!")
+        self.assertEqual(len(e1.children), len(src), f"Length of {e1.children} and {src} should be equal!")
+        for c in e1.children:
+            self.assertIsInstance(c, LogicWrapper, f"{c} should be a LogicWrapper")
+
+    def testWrappedArrayConstantInDSL(self):
+        src = ["hello", 2]
+        e1 = wrap(src) >> expr
+
+        self.assertIsInstance(e1, LogicWrapper, f"{e1} should be a LogicWrapper!")
+        self.assertEqual(e1.value, src, f"The value of {e1} should be {src}")

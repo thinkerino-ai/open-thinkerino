@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from typing import Any
 
 from aitools.logic import (Binding, Expression, LogicObject, LogicWrapper,
@@ -23,12 +24,9 @@ class ExpressionMaker:
         if isinstance(obj, LogicObject):
             return obj
         else:
-            try:
-                if isinstance(obj, str):
-                    return LogicWrapper(obj)
-                else:
-                    return Expression(*map(ExpressionMaker.makeExpression, obj))
-            except ValueError:
+            if isinstance(obj, Iterable) and not isinstance(obj, str):
+                return Expression(*map(ExpressionMaker.makeExpression, obj))
+            else:
                 return LogicWrapper(obj)
 
     def __rrshift__(self, other):
