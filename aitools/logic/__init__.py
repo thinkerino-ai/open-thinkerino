@@ -41,7 +41,6 @@ class LogicWrapper(LogicObject):
         return "{}:{}".format(super().__str__(), str(self.value))
 
 
-
 class Variable(LogicObject):
 
     def __str__(self):

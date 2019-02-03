@@ -1,4 +1,7 @@
-from . import LogicObject, LogicWrapper, Expression, Variable, Binding, Substitution
+from typing import Any
+
+from aitools.logic import (Binding, Expression, LogicObject, LogicWrapper,
+                           Substitution, Variable)
 
 
 def logicObjects(count: int):
@@ -8,6 +11,11 @@ def logicObjects(count: int):
 def variables(count: int):
     return (Variable() for _ in range(count))
 
+def wrap(obj: Any):
+    if isinstance(obj, LogicObject):
+        return obj
+    else:
+        return LogicWrapper(obj)
 
 class ExpressionMaker:
     @staticmethod
@@ -16,7 +24,10 @@ class ExpressionMaker:
             return obj
         else:
             try:
-                return Expression(*map(ExpressionMaker.makeExpression, obj))
+                if isinstance(obj, str):
+                    return LogicWrapper(obj)
+                else:
+                    return Expression(*map(ExpressionMaker.makeExpression, obj))
             except ValueError:
                 return LogicWrapper(obj)
 
