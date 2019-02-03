@@ -1,6 +1,9 @@
 # Pycharm
 .idea
 
+# vscode
+.vscode
+
 # Mac
 .DS_Store
 
@@ -48,6 +51,7 @@ htmlcov/
 .coverage.*
 .cache
 nosetests.xml
+.noseids
 coverage.xml
 *.cover
 .hypothesis/
