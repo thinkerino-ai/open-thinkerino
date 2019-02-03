@@ -59,3 +59,9 @@ class TestEquality(unittest.TestCase):
         b2 = binding(b, [v2, v1])
 
         self.assertNotEqual(b1, b2)
+
+    def testConstantsEquality(self):
+        e1 = 2 >> expr
+        e2 = 2 >> expr
+
+        self.assertEqual(e1, e2)

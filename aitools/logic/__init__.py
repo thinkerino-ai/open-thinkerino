@@ -43,6 +43,11 @@ class LogicWrapper(LogicObject):
     def __str__(self):
         return "{}:{}".format(super().__str__(), str(self.value))
 
+    def __eq__(self, other):
+        return other.id == self.id or other.value == self.value
+
+    def __hash__(self):
+        return hash(self.value)
 
 class Variable(LogicObject):
 

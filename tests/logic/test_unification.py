@@ -2,7 +2,7 @@ import unittest
 from typing import Optional
 
 from aitools.logic import LogicObject, Substitution, Variable
-from aitools.logic.utils import logicObjects, expr, variables, subst, binding
+from aitools.logic.utils import logicObjects, expr, variables, subst, binding, wrap
 
 
 class TestUnification(unittest.TestCase):
@@ -10,6 +10,8 @@ class TestUnification(unittest.TestCase):
     def assertUnificationResult(self, e1: LogicObject, e2: LogicObject, expectedResult: Optional[Substitution], *,
                                 previous: Substitution = None):
         result = Substitution.unify(e1, e2, previous=previous)
+        if expectedResult is not None:
+            self.assertIsNotNone(result)
         self.assertEqual(result, expectedResult,
                          f"Unification between {e1} and {e2} should give {expectedResult}, got {result} instead")
 
@@ -181,3 +183,12 @@ class TestUnification(unittest.TestCase):
         expectedResult = subst((None, [w, x, y, z]))
 
         self.assertUnificationResult(e2, e3, expectedResult, previous=previous)
+
+    def testUnificationWithRepeatedConstants(self):
+        v1 = Variable()
+
+        e1 = (2, v1) >> expr
+        e2 = (2, "hi") >> expr
+
+        expectedResult = subst((wrap("hi"), [v1]))
+        self.assertUnificationResult(e1, e2, expectedResult)
