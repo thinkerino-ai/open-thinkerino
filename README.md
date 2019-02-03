@@ -1,0 +1,5 @@
+# AI Tools
+
+This repository will contain some AI python packages I'll be working on.
+
+I'm a big fan of good old fashioned symbolic AI, so don't expect much deep learning :)
