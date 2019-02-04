@@ -42,4 +42,4 @@ class TestLogicWrappers(unittest.TestCase):
         self.assertEquals(e1.children[0], wrap(src1))
 
         # the second element is a list of wrappers
-        self.assertEquals(e1.children[1].children, list(map(wrap, src2)))
+        self.assertEquals(e1.children[1].children, tuple(map(wrap, src2)))
