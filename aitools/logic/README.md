@@ -16,7 +16,6 @@ e1 = ("hello", ("yay", c), [d]) >> expr # alternative syntax: ("hello", (b, c), 
 e2 = ("hello", (v1, c), v2) >> expr
 # unification
 unifier = Substitution.unify(e1,e2)
-# Result: Substitution({Variable(0): Binding(frozenset({Variable(0)}), head=o3), Variable(1): Binding(frozenset({Variable(1)}), head=(o5))})
 ```
 
 ## Theor-ish
