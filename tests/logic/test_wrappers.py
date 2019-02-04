@@ -27,3 +27,19 @@ class TestLogicWrappers(unittest.TestCase):
 
         self.assertIsInstance(e1, LogicWrapper, f"{e1} should be a LogicWrapper!")
         self.assertEqual(e1.value, src, f"The value of {e1} should be {src}")
+
+    def testUtilsWrapSet(self):
+        src1 = set([1,2,3])
+        src2 = [1,2,3]
+
+        e1 = (src1, src2) >> expr
+        
+        # sets are wrapped, lists are mapped
+        self.assertIsInstance(e1.children[0], LogicWrapper)
+        self.assertIsInstance(e1.children[1], Expression)
+
+        # the first element is just a wrapper around src1
+        self.assertEquals(e1.children[0], wrap(src1))
+
+        # the second element is a list of wrappers
+        self.assertEquals(e1.children[1].children, list(map(wrap, src2)))

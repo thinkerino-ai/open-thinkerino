@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Sequence
 from typing import Any
 
 from aitools.logic import (Binding, Expression, LogicObject, LogicWrapper,
@@ -24,7 +24,8 @@ class ExpressionMaker:
         if isinstance(obj, LogicObject):
             return obj
         else:
-            if isinstance(obj, Iterable) and not isinstance(obj, str):
+            # supports only sequences
+            if isinstance(obj, Sequence) and not isinstance(obj, str):
                 return Expression(*map(ExpressionMaker.makeExpression, obj))
             else:
                 return LogicWrapper(obj)

@@ -192,3 +192,13 @@ class TestUnification(unittest.TestCase):
 
         expectedResult = subst((wrap("hi"), [v1]))
         self.assertUnificationResult(e1, e2, expectedResult)
+
+    def testUnificationWeirdFailingCase(self):
+        v1, v2 = variables(2)
+        c, d = logicObjects(2)
+        e1 = ("hello", ("yay", c), [d]) >> expr # alternative syntax: ("hello", (b, c), (d,)) >> expr
+        e2 = ("hello", (v1, c), v2) >> expr
+ 
+        expectedResult = subst((wrap("yay"), [v1]), ([d] >> expr, [v2]))
+
+        self.assertUnificationResult(e1, e2, expectedResult)

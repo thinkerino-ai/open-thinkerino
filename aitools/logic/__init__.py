@@ -44,7 +44,7 @@ class LogicWrapper(LogicObject):
         return "{}:{}".format(super().__str__(), str(self.value))
 
     def __eq__(self, other):
-        return other.id == self.id or other.value == self.value
+        return other.id == self.id or isinstance(other, LogicWrapper) and other.value == self.value
 
     def __hash__(self):
         return hash(self.value)
@@ -138,7 +138,7 @@ class Binding(LogicObject):
         return f"{self.variables} -> {self.head}"
 
     def __eq__(self, other):
-        return self.head == other.head and self.variables == other.variables
+        return isinstance(other, Binding) and self.head == other.head and self.variables == other.variables
 
     def __hash__(self):
         return hash((self.head, self.variables))
@@ -233,7 +233,7 @@ class Substitution(LogicObject):
         return f"[{map(str,self.bindings)}]"
 
     def __eq__(self, other):
-        return self.bindings == other.bindings
+        return isinstance(other, Substitution) and self.bindings == other.bindings
 
     def __hash__(self):
         return hash(self.bindings)
