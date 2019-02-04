@@ -59,7 +59,7 @@ class Expression(LogicObject):
     def __init__(self, *children:LogicObject):
         if len(children) == 0:
             raise ValueError("There must be at least one child for an expression")
-        self.children = [c if isinstance(c, LogicObject) else __fail(ValueError(f"{c} is not a logic object, wrap it if you want to put it in an expression")) for c in children]
+        self.children = tuple(c if isinstance(c, LogicObject) else __fail(ValueError(f"{c} is not a logic object, wrap it if you want to put it in an expression")) for c in children)
 
         super().__init__()
 
@@ -82,6 +82,8 @@ class Expression(LogicObject):
 
         return True
 
+    def __hash__(self):
+        return hash(self.children)
 
 class Binding(LogicObject):
     def __init__(self, variables: FrozenSet[Variable], head:LogicObject=None):
@@ -135,7 +137,7 @@ class Binding(LogicObject):
         return f"Binding({self.variables}, head={self.head})"
 
     def __str__(self):
-        return f"{self.variables} -> {self.head}"
+        return f"{{{','.join(map(str, self.variables))}}} -> {str(self.head)}"
 
     def __eq__(self, other):
         return isinstance(other, Binding) and self.head == other.head and self.variables == other.variables
@@ -230,7 +232,7 @@ class Substitution(LogicObject):
         return f"Substitution({self.bindings})"
 
     def __str__(self):
-        return f"[{map(str,self.bindings)}]"
+        return f"[{', '.join(map(str,set(self.bindings.values())))}]"
 
     def __eq__(self, other):
         return isinstance(other, Substitution) and self.bindings == other.bindings
@@ -244,3 +246,4 @@ class UnificationError(ValueError):
     This error does not mean that unification failed, which is an acceptable outcome.
     Rather, it means that unification failed within an operation that requires it to succeed."""
     pass
+
