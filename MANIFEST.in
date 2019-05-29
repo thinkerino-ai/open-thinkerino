@@ -1,2 +1,2 @@
-recursive-include aitools *.py
+recursive-include aitools *
 include setup.py README.md LICENSE
