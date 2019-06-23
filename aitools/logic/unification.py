@@ -4,7 +4,7 @@ from typing import FrozenSet, Dict
 
 from aitools.logic.core import LogicObject
 
-from aitools.logic.language import Variable, Expression
+from aitools.logic import Variable, Expression
 
 
 class Binding(LogicObject):
