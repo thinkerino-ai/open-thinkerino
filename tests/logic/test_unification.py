@@ -1,7 +1,7 @@
 import unittest
 from typing import Optional
 
-from aitools.logic import LogicObject, Substitution, Variable
+from aitools.logic import Substitution, LogicObject, Variable
 from aitools.logic.utils import logicObjects, expr, variables, subst, binding, wrap
 
 

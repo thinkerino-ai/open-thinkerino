@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from typing import Any
 
-from aitools.logic import (Binding, Expression, LogicObject, LogicWrapper,
-                           Substitution, Variable)
+from aitools.logic.unification import Binding, Substitution
+from aitools.logic.core import LogicObject, LogicWrapper
+from aitools.logic.language import (Variable, Expression)
 
 
 def logicObjects(count: int):
