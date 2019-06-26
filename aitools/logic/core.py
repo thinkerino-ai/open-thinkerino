@@ -29,8 +29,28 @@ class LogicObject:
     def __hash__(self):
         return hash(self.id)
 
-    def __call__(self, *other_children: LogicObject):
+    def __call__(self, *other_children):
         return Expression(self, *other_children)
+
+
+class LogicWrapper(LogicObject):
+    """Wraps an object in a LogicObject"""
+
+    def __init__(self, value):
+        self.value = value
+        super().__init__()
+
+    def __repr__(self):
+        return "LogicWrapper({}, {})".format(self.id, repr(self.value))
+
+    def __str__(self):
+        return "{}:{}".format(super().__str__(), str(self.value))
+
+    def __eq__(self, other):
+        return other.id == self.id or isinstance(other, LogicWrapper) and other.value == self.value
+
+    def __hash__(self):
+        return hash(self.value)
 
 
 class Variable(LogicObject):
@@ -68,23 +88,3 @@ class Expression(LogicObject):
 
     def __hash__(self):
         return hash(self.children)
-
-
-class LogicWrapper(LogicObject):
-    """Wraps an object in a LogicObject"""
-
-    def __init__(self, value):
-        self.value = value
-        super().__init__()
-
-    def __repr__(self):
-        return "LogicWrapper({}, {})".format(self.id, repr(self.value))
-
-    def __str__(self):
-        return "{}:{}".format(super().__str__(), str(self.value))
-
-    def __eq__(self, other):
-        return other.id == self.id or isinstance(other, LogicWrapper) and other.value == self.value
-
-    def __hash__(self):
-        return hash(self.value)

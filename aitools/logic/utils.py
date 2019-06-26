@@ -2,8 +2,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from aitools.logic.unification import Binding, Substitution
-from aitools.logic.core import LogicObject
-from aitools.logic import Variable, Expression, LogicWrapper
+from aitools.logic import Variable, Expression, LogicWrapper, LogicObject
 
 
 def logicObjects(count: int):
@@ -13,13 +12,11 @@ def logicObjects(count: int):
 def variables(count: int):
     return (Variable() for _ in range(count))
 
-
 def wrap(obj: Any):
     if isinstance(obj, LogicObject):
         return obj
     else:
         return LogicWrapper(obj)
-
 
 class ExpressionMaker:
     @staticmethod

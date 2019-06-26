@@ -54,3 +54,13 @@ class TestSubstitution(unittest.TestCase):
         self.assertEqual(s.getBoundObjectFor(x), s.getBoundObjectFor(y))
         self.assertTrue(s.getBoundObjectFor(x) in [x,y])
         self.assertTrue(s.getBoundObjectFor(y) in [x,y])
+
+    def test_tricky_substitution(self):
+        x, y, z = variables(3)
+        a, b, c = logicObjects(3)
+
+        s = subst((b, [y]), (a(y), [x]))
+
+        expected = a(b)
+
+        self.assertEqual(expected, s.applyTo(x))
