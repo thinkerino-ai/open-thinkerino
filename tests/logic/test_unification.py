@@ -202,5 +202,3 @@ class TestUnification(unittest.TestCase):
         expectedResult = subst((wrap("yay"), [v1]), ([d] >> expr, [v2]))
 
         self.assertUnificationResult(e1, e2, expectedResult)
-
-    
