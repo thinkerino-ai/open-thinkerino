@@ -2,9 +2,7 @@ from __future__ import annotations
 from copy import copy
 from typing import FrozenSet, Dict
 
-from aitools.logic.core import LogicObject
-
-from aitools.logic.language import Variable, Expression
+from aitools.logic.core import LogicObject, Variable, Expression
 
 
 class Binding(LogicObject):
