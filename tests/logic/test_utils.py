@@ -22,5 +22,5 @@ def test_variable_source():
 
     result = Substitution.unify(e1, e2)
 
-    assert (result == expected_result,
-            f"Unification between {e1} and {e2} should give {expected_result}, got {result} instead")
+    assert result == expected_result, \
+        f"Unification between {e1} and {e2} should give {expected_result}, got {result} instead"
