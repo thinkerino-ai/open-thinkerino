@@ -2,8 +2,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from aitools.logic.unification import Binding, Substitution
-from aitools.logic.core import LogicObject, LogicWrapper
-from aitools.logic.language import (Variable, Expression)
+from aitools.logic import Variable, Expression, LogicWrapper, LogicObject
 
 
 def logicObjects(count: int):
@@ -44,3 +43,19 @@ def binding(head, variables) -> Binding:
 
 def subst(*bindings) -> Substitution:
     return Substitution(*map(lambda b: binding(b[0], b[1]), bindings))
+
+
+class VariableSource:
+    def __init__(self, **initial_vars: Variable):
+        self.__vars = initial_vars
+
+    def __getattr__(self, item):
+        if item not in self.__vars:
+            self.__vars[item] = val = Variable()
+        else:
+            val = self.__vars[item]
+
+        return val
+
+
+variable_source = VariableSource()

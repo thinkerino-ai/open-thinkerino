@@ -1,6 +1,7 @@
 import unittest
 
-from aitools.logic import LogicObject, LogicWrapper, Variable, Expression
+from aitools.logic import LogicWrapper, Variable, Expression
+from aitools.logic.core import LogicObject
 from aitools.logic.utils import expr, wrap
 
 

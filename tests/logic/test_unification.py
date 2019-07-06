@@ -1,7 +1,8 @@
 import unittest
 from typing import Optional
 
-from aitools.logic import Substitution, LogicObject, Variable
+from aitools.logic import Substitution, Variable
+from aitools.logic.core import LogicObject
 from aitools.logic.utils import logicObjects, expr, variables, subst, binding, wrap
 
 
@@ -198,7 +199,7 @@ class TestUnification(unittest.TestCase):
         c, d = logicObjects(2)
         e1 = ("hello", ("yay", c), [d]) >> expr # alternative syntax: ("hello", (b, c), (d,)) >> expr
         e2 = ("hello", (v1, c), v2) >> expr
- 
+
         expectedResult = subst((wrap("yay"), [v1]), ([d] >> expr, [v2]))
 
         self.assertUnificationResult(e1, e2, expectedResult)
