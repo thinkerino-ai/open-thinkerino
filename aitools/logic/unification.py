@@ -6,7 +6,7 @@ from aitools.logic.core import LogicObject, Variable, Expression
 
 
 class Binding(LogicObject):
-    def __init__(self, variables: FrozenSet[Variable], head: LogicObject =None):
+    def __init__(self, variables: FrozenSet[Variable], head: LogicObject=None):
         varCount = len(variables)
         if head is None:
             if varCount < 2:

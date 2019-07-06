@@ -12,13 +12,11 @@ def logicObjects(count: int):
 def variables(count: int):
     return (Variable() for _ in range(count))
 
-
 def wrap(obj: Any):
     if isinstance(obj, LogicObject):
         return obj
     else:
         return LogicWrapper(obj)
-
 
 class ExpressionMaker:
     @staticmethod

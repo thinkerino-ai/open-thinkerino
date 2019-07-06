@@ -1,2 +1,2 @@
 from aitools.logic.unification import (Binding, Substitution, UnificationError)
-from aitools.logic.core import (LogicObject, LogicWrapper, Variable, Expression)
+from aitools.logic.core import Variable, Expression, LogicObject, LogicWrapper
