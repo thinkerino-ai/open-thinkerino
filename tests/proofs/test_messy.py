@@ -9,7 +9,7 @@ from aitools.proofs.utils import prover
 def test_retrieve_known_formula():
     kb = KnowledgeBase()
 
-    IsA, dylan, cat = logicObjects(3)
+    IsA, dylan, cat = logicObjects(3, clazz=LogicSymbol)
 
     kb.add_formulas(IsA(dylan, cat))
 
@@ -23,7 +23,7 @@ def test_retrieve_known_formula():
 def test_retrieve_known_open_formula():
     kb = KnowledgeBase()
 
-    IsA, dylan, cat, hugo = logicObjects(4)
+    IsA, dylan, cat, hugo = logicObjects(4, clazz=LogicSymbol)
 
     kb.add_formulas(
         IsA(dylan, cat),
@@ -47,7 +47,7 @@ def test_proof_known_formula():
 
     kb = KnowledgeBase()
 
-    IsA, dylan, cat = logicObjects(3)
+    IsA, dylan, cat = logicObjects(3, clazz=LogicSymbol)
 
     kb.add_formulas(IsA(dylan, cat))
 
@@ -62,7 +62,7 @@ def test_proof_known_open_formula():
     # TODO maybe break this up in different tests with a single proof fixture?
     kb = KnowledgeBase()
 
-    IsA, dylan, hugo, cat = logicObjects(4)
+    IsA, dylan, hugo, cat = logicObjects(4, clazz=LogicSymbol)
 
     kb.add_formulas(
         IsA(dylan, cat),

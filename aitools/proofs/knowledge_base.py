@@ -1,13 +1,15 @@
+import typing
 from collections import deque
 from typing import List, Optional, Iterable, Set
 
 from aitools.logic import Expression, Substitution
-from aitools.proofs.proof import Prover, KnowledgeRetriever
+from aitools.proofs.language import Formula
+from aitools.proofs.proof import Prover, KnowledgeRetriever, Proof
 
 
 class KnowledgeBase():
     def __init__(self):
-        self.__known_formulas: Set[Expression] = set()
+        self.__known_formulas: Set[Formula] = set()
         self.__provers: Set[Prover] = set()
 
         self.__initialize_default_provers()
@@ -24,14 +26,16 @@ class KnowledgeBase():
             if subst is not None:
                 yield subst
 
-    def add_formulas(self, *formulas: Iterable[Expression]):
+    def add_formulas(self, *formulas: Formula):
         """Adds all of the given formulas to the currently known formulas."""
         for f in formulas:
+            if not isinstance(f, Formula):
+                raise TypeError("Only formulas can be added to a Knowledge Base!")
             self.__known_formulas.add(f)
 
-    def prove(self, formula):
+    def prove(self, formula: Formula) -> Iterable[Proof]:
         """Backward search to prove a given formulas using all known provers"""
-        proof_sources = deque(prover(formula) for prover in self.__provers)
+        proof_sources: typing.Deque[Iterable[Proof]] = deque(prover(formula) for prover in self.__provers)
 
         while any(proof_sources):
             source = proof_sources.popleft()
@@ -40,8 +44,8 @@ class KnowledgeBase():
             except StopIteration:
                 pass
             else:
-                yield new_proof
                 proof_sources.append(source)
+                yield new_proof
 
 
 
