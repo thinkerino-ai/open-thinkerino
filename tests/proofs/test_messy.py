@@ -1,5 +1,6 @@
 from aitools.logic import Variable
 from aitools.logic.utils import subst
+from aitools.proofs.knowledge_base import KnowledgeBase
 
 
 def test_retrieve_known_formula():
@@ -239,7 +240,7 @@ def test_prover_returning_substitution_false():
     @prover
     def Likes(_x, _y):
         if _x == "lisa" and isinstance(_y, Variable):
-            return False, subst("milhouse", [_y]
+            return False, subst("milhouse", [_y])
 
         return None
 
@@ -338,7 +339,7 @@ def test_listener_complex_conjunction():
     # TODO put checks about _temporary_listeners in a different test, for now I'm just writing things quickly
     assert len(kb._temporary_listeners) == 0
 
-    kb.add_formulas(IsBrother(carl, alice)))
+    kb.add_formulas(IsBrother(carl, alice))
 
     assert len(kb._temporary_listeners) == 1
     assert not any(kb.prove(IsUncle(carl, bob)))
@@ -414,13 +415,13 @@ def test_listener_chain():
     def deduce_from_a_b(_x):
         declare(B(_x))
 
-    @listener(B(v._x), retroactive=False):
+    @listener(B(v._x), retroactive=False)
     def deduce_from_b_c(_x):
-        declare C(_x)
+        declare(C(_x))
 
     @listener(C(v._x))
     def deduce_from_c_d(_x):
-        declare D(_x)
+        declare(D(_x))
 
     with KnowledgeBase() as kb:
 
