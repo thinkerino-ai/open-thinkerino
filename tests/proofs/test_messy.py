@@ -1,6 +1,7 @@
 from aitools.logic import Variable, Substitution
 from aitools.logic.utils import subst, logicObjects, variable_source as v
 from aitools.proofs.knowledge_base import KnowledgeBase
+from aitools.proofs.language import Implies, LogicSymbol
 from aitools.proofs.proof import Proof, KnowledgeRetriever
 from aitools.proofs.utils import prover
 
@@ -77,6 +78,7 @@ def test_proof_known_open_formula():
 
 
 def test_implication_shortcut():
+    IsA, cat, animal = logicObjects(3, clazz=LogicSymbol)
     assert (IsA(v._x, cat) >> IsA(v._x, animal)) == (Implies(IsA(v._x, cat), IsA(v._x, animal)))
 
 

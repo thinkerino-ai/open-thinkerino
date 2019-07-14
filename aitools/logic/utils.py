@@ -5,8 +5,8 @@ from aitools.logic.unification import Binding, Substitution
 from aitools.logic import Variable, Expression, LogicWrapper, LogicObject
 
 
-def logicObjects(count: int):
-    return (LogicObject() for _ in range(count))
+def logicObjects(count: int, *, clazz=LogicObject):
+    return (clazz() for _ in range(count))
 
 
 def variables(count: int):
