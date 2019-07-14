@@ -1,6 +1,7 @@
 from aitools.logic import Variable, Substitution
 from aitools.logic.utils import subst, logicObjects, variable_source as v
 from aitools.proofs.knowledge_base import KnowledgeBase
+from aitools.proofs.proof import Proof, KnowledgeRetriever
 from aitools.proofs.utils import prover
 
 
@@ -37,29 +38,39 @@ def test_retrieve_known_open_formula():
     assert any(substitution.getBoundObjectFor(v._x) == hugo for substitution in substitutions)
 
 
+def _is_known_formula_proof(proof: Proof) -> bool:
+    return isinstance(proof, Proof) and len(proof) == 1 and isinstance(proof[-1].inference_rule, KnowledgeRetriever)
+
+
 def test_proof_known_formula():
+
     kb = KnowledgeBase()
+
+    IsA, dylan, cat = logicObjects(3)
 
     kb.add_formulas(IsA(dylan, cat))
 
-    # at least one way to prove it!
-    assert any(kb.prove(IsA(dylan, cat)))
+    proofs = list(kb.prove(IsA(dylan, cat)))
+
+    # at least one way to prove it directly!
+    assert all(_is_known_formula_proof(p) for p in proofs)
+    assert any(proofs)
 
 
 def test_proof_known_open_formula():
     # TODO maybe break this up in different tests with a single proof fixture?
     kb = KnowledgeBase()
 
+    IsA, dylan, hugo, cat = logicObjects(4)
+
     kb.add_formulas(
         IsA(dylan, cat),
         IsA(hugo, cat)
     )
 
-    proofs = kb.prove(IsA(v._x, cat))
+    proofs = list(kb.prove(IsA(v._x, cat)))
     assert len(proofs) == 2
-    for proof in proofs:
-        assert len(proof) == 1
-        assert isinstance(proof.steps[0], FromAxiom)
+    assert all(_is_known_formula_proof(proof) for proof in proofs)
 
     assert any(p.substitution.getBoundObjectFor(v._x) == dylan for p in proofs)
     assert any(p.substitution.getBoundObjectFor(v._x) == hugo for p in proofs)
@@ -138,7 +149,7 @@ def test_custom_prover_with_explicit_formula():
     kb.add_provers(name_here_does_not_matter)
 
     assert any(kb.prove(
-        IsPayload({'code':200, 'message':'success!'})
+        IsPayload({'code': 200, 'message': 'success!'})
     ))
 
 
@@ -231,18 +242,18 @@ def test_prover_returning_substitutions():
     kb = KnowledgeBase()
     kb.add_provers(Likes)
 
-    assert(kb.prove(Likes("lisa", "nelson")))
+    assert (kb.prove(Likes("lisa", "nelson")))
 
     lisa_likes_proofs = kb.prove(Likes("lisa", v._y))
-    assert(len(lisa_likes_proofs) == 1)
-    assert(any(p.substitution.getBoundObjectFor(v._y) == 'nelson' for p in lisa_likes_proofs))
+    assert (len(lisa_likes_proofs) == 1)
+    assert (any(p.substitution.getBoundObjectFor(v._y) == 'nelson' for p in lisa_likes_proofs))
 
     likes_lisa_proofs = kb.prove(Likes(v._y, "lisa"))
-    assert(len(likes_lisa_proofs) == 1)
-    assert(any(p.substitution.getBoundObjectFor(v._y) == "milhouse") for p in lisa_likes_proofs)
+    assert (len(likes_lisa_proofs) == 1)
+    assert (any(p.substitution.getBoundObjectFor(v._y) == "milhouse") for p in lisa_likes_proofs)
 
     # nobody likes milhouse
-    assert(not any(kb.prove(Likes(v._y, "milhouse"))))
+    assert (not any(kb.prove(Likes(v._y, "milhouse"))))
 
 
 def test_prover_returning_substitution_false():
@@ -271,7 +282,6 @@ def test_prover_returning_multiple_results():
                 yield subst(el, [_x])
         else:
             return _x in _collection
-
 
     kb = KnowledgeBase()
     kb.add_provers(In)
@@ -433,7 +443,6 @@ def test_listener_chain():
         declare(D(_x))
 
     with KnowledgeBase() as kb:
-
         kb.add_listeners(deduce_from_b_c)
         kb.add_formula(A(foo))
 
@@ -445,6 +454,7 @@ def test_listener_chain():
 
 def test_listener_priority():
     res = []
+
     @listener(Go, priority=1)
     def listener_1():
         res.append(1)
