@@ -5,6 +5,7 @@
     - the proofset is in any case lazy
     - it exposes the __iter__ method
     - it exposes the __len__ method
+    - can take additional hypotheses and prove within them (the good old A |- B)
 - a prover can return:
     - True: the formula is proven to be True without any further substitution
     - False: the formula is proven to be False without any further substitution
