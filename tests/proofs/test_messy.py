@@ -1,15 +1,40 @@
-from aitools.logic import Variable
-from aitools.logic.utils import subst
+from aitools.logic import Variable, Substitution
+from aitools.logic.utils import subst, logicObjects, variable_source as v
 from aitools.proofs.knowledge_base import KnowledgeBase
+from aitools.proofs.utils import prover
 
 
 def test_retrieve_known_formula():
     kb = KnowledgeBase()
 
+    IsA, dylan, cat = logicObjects(3)
+
     kb.add_formulas(IsA(dylan, cat))
 
     # we can retrieve it because we already know it
-    assert any(kb.retrieve(IsA(dylan, cat)))
+    substitutions = list(kb.retrieve(IsA(dylan, cat)))
+
+    assert any(substitutions)
+    assert all(isinstance(s, Substitution) for s in substitutions)
+
+
+def test_retrieve_known_open_formula():
+    kb = KnowledgeBase()
+
+    IsA, dylan, cat, hugo = logicObjects(4)
+
+    kb.add_formulas(
+        IsA(dylan, cat),
+        IsA(hugo, cat)
+    )
+
+    substitutions = list(kb.retrieve(IsA(v._x, cat)))
+    assert len(substitutions) == 2
+
+    assert all(isinstance(s, Substitution) for s in substitutions)
+
+    assert any(substitution.getBoundObjectFor(v._x) == dylan for substitution in substitutions)
+    assert any(substitution.getBoundObjectFor(v._x) == hugo for substitution in substitutions)
 
 
 def test_proof_known_formula():
@@ -19,22 +44,6 @@ def test_proof_known_formula():
 
     # at least one way to prove it!
     assert any(kb.prove(IsA(dylan, cat)))
-
-
-def test_retrieve_known_open_formula():
-    kb = KnowledgeBase()
-
-    kb.add_formulas(
-        IsA(dylan, cat),
-        IsA(hugo, cat)
-    )
-
-    substitutions = kb.retrieve(IsA(v._x, cat))
-    assert len(substitutions) == 2
-
-    assert any(substitution.getBoundObjectFor(v._x) == dylan for substitution in substitutions)
-    assert any(substitution.getBoundObjectFor(v._x) == hugo for substitution in substitutions)
-
 
 
 def test_proof_known_open_formula():
