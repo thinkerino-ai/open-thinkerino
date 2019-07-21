@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Iterable, List
+from typing import Iterable
 
 from aitools.logic import Substitution
 from aitools.proofs.language import Formula

@@ -1,34 +1,34 @@
 import unittest
 
-from aitools.logic.utils import variables, logicObjects, subst, expr
+from aitools.logic.utils import variables, logic_objects, subst, expr
 
 
 class TestSubstitution(unittest.TestCase):
 
     def testComplexSubstitution(self):
         x, y, z = variables(3)
-        a, b, c, d = logicObjects(4)
+        a, b, c, d = logic_objects(4)
 
         e = (x, a) >> expr
 
-        yExpr = (a, (b, y), d) >> expr
-        zExpr = (c, z) >> expr
+        y_expr = (a, (b, y), d) >> expr
+        z_expr = (c, z) >> expr
 
-        s = subst((zExpr, [y]), (c, [z]), (yExpr, [x]))
+        s = subst((z_expr, [y]), (c, [z]), (y_expr, [x]))
 
-        expectedResult = ((a, (b, (c, c)), d), a) >> expr
+        expected_result = ((a, (b, (c, c)), d), a) >> expr
 
-        self.assertEqual(s.applyTo(e), expectedResult)
+        self.assertEqual(s.apply_to(e), expected_result)
 
     def testInfiniteSubstitution(self):
         x, = variables(1)
-        a, = logicObjects(1)
+        a, = logic_objects(1)
 
         e = (x, a) >> expr
 
         try:
             s = subst((e, [x]))
-            s.applyTo(e)
+            s.apply_to(e)
         except ValueError:
             pass  # success
         except RecursionError:
@@ -37,30 +37,30 @@ class TestSubstitution(unittest.TestCase):
     def testGetBoundObject(self):
         x, y = variables(2)
 
-        a, b, c, d = logicObjects(4)
+        a, b, c, d = logic_objects(4)
 
         e = (a, (b, c), d) >> expr
 
         s = subst((e, [x, y]))
 
-        self.assertEqual(e, s.getBoundObjectFor(x))
-        self.assertEqual(e, s.getBoundObjectFor(y))
+        self.assertEqual(e, s.get_bound_object_for(x))
+        self.assertEqual(e, s.get_bound_object_for(y))
 
     def testGetBoundVariable(self):
         x, y = variables(2)
 
-        s = subst((None, [x,y]))
+        s = subst((None, [x, y]))
 
-        self.assertEqual(s.getBoundObjectFor(x), s.getBoundObjectFor(y))
-        self.assertTrue(s.getBoundObjectFor(x) in [x,y])
-        self.assertTrue(s.getBoundObjectFor(y) in [x,y])
+        self.assertEqual(s.get_bound_object_for(x), s.get_bound_object_for(y))
+        self.assertTrue(s.get_bound_object_for(x) in [x, y])
+        self.assertTrue(s.get_bound_object_for(y) in [x, y])
 
     def test_tricky_substitution(self):
         x, y, z = variables(3)
-        a, b, c = logicObjects(3)
+        a, b, c = logic_objects(3)
 
         s = subst((b, [y]), (a(y), [x]))
 
         expected = a(b)
 
-        self.assertEqual(expected, s.applyTo(x))
+        self.assertEqual(expected, s.apply_to(x))

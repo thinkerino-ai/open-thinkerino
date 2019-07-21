@@ -1,6 +1,6 @@
 import typing
 from collections import deque
-from typing import List, Optional, Iterable, Set
+from typing import Optional, Iterable, Set
 
 from aitools.logic import Expression, Substitution
 from aitools.proofs.language import Formula
@@ -8,7 +8,7 @@ from aitools.proofs.proof import Prover, ProofStep
 from aitools.proofs.provers import KnowledgeRetriever, RestrictedModusPonens
 
 
-class KnowledgeBase():
+class KnowledgeBase:
     def __init__(self):
         self.__known_formulas: Set[Formula] = set()
         self.__provers: Set[Prover] = set()
@@ -41,7 +41,7 @@ class KnowledgeBase():
         proof_sources: typing.Deque[Iterable[ProofStep]] = deque(prover(formula, self) for prover in self.__provers)
 
         while any(proof_sources):
-            source = proof_sources.popleft()
+            source = proof_sources.popleft().__iter__()
             try:
                 new_proof = next(source)
             except StopIteration:
@@ -49,7 +49,3 @@ class KnowledgeBase():
             else:
                 proof_sources.append(source)
                 yield new_proof
-
-
-
-

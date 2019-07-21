@@ -30,8 +30,8 @@ class TestLogicWrappers(unittest.TestCase):
         self.assertEqual(e1.value, src, f"The value of {e1} should be {src}")
 
     def testUtilsWrapSet(self):
-        src1 = {1,2,3}
-        src2 = [1,2,3]
+        src1 = {1, 2, 3}
+        src2 = [1, 2, 3]
 
         e1 = (src1, src2) >> expr
         

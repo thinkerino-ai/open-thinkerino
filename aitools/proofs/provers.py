@@ -17,7 +17,7 @@ class RestrictedModusPonens(Prover):
             rule_pattern = Implies(v._premise, formula)
 
             for rule_proof in kb.prove(rule_pattern):
-                premise = rule_proof.substitution.getBoundObjectFor(v._premise)
-                for premise_proof in kb.prove(rule_proof.substitution.applyTo(premise)):
+                premise = rule_proof.substitution.get_bound_object_for(v._premise)
+                for premise_proof in kb.prove(rule_proof.substitution.apply_to(premise)):
                     yield ProofStep(inference_rule=self, conclusion=formula, substitution=premise_proof.substitution,
                                     premises=(rule_proof, premise_proof))

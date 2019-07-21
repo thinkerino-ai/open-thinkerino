@@ -1,5 +1,5 @@
 from aitools.logic import Variable, Substitution
-from aitools.logic.utils import subst, logicObjects, variable_source as v
+from aitools.logic.utils import subst, logic_objects, variable_source as v
 from aitools.proofs.knowledge_base import KnowledgeBase
 from aitools.proofs.language import Implies, LogicSymbol, Formula
 from aitools.proofs.proof import ProofStep
@@ -10,7 +10,7 @@ from aitools.proofs.utils import prover
 def test_retrieve_known_formula():
     kb = KnowledgeBase()
 
-    IsA, dylan, cat = logicObjects(3, clazz=LogicSymbol)
+    IsA, dylan, cat = logic_objects(3, clazz=LogicSymbol)
 
     kb.add_formulas(IsA(dylan, cat))
 
@@ -24,7 +24,7 @@ def test_retrieve_known_formula():
 def test_retrieve_known_open_formula():
     kb = KnowledgeBase()
 
-    IsA, dylan, cat, hugo = logicObjects(4, clazz=LogicSymbol)
+    IsA, dylan, cat, hugo = logic_objects(4, clazz=LogicSymbol)
 
     kb.add_formulas(
         IsA(dylan, cat),
@@ -36,21 +36,21 @@ def test_retrieve_known_open_formula():
 
     assert all(isinstance(s, Substitution) for s in substitutions)
 
-    assert any(substitution.getBoundObjectFor(v._x) == dylan for substitution in substitutions)
-    assert any(substitution.getBoundObjectFor(v._x) == hugo for substitution in substitutions)
+    assert any(substitution.get_bound_object_for(v._x) == dylan for substitution in substitutions)
+    assert any(substitution.get_bound_object_for(v._x) == hugo for substitution in substitutions)
 
 
 def _is_known_formula_proof_of(proof: ProofStep, formula: Formula) -> bool:
     return (isinstance(proof, ProofStep) and proof.premises is None and
             isinstance(proof.inference_rule, KnowledgeRetriever) and
-            proof.substitution.applyTo(formula) == proof.substitution.applyTo(proof.conclusion))
+            proof.substitution.apply_to(formula) == proof.substitution.apply_to(proof.conclusion))
 
 
 def test_proof_known_formula():
 
     kb = KnowledgeBase()
 
-    IsA, dylan, cat = logicObjects(3, clazz=LogicSymbol)
+    IsA, dylan, cat = logic_objects(3, clazz=LogicSymbol)
 
     kb.add_formulas(IsA(dylan, cat))
 
@@ -66,7 +66,7 @@ def test_proof_known_open_formula():
     # TODO maybe break this up in different tests with a single proof fixture?
     kb = KnowledgeBase()
 
-    IsA, dylan, hugo, cat = logicObjects(4, clazz=LogicSymbol)
+    IsA, dylan, hugo, cat = logic_objects(4, clazz=LogicSymbol)
 
     kb.add_formulas(
         IsA(dylan, cat),
@@ -78,19 +78,19 @@ def test_proof_known_open_formula():
     assert len(proofs) == 2
     assert all(_is_known_formula_proof_of(proof, target) for proof in proofs)
 
-    assert any(p.substitution.getBoundObjectFor(v._x) == dylan for p in proofs)
-    assert any(p.substitution.getBoundObjectFor(v._x) == hugo for p in proofs)
+    assert any(p.substitution.get_bound_object_for(v._x) == dylan for p in proofs)
+    assert any(p.substitution.get_bound_object_for(v._x) == hugo for p in proofs)
 
 
 def test_implication_shortcut():
-    IsA, cat, animal = logicObjects(3, clazz=LogicSymbol)
+    IsA, cat, animal = logic_objects(3, clazz=LogicSymbol)
     assert (IsA(v._x, cat) >> IsA(v._x, animal)) == (Implies(IsA(v._x, cat), IsA(v._x, animal)))
 
 
 def test_simple_deduction():
     kb = KnowledgeBase()
 
-    IsA, cat, animal, dylan = logicObjects(4, clazz=LogicSymbol)
+    IsA, cat, animal, dylan = logic_objects(4, clazz=LogicSymbol)
 
     kb.add_formulas(
         IsA(v._x, cat) >> IsA(v._x, animal)
@@ -256,11 +256,11 @@ def test_prover_returning_substitutions():
 
     lisa_likes_proofs = kb.prove(Likes("lisa", v._y))
     assert (len(lisa_likes_proofs) == 1)
-    assert (any(p.substitution.getBoundObjectFor(v._y) == 'nelson' for p in lisa_likes_proofs))
+    assert (any(p.substitution.get_bound_object_for(v._y) == 'nelson' for p in lisa_likes_proofs))
 
     likes_lisa_proofs = kb.prove(Likes(v._y, "lisa"))
     assert (len(likes_lisa_proofs) == 1)
-    assert (any(p.substitution.getBoundObjectFor(v._y) == "milhouse") for p in lisa_likes_proofs)
+    assert (any(p.substitution.get_bound_object_for(v._y) == "milhouse") for p in lisa_likes_proofs)
 
     # nobody likes milhouse
     assert (not any(kb.prove(Likes(v._y, "milhouse"))))

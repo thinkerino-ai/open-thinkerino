@@ -2,7 +2,7 @@
 
 # Logic Operators
 from aitools.logic import LogicObject, Expression
-from aitools.logic.utils import logicObjects
+from aitools.logic.utils import logic_objects
 
 
 class LogicSymbol(LogicObject):
@@ -10,7 +10,7 @@ class LogicSymbol(LogicObject):
         return Formula(self, *other_children)
 
 
-And, Or, Implies, CoImplies, Not = logicObjects(5, clazz=LogicSymbol)
+And, Or, Implies, CoImplies, Not = logic_objects(5, clazz=LogicSymbol)
 
 
 class Formula(Expression):
