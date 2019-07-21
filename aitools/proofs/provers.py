@@ -11,11 +11,13 @@ class KnowledgeRetriever(Prover):
 
 
 class RestrictedModusPonens(Prover):
-
+    """Restricted backward version of modus ponens, which won't perform recursive proof of implications"""
     def __call__(self, formula: Formula, kb=None):
-        rule_pattern = Implies(v._premise, formula)
-        return iter([])
-        for subst in self.__kb.retrieve(rule_pattern):
-            premise = subst.getBoundObjectFor(v._premise)
-            for premise_proof in self.__kb.prove(subst.applyTo(premise)):
-                pass
+        if not formula.children[0] == Implies:
+            rule_pattern = Implies(v._premise, formula)
+
+            for rule_proof in kb.prove(rule_pattern):
+                premise = rule_proof.substitution.getBoundObjectFor(v._premise)
+                for premise_proof in kb.prove(rule_proof.substitution.applyTo(premise)):
+                    yield ProofStep(inference_rule=self, conclusion=formula, substitution=premise_proof.substitution,
+                                    premises=(rule_proof, premise_proof))
