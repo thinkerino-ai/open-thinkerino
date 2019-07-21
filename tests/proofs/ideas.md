@@ -1,12 +1,17 @@
 # Ideas
 
+- a proof must be **reproducible** by doing all of the following:
+    - checking its premises (if any)
+    - calling its inference step on the conclusion passing the premises as an "ad-hoc" KB
 - KnowledgeBase.prove:
     - returns a "proofset", which **can** be async
     - the proofset is in any case lazy
     - it exposes the __iter__ method
     - it exposes the __len__ method
     - can take additional hypotheses and prove within them (the good old A |- B)
-- a prover can return:
+- KnowledgeBase.with_hypotheses:
+    - returns a new "temporary" knowledge base which contains all the hypotheses and has the original as a fallback
+- a prover **function** can return:
     - True: the formula is proven to be True without any further substitution
     - False: the formula is proven to be False without any further substitution
     - None: the formula couldn't be proven either True or False by this prover
@@ -15,11 +20,21 @@
     - a pair `(bool, Substitution)`: the formula was proven to be True/False with the Substitution
     - a sequence of pairs: the formula was proven to be True/False with each of the Substitutions
     - **raise**: just like returning None
+    - a Proof
+    - a sequence of Proofs
 - `prover` decorator:
-    - the `proves` argument can be either a Formula or a collection of Formula
+    - the `proves` argument can be either a Formula ~~or a collection of Formula (makes no sense!)~~
     - it provides a default variable source to create the variables for the decorated function/generated predicate
         - the variable source can be provided by hand to override it
         - the default one is taken from the current (global) context
+    - when called it takes optional "kb" kwarg, which specifies what to base the proof on, including hypotheses
+    - returns a sequence of proofs
+    - if the decorated function returned boolean/Subsitution/pair or a sequence of these, it creates an *implicit proof*
+        - built on the proofs requested by the decorated function (and their result)
+            - this can lead to a very large premise set (depending on the complexity of the prover)
+            - it also **needs to account for "python" checks**, by including a special term representing the prover
+                - an optional "is_transparent" argument to the `@prover` decorator prevents this
+        - the decorated function can also use a `with premises(...)` before returning or yielding, which overrides the implicit premises (and also behaves as if `is_transparent` was set for the returned result)
 - an evaluator is like a prover, but it returns an object which is the evaluation of the input
     - this can lead to cycles! we need to avoid them!
 - listeners (aka: forward provers):
