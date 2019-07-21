@@ -6,7 +6,7 @@ from aitools.logic.core import LogicObject, Variable, Expression
 
 
 class Binding(LogicObject):
-    def __init__(self, variables: FrozenSet[Variable], head: LogicObject=None):
+    def __init__(self, variables: FrozenSet[Variable], head: LogicObject = None):
         varCount = len(variables)
         if head is None:
             if varCount < 2:
@@ -25,7 +25,7 @@ class Binding(LogicObject):
         return self.head if self.head is not None else iter(self.variables).__next__()
 
     @classmethod
-    def join(cls, a:Binding, b:Binding, bindingContext=None) -> Binding:
+    def join(cls, a: Binding, b: Binding, bindingContext=None) -> Binding:
         if a is None or b is None:
             raise ValueError("Bindings cannot be None in a join")
 
@@ -67,9 +67,9 @@ class Binding(LogicObject):
 
 
 class Substitution(LogicObject):
-    def __init__(self, *bindings:Binding):
+    def __init__(self, *bindings: Binding):
         # TODO bindings should be a frozen set
-        self._bindings_by_variable : Dict[Variable, Binding] = {}
+        self._bindings_by_variable: Dict[Variable, Binding] = {}
         for b in bindings:
             self.__declareBinding(b)
         super().__init__()
@@ -154,8 +154,8 @@ class Substitution(LogicObject):
     def __str__(self):
         return f"[{', '.join(map(str, set(self._bindings_by_variable.values())))}]"
 
-    def __eq__(self, other):
-        return all(self.getBoundObjectFor(v)==other.getBoundObjectFor(v) for v in self._bindings_by_variable)
+    def __eq__(self, other: Substitution):
+        return all(self.getBoundObjectFor(v) == other.getBoundObjectFor(v) for v in self._bindings_by_variable)
 
     def __hash__(self):
         return hash(self._bindings_by_variable)

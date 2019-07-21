@@ -1,8 +1,9 @@
 from aitools.logic import Variable, Substitution
 from aitools.logic.utils import subst, logicObjects, variable_source as v
 from aitools.proofs.knowledge_base import KnowledgeBase
-from aitools.proofs.language import Implies, LogicSymbol
-from aitools.proofs.proof import Proof, KnowledgeRetriever
+from aitools.proofs.language import Implies, LogicSymbol, Formula
+from aitools.proofs.proof import ProofStep
+from aitools.proofs.provers import KnowledgeRetriever
 from aitools.proofs.utils import prover
 
 
@@ -39,8 +40,10 @@ def test_retrieve_known_open_formula():
     assert any(substitution.getBoundObjectFor(v._x) == hugo for substitution in substitutions)
 
 
-def _is_known_formula_proof(proof: Proof) -> bool:
-    return isinstance(proof, Proof) and len(proof) == 1 and isinstance(proof[-1].inference_rule, KnowledgeRetriever)
+def _is_known_formula_proof_of(proof: ProofStep, formula: Formula) -> bool:
+    return (isinstance(proof, ProofStep) and proof.premises is None and
+            isinstance(proof.inference_rule, KnowledgeRetriever) and
+            proof.substitution.applyTo(formula) == proof.substitution.applyTo(proof.conclusion))
 
 
 def test_proof_known_formula():
@@ -51,10 +54,11 @@ def test_proof_known_formula():
 
     kb.add_formulas(IsA(dylan, cat))
 
-    proofs = list(kb.prove(IsA(dylan, cat)))
+    target = IsA(dylan, cat)
+    proofs = list(kb.prove(target))
 
     # at least one way to prove it directly!
-    assert all(_is_known_formula_proof(p) for p in proofs)
+    assert all(_is_known_formula_proof_of(p, target) for p in proofs)
     assert any(proofs)
 
 
@@ -69,9 +73,10 @@ def test_proof_known_open_formula():
         IsA(hugo, cat)
     )
 
-    proofs = list(kb.prove(IsA(v._x, cat)))
+    target = IsA(v._x, cat)
+    proofs = list(kb.prove(target))
     assert len(proofs) == 2
-    assert all(_is_known_formula_proof(proof) for proof in proofs)
+    assert all(_is_known_formula_proof_of(proof, target) for proof in proofs)
 
     assert any(p.substitution.getBoundObjectFor(v._x) == dylan for p in proofs)
     assert any(p.substitution.getBoundObjectFor(v._x) == hugo for p in proofs)
@@ -85,14 +90,17 @@ def test_implication_shortcut():
 def test_simple_deduction():
     kb = KnowledgeBase()
 
+    IsA, cat, animal, dylan = logicObjects(4, clazz=LogicSymbol)
+
     kb.add_formulas(
         IsA(v._x, cat) >> IsA(v._x, animal)
     )
 
     kb.add_formulas(IsA(dylan, cat))
 
-    assert any(kb.prove(IsA(dylan, animal)))
-
+    proofs = list(kb.prove(IsA(dylan, animal)))
+    assert any(proofs)
+    assert all(isinstance(p, ProofStep) for p in proofs)
 
 @prover
 def IsEven(n: int):

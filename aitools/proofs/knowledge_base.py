@@ -4,7 +4,8 @@ from typing import List, Optional, Iterable, Set
 
 from aitools.logic import Expression, Substitution
 from aitools.proofs.language import Formula
-from aitools.proofs.proof import Prover, KnowledgeRetriever, Proof
+from aitools.proofs.proof import Prover, ProofStep
+from aitools.proofs.provers import KnowledgeRetriever, RestrictedModusPonens
 
 
 class KnowledgeBase():
@@ -15,7 +16,9 @@ class KnowledgeBase():
         self.__initialize_default_provers()
 
     def __initialize_default_provers(self):
-        self.__provers.add(KnowledgeRetriever(self))
+        self.__provers.add(KnowledgeRetriever())
+        # although it's quite a standard proving strategy, I really don't like having MP as a default...
+        self.__provers.add(RestrictedModusPonens())
 
     def retrieve(self, formula: Optional[Expression] = None) -> Iterable[Substitution]:
         """Retrieves all formula from the KnowledgeBase which are unifiable with the given one.
@@ -33,9 +36,9 @@ class KnowledgeBase():
                 raise TypeError("Only formulas can be added to a Knowledge Base!")
             self.__known_formulas.add(f)
 
-    def prove(self, formula: Formula) -> Iterable[Proof]:
+    def prove(self, formula: Formula) -> Iterable[ProofStep]:
         """Backward search to prove a given formulas using all known provers"""
-        proof_sources: typing.Deque[Iterable[Proof]] = deque(prover(formula) for prover in self.__provers)
+        proof_sources: typing.Deque[Iterable[ProofStep]] = deque(prover(formula, self) for prover in self.__provers)
 
         while any(proof_sources):
             source = proof_sources.popleft()
