@@ -1,7 +1,7 @@
-from aitools.logic import Variable, Substitution
+from aitools.logic import Variable, Substitution, LogicObject, Expression
 from aitools.logic.utils import subst, logic_objects, variable_source as v
 from aitools.proofs.knowledge_base import KnowledgeBase
-from aitools.proofs.language import Implies, LogicSymbol, Formula
+from aitools.proofs.language import Implies
 from aitools.proofs.proof import ProofStep
 from aitools.proofs.provers import KnowledgeRetriever
 from aitools.proofs.utils import prover
@@ -10,7 +10,7 @@ from aitools.proofs.utils import prover
 def test_retrieve_known_formula():
     kb = KnowledgeBase()
 
-    IsA, dylan, cat = logic_objects(3, clazz=LogicSymbol)
+    IsA, dylan, cat = logic_objects(3, clazz=LogicObject)
 
     kb.add_formulas(IsA(dylan, cat))
 
@@ -24,7 +24,7 @@ def test_retrieve_known_formula():
 def test_retrieve_known_open_formula():
     kb = KnowledgeBase()
 
-    IsA, dylan, cat, hugo = logic_objects(4, clazz=LogicSymbol)
+    IsA, dylan, cat, hugo = logic_objects(4, clazz=LogicObject)
 
     kb.add_formulas(
         IsA(dylan, cat),
@@ -40,7 +40,7 @@ def test_retrieve_known_open_formula():
     assert any(substitution.get_bound_object_for(v._x) == hugo for substitution in substitutions)
 
 
-def _is_known_formula_proof_of(proof: ProofStep, formula: Formula) -> bool:
+def _is_known_formula_proof_of(proof: ProofStep, formula: Expression) -> bool:
     return (isinstance(proof, ProofStep) and proof.premises is None and
             isinstance(proof.inference_rule, KnowledgeRetriever) and
             proof.substitution.apply_to(formula) == proof.substitution.apply_to(proof.conclusion))
@@ -50,7 +50,7 @@ def test_proof_known_formula():
 
     kb = KnowledgeBase()
 
-    IsA, dylan, cat = logic_objects(3, clazz=LogicSymbol)
+    IsA, dylan, cat = logic_objects(3, clazz=LogicObject)
 
     kb.add_formulas(IsA(dylan, cat))
 
@@ -66,7 +66,7 @@ def test_proof_known_open_formula():
     # TODO maybe break this up in different tests with a single proof fixture?
     kb = KnowledgeBase()
 
-    IsA, dylan, hugo, cat = logic_objects(4, clazz=LogicSymbol)
+    IsA, dylan, hugo, cat = logic_objects(4, clazz=LogicObject)
 
     kb.add_formulas(
         IsA(dylan, cat),
@@ -83,17 +83,17 @@ def test_proof_known_open_formula():
 
 
 def test_implication_shortcut():
-    IsA, cat, animal = logic_objects(3, clazz=LogicSymbol)
-    assert (IsA(v._x, cat) >> IsA(v._x, animal)) == (Implies(IsA(v._x, cat), IsA(v._x, animal)))
+    IsA, cat, animal = logic_objects(3, clazz=LogicObject)
+    assert (IsA(v._x, cat) <<Implies>> IsA(v._x, animal)) == (Implies(IsA(v._x, cat), IsA(v._x, animal)))
 
 
 def test_simple_deduction():
     kb = KnowledgeBase()
 
-    IsA, cat, animal, dylan = logic_objects(4, clazz=LogicSymbol)
+    IsA, cat, animal, dylan = logic_objects(4, clazz=LogicObject)
 
     kb.add_formulas(
-        IsA(v._x, cat) >> IsA(v._x, animal)
+        IsA(v._x, cat) <<Implies>> IsA(v._x, animal)
     )
 
     kb.add_formulas(IsA(dylan, cat))
@@ -522,7 +522,7 @@ def test_listener_consume():
 #   - _x == 2 -> Equals(_x, 2)
 #   - _x + 3 -> qualche oggetto che restituisce x + 3 quando il valore di x è noto (tipo il sistema può chiamare "evaluate"? anzi no! evaluators!)
 #   - A & B -> e compagnia bella
-#   - if A -> usare direttamente una Formula come bool
+#   - if A -> usare direttamente una Expression come bool
 #   - for s in A -> iterare direttamente per ottenere tutte le sostituzioni che soddisfano una formula
 #   - with assumptions(...) -> aggiunge **temporaneamente** alla KB del contesto corrente delle formule
 # - listener nel CognitiveSystem -> possono evitare che una cosa sia salvata nella KB

@@ -3,14 +3,13 @@ from collections import deque
 from typing import Optional, Iterable, Set
 
 from aitools.logic import Expression, Substitution
-from aitools.proofs.language import Formula
 from aitools.proofs.proof import Prover, ProofStep
 from aitools.proofs.provers import KnowledgeRetriever, RestrictedModusPonens
 
 
 class KnowledgeBase:
     def __init__(self):
-        self.__known_formulas: Set[Formula] = set()
+        self.__known_formulas: Set[Expression] = set()
         self.__provers: Set[Prover] = set()
 
         self.__initialize_default_provers()
@@ -29,14 +28,14 @@ class KnowledgeBase:
             if subst is not None:
                 yield subst
 
-    def add_formulas(self, *formulas: Formula):
+    def add_formulas(self, *formulas: Expression):
         """Adds all of the given formulas to the currently known formulas."""
         for f in formulas:
-            if not isinstance(f, Formula):
+            if not isinstance(f, Expression):
                 raise TypeError("Only formulas can be added to a Knowledge Base!")
             self.__known_formulas.add(f)
 
-    def prove(self, formula: Formula) -> Iterable[ProofStep]:
+    def prove(self, formula: Expression) -> Iterable[ProofStep]:
         """Backward search to prove a given formulas using all known provers"""
         proof_sources: typing.Deque[Iterable[ProofStep]] = deque(prover(formula, self) for prover in self.__provers)
 
