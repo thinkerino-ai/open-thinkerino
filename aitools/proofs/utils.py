@@ -70,7 +70,7 @@ def predicate_function(func=None, *args, predicate_source=None, variable_source=
 
         # TODO if called without arguments, it returns the predicate (hint: instead of a function use a class inheriting from predicate?)
         @wraps(prover_function)
-        def _magic_wrapper(*_args): #TODO allow kwargs, everybody likes kwargs!
+        def _magic_wrapper(*_args):
             if len(_args) != len(arg_names):
                 raise TypeError("Wrong argument count for {}".format(prover_function))
 
