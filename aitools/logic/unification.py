@@ -22,7 +22,8 @@ class Binding(LogicObject):
         super().__init__()
 
     def get_bound_object_for(self):
-        return self.head if self.head is not None else iter(self.variables).__next__()
+        # TODO: that 'max' is super inefficient! (but necessary to guarantee order)
+        return self.head if self.head is not None else max(self.variables, key=lambda v: v.id)
 
     @classmethod
     def join(cls, a: Binding, b: Binding, binding_context=None) -> Binding:

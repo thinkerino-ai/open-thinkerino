@@ -2,7 +2,7 @@ from aitools.logic import Variable, Substitution, LogicObject, Expression
 from aitools.logic.utils import subst, logic_objects, variable_source as v
 from aitools.proofs.knowledge_base import KnowledgeBase
 from aitools.proofs.language import Implies
-from aitools.proofs.proof import ProofStep
+from aitools.proofs.proof import Proof
 from aitools.proofs.provers import KnowledgeRetriever
 from aitools.proofs.utils import prover
 
@@ -40,8 +40,8 @@ def test_retrieve_known_open_formula():
     assert any(substitution.get_bound_object_for(v._x) == hugo for substitution in substitutions)
 
 
-def _is_known_formula_proof_of(proof: ProofStep, formula: Expression) -> bool:
-    return (isinstance(proof, ProofStep) and proof.premises is None and
+def _is_known_formula_proof_of(proof: Proof, formula: Expression) -> bool:
+    return (isinstance(proof, Proof) and not any(proof.premises) and
             isinstance(proof.inference_rule, KnowledgeRetriever) and
             proof.substitution.apply_to(formula) == proof.substitution.apply_to(proof.conclusion))
 
@@ -100,7 +100,8 @@ def test_simple_deduction():
 
     proofs = list(kb.prove(IsA(dylan, animal)))
     assert any(proofs)
-    assert all(isinstance(p, ProofStep) for p in proofs)
+    assert all(isinstance(p, Proof) for p in proofs)
+
 
 @prover
 def IsEven(n: int):
@@ -110,22 +111,29 @@ def IsEven(n: int):
         return False
 
 
-@prover
-def IsMultipleOf4(n: int):
-    if IsEven(n / 2):
-        return True
-    else:
-        return False
-
-
 def test_simple_custom_prover_passing_python_value():
     kb = KnowledgeBase()
-    kb.add_provers(IsEven)
+    # TODO not needed anymore!
+    #kb.add_provers(IsEven)
 
     assert any(kb.prove(IsEven(2)))
 
     # this means we can't prove it, not that we can prove it is false
     assert not any(kb.prove(IsEven(3)))
+
+
+def test_simple_custom_prover_to_be_false():
+    kb = KnowledgeBase()
+
+    assert any(kb.prove(IsEven(3), truth=False))
+
+
+@prover
+def IsMultipleOf4(n: int):
+    if IsEven(n // 2):
+        return True
+    else:
+        return False
 
 
 def test_custom_prover_chain():

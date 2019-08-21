@@ -8,7 +8,8 @@
     - the proofset is in any case lazy
     - it exposes the __iter__ method
     - it exposes the __len__ method
-    - can take additional hypotheses and prove within them (the good old A |- B)
+    - can take additional hypotheses and prove taking them in account (the good old A |- B)
+    - takes a`truth` argument which specifies whether to search for proofs **for** the formula or **against** it (prove that it is false) 
 - KnowledgeBase.with_hypotheses:
     - returns a new "temporary" knowledge base which contains all the hypotheses and has the original as a fallback
 - a prover **function** can return:
@@ -32,7 +33,7 @@
     - if the decorated function returned boolean/Subsitution/pair or a sequence of these, it creates an *implicit proof*
         - built on the proofs requested by the decorated function (and their result)
             - this can lead to a very large premise set (depending on the complexity of the prover)
-            - it also **needs to account for "python" checks**, by including a special term representing the prover
+            - it also **needs to account for "python" checks** (i.e. flow control based on anything except proofs), by including a special term representing the prover
                 - an optional "is_transparent" argument to the `@prover` decorator prevents this
         - the decorated function can also use a `with premises(...)` before returning or yielding, which overrides the implicit premises (and also behaves as if `is_transparent` was set for the returned result)
 - an evaluator is like a prover, but it returns an object which is the evaluation of the input

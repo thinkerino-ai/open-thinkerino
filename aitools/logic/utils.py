@@ -49,7 +49,7 @@ def subst(*bindings) -> Substitution:
 
 class VariableSource:
     def __init__(self, **initial_vars: Variable):
-        self.__vars = initial_vars
+        self.__vars = {**initial_vars}
 
     def __getattr__(self, item):
         if item not in self.__vars:
@@ -60,4 +60,19 @@ class VariableSource:
         return val
 
 
+class LogicObjectSource:
+    def __init__(self, **initial_objects: LogicObject):
+        self.__objects = {**initial_objects}
+
+    def __getattr__(self, item):
+        if item not in self.__objects:
+            self.__objects[item] = val = LogicObject()
+        else:
+            val = self.__vars[item]
+
+        return val
+
+
 variable_source = VariableSource()
+
+logic_object_source = LogicObjectSource()

@@ -24,7 +24,7 @@ class LogicObject:
         return False
 
     def __eq__(self, other):
-        return other.id == self.id
+        return isinstance(other, LogicObject) and other.id == self.id
 
     def __hash__(self):
         return hash(self.id)
@@ -47,11 +47,20 @@ class LogicWrapper(LogicObject):
         return "{}:{}".format(super().__str__(), str(self.value))
 
     def __eq__(self, other):
-        return other.id == self.id or isinstance(other, LogicWrapper) and other.value == self.value
+        return (other.id == self.id or
+                isinstance(other, LogicWrapper) and other.value == self.value or
+                not isinstance(other, LogicObject) and self.value == other)
 
     def __hash__(self):
         return hash(self.value)
 
+    def __mod__(self, other):
+        if isinstance(other, LogicObject):
+            return self.value % other.value
+        else:
+            return self.value % other
+
+    # TODO all other magic methods!
 
 class Variable(LogicObject):
 
