@@ -55,7 +55,6 @@ class EmbeddedProver(Prover):
             yield from (p for p in processed if p is not None)
 
 
-# TODO this name is now terrible for completely different reasons
 def predicate_function(func=None, *args, predicate_source=None, variable_source=None):
     got_args = len(args) > 0 or predicate_source is not None or variable_source is not None
 
