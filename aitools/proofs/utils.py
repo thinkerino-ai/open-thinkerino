@@ -12,7 +12,7 @@ class EmbeddedProver(Prover):
         self.prover_function = prover_function
 
     def __call__(self, formula: Expression, _kb=None, _truth: bool = True) -> Iterable[Proof]:
-        # TODO use __kb and __truth somehow :P I'm too tired to understand how/if/why/boop, probably via context?
+        # TODO use _kb somehow :P I'm too tired to understand how/if/why/boop, probably via context?
         return self.normalize_results(formula=formula,
                                       requested_truth=_truth,
                                       raw_result=self.prover_function(*formula.children[1:]))
@@ -41,7 +41,7 @@ class EmbeddedProver(Prover):
             elif isinstance(res, Proof):
                 raise NotImplementedError
             else:
-                # TODO other cases
+                # TODO other cases, not that the ones above are anywhere near implemented :$
                 raise TypeError
 
         if (isinstance(raw_result, tuple) and len(raw_result) == 2 and
@@ -55,8 +55,8 @@ class EmbeddedProver(Prover):
             yield from (p for p in processed if p is not None)
 
 
-# TODO this name is terrible, it is not a prover at all! it's more of a "predicateThatMakesAutoProvingFunctions"
-def prover(func=None, *args, predicate_source=None, variable_source=None):
+# TODO this name is now terrible for completely different reasons
+def predicateThatMakesAutoProvingFunctions(func=None, *args, predicate_source=None, variable_source=None):
     got_args = len(args) > 0 or predicate_source is not None or variable_source is not None
 
     def _decorate(prover_function):

@@ -4,7 +4,7 @@ from aitools.proofs.knowledge_base import KnowledgeBase
 from aitools.proofs.language import Implies
 from aitools.proofs.proof import Proof
 from aitools.proofs.provers import KnowledgeRetriever
-from aitools.proofs.utils import prover
+from aitools.proofs.utils import predicateThatMakesAutoProvingFunctions
 
 
 def test_retrieve_known_formula():
@@ -103,7 +103,7 @@ def test_simple_deduction():
     assert all(isinstance(p, Proof) for p in proofs)
 
 
-@prover
+@predicateThatMakesAutoProvingFunctions
 def IsEven(n: int):
     if n % 2 == 0:
         return True
@@ -123,10 +123,11 @@ def test_simple_custom_prover_passing_python_value():
 def test_simple_custom_prover_to_be_false():
     kb = KnowledgeBase()
 
+    # now *this* means that we can prove it is false :P
     assert any(kb.prove(IsEven(3), truth=False))
 
 
-@prover
+@predicateThatMakesAutoProvingFunctions
 def IsMultipleOf4(n: int):
     if IsEven(n // 2):
         return True
@@ -158,7 +159,7 @@ def test_custom_prover_in_open_formula():
 
 def test_custom_prover_with_explicit_formula():
     # TODO I don't like the input being a variable, but what else can I do?
-    @prover(proves=IsPayload(v._x))
+    @predicateThatMakesAutoProvingFunctions(proves=IsPayload(v._x))
     def name_here_does_not_matter(_x: dict):
         return isinstance(_x, dict) and isinstance(x['code'], int) and isinstance(x['message'], str)
 
@@ -171,7 +172,7 @@ def test_custom_prover_with_explicit_formula():
 
 def test_custom_prover_incomplete():
     # this prover can only prove its formula in some cases
-    @prover
+    @predicateThatMakesAutoProvingFunctions
     def IsPrime(_n: int):
         if _n in (2, 3, 5, 7):
             return True
@@ -191,7 +192,7 @@ def test_custom_prover_incomplete():
 
 
 def test_multiple_custom_provers_for_the_same_formula():
-    @prover(proves=IsPrime(v._n))
+    @predicateThatMakesAutoProvingFunctions(proves=IsPrime(v._n))
     def prime_prover_012345(_n: int):
         if _n in (2, 3):
             return True
@@ -199,7 +200,7 @@ def test_multiple_custom_provers_for_the_same_formula():
             return False
         return None
 
-    @prover(proves=IsPrime(v._n))
+    @predicateThatMakesAutoProvingFunctions(proves=IsPrime(v._n))
     def prime_prover_456789(_n: int):
         if _n in (5, 7):
             return True
@@ -224,7 +225,7 @@ def test_multiple_custom_provers_for_the_same_formula():
 
 
 def test_prover_returning_substitutions():
-    @prover
+    @predicateThatMakesAutoProvingFunctions
     def Likes(_x: str, _y: str):
         """We prove that lisa likes nelson and milhouse likes lisa.
         We also prove that nobody likes milhouse."""
@@ -273,7 +274,7 @@ def test_prover_returning_substitutions():
 
 
 def test_prover_returning_substitution_false():
-    @prover
+    @predicateThatMakesAutoProvingFunctions
     def Likes(_x, _y):
         if _x == "lisa" and isinstance(_y, Variable):
             return False, subst("milhouse", [_y])
@@ -290,7 +291,7 @@ def test_prover_returning_substitution_false():
 
 
 def test_prover_returning_multiple_results():
-    @prover
+    @predicateThatMakesAutoProvingFunctions
     def In(_x, _collection):
 
         if isinstance(_x, Variable):
