@@ -113,8 +113,6 @@ def IsEven(n: int):
 
 def test_simple_custom_prover_passing_python_value():
     kb = KnowledgeBase()
-    # TODO not needed anymore!
-    #kb.add_provers(IsEven)
 
     assert any(kb.prove(IsEven(2)))
 
