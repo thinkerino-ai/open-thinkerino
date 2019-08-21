@@ -47,7 +47,7 @@ class LogicWrapper(LogicObject):
         return "{}:{}".format(super().__str__(), str(self.value))
 
     def __eq__(self, other):
-        return (other.id == self.id or
+        return (isinstance(other, LogicObject) and other.id == self.id or
                 isinstance(other, LogicWrapper) and other.value == self.value or
                 not isinstance(other, LogicObject) and self.value == other)
 
@@ -56,9 +56,9 @@ class LogicWrapper(LogicObject):
 
     def __mod__(self, other):
         if isinstance(other, LogicObject):
-            return self.value % other.value
+            return LogicWrapper(self.value.__mod__(other.value))
         else:
-            return self.value % other
+            return LogicWrapper(self.value.__mod__(other))
 
     # TODO all other magic methods!
 
