@@ -56,7 +56,7 @@ class EmbeddedProver(Prover):
 
 
 # TODO this name is now terrible for completely different reasons
-def predicateThatMakesAutoProvingFunctions(func=None, *args, predicate_source=None, variable_source=None):
+def predicate_function(func=None, *args, predicate_source=None, variable_source=None):
     got_args = len(args) > 0 or predicate_source is not None or variable_source is not None
 
     def _decorate(prover_function):
