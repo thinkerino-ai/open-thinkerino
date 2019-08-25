@@ -54,13 +54,107 @@ class LogicWrapper(LogicObject):
     def __hash__(self):
         return hash(self.value)
 
-    def __mod__(self, other):
-        if isinstance(other, LogicObject):
-            return LogicWrapper(self.value.__mod__(other.value))
+    @staticmethod
+    def __magic_binary(method, other):
+        if isinstance(other, LogicWrapper):
+            return LogicWrapper(method(other.value))
         else:
-            return LogicWrapper(self.value.__mod__(other))
+            return LogicWrapper(method(other))
 
-    # TODO all other magic methods!
+    def __add__(self, other):
+        return self.__magic_binary(self.value.__add__, other)
+
+    def __sub__(self, other):
+        return self.__magic_binary(self.value.__sub__, other)
+
+    def __mul__(self, other):
+        return self.__magic_binary(self.value.__mul__, other)
+
+    def __truediv__(self, other):
+        return self.__magic_binary(self.value.__truediv__, other)
+
+    def __floordiv__(self, other):
+        return self.__magic_binary(self.value.__floordiv__, other)
+
+    def __mod__(self, other):
+        return self.__magic_binary(self.value.__mod__, other)
+
+    def __pow__(self, other):
+        return self.__magic_binary(self.value.__pow__, other)
+
+    def __rshift__(self, other):
+        return self.__magic_binary(self.value.__rshift__, other)
+
+    def __lshift__(self, other):
+        return self.__magic_binary(self.value.__lshift__, other)
+
+    def __and__(self, other):
+        return self.__magic_binary(self.value.__and__, other)
+
+    def __or__(self, other):
+        return self.__magic_binary(self.value.__or__, other)
+
+    def __xor__(self, other):
+        return self.__magic_binary(self.value.__xor__, other)
+
+    def __radd__(self, other):
+        return self.__magic_binary(self.value.__radd__, other)
+
+    def __rsub__(self, other):
+        return self.__magic_binary(self.value.__rsub__, other)
+
+    def __rmul__(self, other):
+        return self.__magic_binary(self.value.__rmul__, other)
+
+    def __rtruediv__(self, other):
+        return self.__magic_binary(self.value.__rtruediv__, other)
+
+    def __rfloordiv__(self, other):
+        return self.__magic_binary(self.value.__rfloordiv__, other)
+
+    def __rmod__(self, other):
+        return self.__magic_binary(self.value.__rmod__, other)
+
+    def __rpow__(self, other):
+        return self.__magic_binary(self.value.__rpow__, other)
+
+    def __rrshift__(self, other):
+        return self.__magic_binary(self.value.__rrshift__, other)
+
+    def __rlshift__(self, other):
+        return self.__magic_binary(self.value.__rlshift__, other)
+
+    def __rand__(self, other):
+        return self.__magic_binary(self.value.__rand__, other)
+
+    def __ror__(self, other):
+        return self.__magic_binary(self.value.__ror__, other)
+
+    def __rxor__(self, other):
+        return self.__magic_binary(self.value.__rxor__, other)
+
+    def __lt__(self, other):
+        return self.__magic_binary(self.value.__lt__, other)
+
+    def __gt__(self, other):
+        return self.__magic_binary(self.value.__gt__, other)
+
+    def __le__(self, other):
+        return self.__magic_binary(self.value.__le__, other)
+
+    def __ge__(self, other):
+        return self.__magic_binary(self.value.__ge__, other)
+
+    def __neg__(self):
+        return self.value.__neg__()
+
+    def __pos__(self, other):
+        return self.value.__pos__()
+
+    def __invert__(self, other):
+        return self.value.__invert__()
+
+
 
 class Variable(LogicObject):
 
