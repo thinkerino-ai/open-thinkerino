@@ -4,9 +4,10 @@ from typing import Union, Optional, Any, Iterable, Tuple
 from aitools.logic import Substitution, Expression
 from aitools.logic.utils import expr
 from aitools.proofs.context import context
-from aitools.proofs.proof import Proof, ProofSet, Prover
+from aitools.proofs.proof import Proof, Prover
 
 
+# TODO repr or str to show the prover_function
 class EmbeddedProver(Prover):
     def __init__(self, prover_function):
         self.prover_function = prover_function

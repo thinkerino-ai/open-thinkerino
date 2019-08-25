@@ -33,4 +33,4 @@ class ProofSet:
         yield from self._proofs
 
     def __bool__(self):
-        yield any(self._proofs)
+        return any(self._proofs)

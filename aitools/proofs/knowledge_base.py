@@ -3,7 +3,8 @@ from collections import deque
 from typing import Optional, Iterable, Set
 
 from aitools.logic import Expression, Substitution
-from aitools.proofs.proof import Prover, Proof
+from aitools.proofs.context import contextual
+from aitools.proofs.proof import Prover, Proof, ProofSet
 from aitools.proofs.provers import KnowledgeRetriever, RestrictedModusPonens
 
 
@@ -35,7 +36,8 @@ class KnowledgeBase:
                 raise TypeError("Only formulas can be added to a Knowledge Base!")
             self.__known_formulas.add(f)
 
-    def prove(self, formula: Expression, truth: bool = True) -> Iterable[Proof]:
+    def prove(self, formula: Expression, truth: bool = True) -> ProofSet:
+
         """Backward search to prove a given formulas using all known provers"""
         proof_sources: typing.Deque[Iterable[Proof]] = deque(
             prover(formula, _kb=self, _truth=truth) for prover in self.__provers
@@ -45,15 +47,16 @@ class KnowledgeBase:
         if _embedded_prover is not None:
             proof_sources.appendleft(_embedded_prover(formula=formula, _kb=self, _truth=truth))
 
-        while any(proof_sources):
-            source = proof_sources.popleft().__iter__()
-            try:
-                new_proof = next(source)
-            except StopIteration:
-                pass
-            else:
-                proof_sources.append(source)
-                yield new_proof
+        @contextual('kb', self)
+        def _inner():
+            while any(proof_sources):
+                source = proof_sources.popleft().__iter__()
+                try:
+                    new_proof = next(source)
+                except StopIteration:
+                    pass
+                else:
+                    proof_sources.append(source)
+                    yield new_proof
 
-    def add_provers(self, *provers):
-        self.__provers.update(provers)
+        return ProofSet(_inner())

@@ -129,16 +129,15 @@ def test_simple_custom_prover_to_be_false():
 
 @predicate_function
 def IsMultipleOf4(n: int):
-    if IsEven(n // 2):
+    from aitools.proofs.context import prove
+    if prove(IsEven(n // 2)):
         return True
-    else:
+    elif prove(IsEven(n // 2), truth=False):
         return False
 
 
 def test_custom_prover_chain():
     kb = KnowledgeBase()
-
-    kb.add_provers(IsEven, IsMultipleOf4)
 
     assert any(kb.prove(IsMultipleOf4(20)))
 
@@ -149,7 +148,6 @@ def test_custom_prover_chain():
 def test_custom_prover_in_open_formula():
     kb = KnowledgeBase()
 
-    kb.add_provers(IsEven)
 
     # I don't actually like even numbers, unless they are powers of 2
     kb.add(IsEven(v._x) >> IsNice(v._x))
@@ -163,7 +161,6 @@ def test_custom_prover_with_explicit_formula():
     def name_here_does_not_matter(_x: dict):
         return isinstance(_x, dict) and isinstance(x['code'], int) and isinstance(x['message'], str)
 
-    kb.add_provers(name_here_does_not_matter)
 
     assert any(kb.prove(
         IsPayload({'code': 200, 'message': 'success!'})
@@ -183,7 +180,6 @@ def test_custom_prover_incomplete():
 
     kb = KnowledgeBase()
 
-    kb.add_provers(IsPrime)
 
     assert any(kb.prove(IsPrime(2)))
     assert any(kb.prove(~IsPrime(4)))
@@ -210,7 +206,6 @@ def test_multiple_custom_provers_for_the_same_formula():
 
     kb = KnowledgeBase()
 
-    kb.add_provers(prime_prover_012345, prime_prover_456789)
 
     assert any(kb.prove(IsPrime(2)))
     assert any(kb.prove(IsPrime(7)))
@@ -257,7 +252,6 @@ def test_prover_returning_substitutions():
             return True, subst(map[val], [var])
 
     kb = KnowledgeBase()
-    kb.add_provers(Likes)
 
     assert (kb.prove(Likes("lisa", "nelson")))
 
@@ -283,7 +277,6 @@ def test_prover_returning_substitution_false():
 
     kb = KnowledgeBase()
 
-    kb.add_provers(Likes)
 
     assert not any(kb.prove(Likes("lisa", "milhouse")))
 
@@ -301,7 +294,6 @@ def test_prover_returning_multiple_results():
             return _x in _collection
 
     kb = KnowledgeBase()
-    kb.add_provers(In)
 
     assert any(kb.prove(In(3, [1, 2, 3])))
     assert any(kb.prove(~In(4, [1, 2, 3])))
