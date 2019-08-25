@@ -20,23 +20,24 @@ def wrap(obj: Any):
         return LogicWrapper(obj)
 
 
-class ExpressionMaker:
-    @staticmethod
-    def make_expression(obj) -> LogicObject:
-        if isinstance(obj, LogicObject):
-            return obj
+def expr(*args) -> LogicObject:
+    if len(args) == 0:
+        raise ValueError("At least one element!")
+    elif len(args) == 1:
+        obj = args[0]
+    else:
+        obj = args
+
+    if isinstance(obj, LogicObject):
+        return obj
+    else:
+        # supports only sequences
+        if isinstance(obj, Sequence) and not isinstance(obj, str):
+            return Expression(*map(expr, obj))
         else:
-            # supports only sequences
-            if isinstance(obj, Sequence) and not isinstance(obj, str):
-                return Expression(*map(ExpressionMaker.make_expression, obj))
-            else:
-                return LogicWrapper(obj)
-
-    def __rrshift__(self, other):
-        return self.make_expression(other)
+            return LogicWrapper(obj)
 
 
-expr: ExpressionMaker = ExpressionMaker()
 
 
 def binding(head, vars) -> Binding:

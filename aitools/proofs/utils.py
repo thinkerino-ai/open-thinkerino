@@ -66,7 +66,7 @@ def predicate_function(func=None, *args, predicate_source=None, variable_source=
 
         # variables come from the **positional** arguments of `prover_function`
         arg_names = prover_function.__code__.co_varnames[:prover_function.__code__.co_argcount]
-        formula = (predicate, *(getattr(_variable_source, arg_name) for arg_name in arg_names)) >> expr
+        formula =  expr(predicate, *(getattr(_variable_source, arg_name) for arg_name in arg_names))
 
         # TODO if called without arguments, it returns the predicate (hint: instead of a function use a class inheriting from predicate?)
         @wraps(prover_function)
@@ -74,7 +74,7 @@ def predicate_function(func=None, *args, predicate_source=None, variable_source=
             if len(_args) != len(arg_names):
                 raise TypeError("Wrong argument count for {}".format(prover_function))
 
-            result = (predicate, *_args) >> expr
+            result = expr(predicate, *_args)
 
             result._embedded_prover = EmbeddedProver(prover_function)
             # TODO add __bool__ function to this expression

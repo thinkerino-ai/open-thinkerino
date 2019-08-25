@@ -9,14 +9,14 @@ class TestSubstitution(unittest.TestCase):
         x, y, z = variables(3)
         a, b, c, d = logic_objects(4)
 
-        e = (x, a) >> expr
+        e = expr(x, a)
 
-        y_expr = (a, (b, y), d) >> expr
-        z_expr = (c, z) >> expr
+        y_expr = expr(a, (b, y), d)
+        z_expr = expr(c, z)
 
         s = subst((z_expr, [y]), (c, [z]), (y_expr, [x]))
 
-        expected_result = ((a, (b, (c, c)), d), a) >> expr
+        expected_result = expr((a, (b, (c, c)), d), a)
 
         self.assertEqual(s.apply_to(e), expected_result)
 
@@ -24,7 +24,7 @@ class TestSubstitution(unittest.TestCase):
         x, = variables(1)
         a, = logic_objects(1)
 
-        e = (x, a) >> expr
+        e = expr(x, a)
 
         try:
             s = subst((e, [x]))
@@ -39,7 +39,7 @@ class TestSubstitution(unittest.TestCase):
 
         a, b, c, d = logic_objects(4)
 
-        e = (a, (b, c), d) >> expr
+        e = expr(a, (b, c), d)
 
         s = subst((e, [x, y]))
 

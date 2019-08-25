@@ -29,16 +29,16 @@ class TestUnification(unittest.TestCase):
 
     def testUnificationBetweenExpressionsSuccess(self):
         a, b, c, d = logic_objects(4)
-        e1 = (a, (b, c), d) >> expr
-        e2 = (a, (b, c), d) >> expr
+        e1 = expr(a, (b, c), d)
+        e2 = expr(a, (b, c), d)
 
         expected_result = subst()
         self.assertUnificationResult(e1, e2, expected_result)
 
     def testUnificationBetweenExpressionsFailure(self):
         a, b, c, d = logic_objects(4)
-        e1 = (a, (b, c), d) >> expr
-        e2 = (a, (b, c), a) >> expr
+        e1 = expr(a, (b, c), d)
+        e2 = expr(a, (b, c), a)
 
         self.assertUnificationResult(e1, e2, None)
 
@@ -46,8 +46,8 @@ class TestUnification(unittest.TestCase):
         v1, = variables(1)
         a, b, c, d = logic_objects(4)
 
-        expr_d = [d] >> expr
-        e1 = (a, (b, c), expr_d) >> expr
+        expr_d = expr([d])
+        e1 = expr(a, (b, c), expr_d)
 
         expected_result = subst((e1, [v1]))
 
@@ -57,9 +57,9 @@ class TestUnification(unittest.TestCase):
         v1, v2 = variables(2)
         a, b, c, d = logic_objects(4)
 
-        expr_d = [d] >> expr
-        e1 = (a, (b, c), expr_d) >> expr
-        e2 = (a, (v1, c), v2) >> expr
+        expr_d = expr([d])
+        e1 = expr(a, (b, c), expr_d)
+        e2 = expr(a, (v1, c), v2)
 
         expected_result = subst((b, [v1]), (expr_d, [v2]))
 
@@ -69,9 +69,9 @@ class TestUnification(unittest.TestCase):
         v1, = variables(1)
         a, b, c, d = logic_objects(4)
 
-        expr_d = [d] >> expr
-        e1 = (a, (b, c), expr_d) >> expr
-        e3 = (a, (v1, c), v1) >> expr
+        expr_d = expr([d])
+        e1 = expr(a, (b, c), expr_d)
+        e3 = expr(a, (v1, c), v1)
 
         self.assertUnificationResult(e1, e3, None)
 
@@ -79,8 +79,8 @@ class TestUnification(unittest.TestCase):
         v1, v2 = variables(2)
         a, c = logic_objects(2)
 
-        e2 = (a, (v1, c), v2) >> expr
-        e3 = (a, (v1, c), v1) >> expr
+        e2 = expr(a, (v1, c), v2)
+        e3 = expr(a, (v1, c), v1)
 
         expected_result = subst((None, [v1, v2]))
 
@@ -90,9 +90,9 @@ class TestUnification(unittest.TestCase):
         v1, v2 = variables(2)
         a, c, d = logic_objects(3)
 
-        expr_d = [d] >> expr
-        e2 = (a, (v1, c), v2) >> expr
-        e4 = (a, v1, expr_d) >> expr
+        expr_d = expr([d])
+        e2 = expr(a, (v1, c), v2)
+        e4 = expr(a, v1, expr_d)
 
         self.assertUnificationResult(e2, e4, None)
 
@@ -100,10 +100,10 @@ class TestUnification(unittest.TestCase):
         v1, v2 = variables(2)
         a, b, c, d = logic_objects(4)
 
-        bc_expr1 = (b, c) >> expr
-        bc_expr2 = (b, c) >> expr
-        e1 = (a, bc_expr1, v1, d) >> expr
-        e2 = (a, v2, bc_expr2, d) >> expr
+        bc_expr1 = expr(b, c)
+        bc_expr2 = expr(b, c)
+        e1 = expr(a, bc_expr1, v1, d)
+        e2 = expr(a, v2, bc_expr2, d)
 
         expected_result = subst((bc_expr1, [v1]), (bc_expr2, [v2]))
 
@@ -113,9 +113,9 @@ class TestUnification(unittest.TestCase):
         x = Variable()
         a, b, c, d = logic_objects(4)
 
-        bc_expr = (b, c) >> expr
-        e1 = (a, bc_expr, d) >> expr
-        e2 = (a, x, d) >> expr
+        bc_expr = expr(b, c)
+        e1 = expr(a, bc_expr, d)
+        e2 = expr(a, x, d)
 
         previous = subst((bc_expr, [x]))
 
@@ -125,9 +125,9 @@ class TestUnification(unittest.TestCase):
         x = Variable()
         a, b, c, d = logic_objects(4)
 
-        bc_expr = (b, c) >> expr
-        e1 = (a, bc_expr, d) >> expr
-        e2 = (a, x, d) >> expr
+        bc_expr = expr(b, c)
+        e1 = expr(a, bc_expr, d)
+        e2 = expr(a, x, d)
 
         previous = subst((b, [x]))
 
@@ -137,8 +137,8 @@ class TestUnification(unittest.TestCase):
         x, y, z = variables(3)
         a, d = logic_objects(2)
 
-        e2 = (a, x, z) >> expr
-        e3 = (a, y, d) >> expr
+        e2 = expr(a, x, z)
+        e3 = expr(a, y, d)
 
         previous = subst((a, [x]), (a, [y]))
 
@@ -150,10 +150,10 @@ class TestUnification(unittest.TestCase):
         x, y, z = variables(3)
         a, b, c, d = logic_objects(4)
 
-        bc_expr = (b, c) >> expr
-        bz_expr = (b, z) >> expr
-        e2 = (a, x, d) >> expr
-        e3 = (a, y, d) >> expr
+        bc_expr = expr(b, c)
+        bz_expr = expr(b, z)
+        e2 = expr(a, x, d)
+        e3 = expr(a, y, d)
 
         previous = subst((bc_expr, [x]), (bz_expr, [y]))
 
@@ -165,8 +165,8 @@ class TestUnification(unittest.TestCase):
         x, y = variables(2)
         a, b, d = logic_objects(3)
 
-        e2 = (a, x, d) >> expr
-        e3 = (a, y, d) >> expr
+        e2 = expr(a, x, d)
+        e3 = expr(a, y, d)
 
         previous = subst((a, [x]), (b, [y]))
 
@@ -176,8 +176,8 @@ class TestUnification(unittest.TestCase):
         w, x, y, z = variables(4)
         a, d = logic_objects(2)
 
-        e2 = (a, x, d) >> expr
-        e3 = (a, y, d) >> expr
+        e2 = expr(a, x, d)
+        e3 = expr(a, y, d)
 
         previous = subst((None, [x, z]), (None, [y, w]))
 
@@ -188,8 +188,8 @@ class TestUnification(unittest.TestCase):
     def testUnificationWithRepeatedConstants(self):
         v1 = Variable()
 
-        e1 = (2, v1) >> expr
-        e2 = (2, "hi") >> expr
+        e1 = expr(2, v1)
+        e2 = expr(2, "hi")
 
         expected_result = subst((wrap("hi"), [v1]))
         self.assertUnificationResult(e1, e2, expected_result)
@@ -197,9 +197,9 @@ class TestUnification(unittest.TestCase):
     def testUnificationWeirdFailingCase(self):
         v1, v2 = variables(2)
         c, d = logic_objects(2)
-        e1 = ("hello", ("yay", c), [d]) >> expr  # alternative syntax: ("hello", (b, c), (d,)) >> expr
-        e2 = ("hello", (v1, c), v2) >> expr
+        e1 = expr("hello", ("yay", c), [d])
+        e2 = expr("hello", (v1, c), v2)
 
-        expected_result = subst((wrap("yay"), [v1]), ([d] >> expr, [v2]))
+        expected_result = subst((wrap("yay"), [v1]), (expr([d]), [v2]))
 
         self.assertUnificationResult(e1, e2, expected_result)
