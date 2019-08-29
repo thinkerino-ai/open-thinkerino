@@ -155,7 +155,6 @@ class LogicWrapper(LogicObject):
         return self.value.__invert__()
 
 
-
 class Variable(LogicObject):
 
     def __str__(self):

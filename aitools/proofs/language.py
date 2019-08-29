@@ -1,8 +1,13 @@
 """Some basic symbols"""
 
 # Logic Operators
-from aitools.logic import LogicObject, Expression
+from aitools.logic import LogicObject, Expression, LogicWrapper
 from aitools.logic.utils import logic_objects
+
+
+class MagicPredicate(LogicObject):
+    def __call__(self, *other_children):
+        return super().__call__(*(c if isinstance(c, LogicObject) else LogicWrapper(c) for c in other_children))
 
 
 class LogicInfix(LogicObject):

@@ -86,6 +86,7 @@ def predicate_function(func=None, *args, predicate_source=None, variable_source=
             # return ProofSet(normalized_results)
 
         _magic_wrapper.formula = formula
+        _magic_wrapper.wrapped_function = prover_function
 
         return _magic_wrapper
 

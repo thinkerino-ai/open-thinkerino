@@ -1,7 +1,7 @@
 from aitools.logic import Variable, Substitution, LogicObject, Expression
 from aitools.logic.utils import subst, logic_objects, variable_source as v
 from aitools.proofs.knowledge_base import KnowledgeBase
-from aitools.proofs.language import Implies
+from aitools.proofs.language import Implies, MagicPredicate
 from aitools.proofs.proof import Proof
 from aitools.proofs.provers import KnowledgeRetriever
 from aitools.proofs.utils import predicate_function
@@ -148,11 +148,15 @@ def test_custom_prover_chain():
 def test_custom_prover_in_open_formula():
     kb = KnowledgeBase()
 
+    IsNice = MagicPredicate()
 
     # I don't actually like even numbers, unless they are powers of 2
-    kb.add(IsEven(v._x) >> IsNice(v._x))
+    kb.add_formulas(IsEven(v._x) <<Implies>> IsNice(v._x))
 
-    assert any(kb.prove(IsNice(32)))
+    # ok maybe this IS necessary :P otherwise the kb doesn't know how to use it
+    kb.add_provers(IsEven)
+
+    assert any(kb.prove(IsNice(32))) # (IsNice LogicWrapper(32))
 
 
 def test_custom_prover_with_explicit_formula():

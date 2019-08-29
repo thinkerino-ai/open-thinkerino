@@ -6,6 +6,7 @@ from aitools.logic import Expression, Substitution
 from aitools.proofs.context import contextual
 from aitools.proofs.proof import Prover, Proof, ProofSet
 from aitools.proofs.provers import KnowledgeRetriever, RestrictedModusPonens
+from aitools.proofs.utils import EmbeddedProver
 
 
 class KnowledgeBase:
@@ -16,9 +17,9 @@ class KnowledgeBase:
         self.__initialize_default_provers()
 
     def __initialize_default_provers(self):
-        self.__provers.add(KnowledgeRetriever())
+        self.add_provers(KnowledgeRetriever())
         # although it's quite a standard proving strategy, I really don't like having MP as a default...
-        self.__provers.add(RestrictedModusPonens())
+        self.add_provers(RestrictedModusPonens())
 
     def retrieve(self, formula: Optional[Expression] = None) -> Iterable[Substitution]:
         """Retrieves all formula from the KnowledgeBase which are unifiable with the given one.
@@ -60,3 +61,10 @@ class KnowledgeBase:
                     yield new_proof
 
         return ProofSet(_inner())
+
+    def add_provers(self, *provers):
+        for p in provers:
+            if isinstance(p, Prover):
+                self.__provers.add(p)
+            else:
+                self.__provers.add(EmbeddedProver(p.wrapped_function))
