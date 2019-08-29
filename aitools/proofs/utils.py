@@ -43,6 +43,8 @@ class EmbeddedProver(Prover):
                 raise NotImplementedError
             else:
                 # TODO other cases, not that the ones above are anywhere near implemented :$
+                # TODO maybe if another object (or iterable or with bool) is returned I could use them as a binding?
+
                 raise TypeError
 
         if (isinstance(raw_result, tuple) and len(raw_result) == 2 and
