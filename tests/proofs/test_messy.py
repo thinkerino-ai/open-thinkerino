@@ -156,7 +156,7 @@ def test_custom_prover_in_open_formula():
     # ok maybe this IS necessary :P otherwise the kb doesn't know how to use it
     kb.add_provers(IsEven)
 
-    assert any(kb.prove(IsNice(32))) # (IsNice LogicWrapper(32))
+    assert any(kb.prove(IsNice(32)))
 
 
 def test_custom_prover_with_explicit_formula():
