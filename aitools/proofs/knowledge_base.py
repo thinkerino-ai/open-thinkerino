@@ -67,4 +67,4 @@ class KnowledgeBase:
             if isinstance(p, Prover):
                 self.__provers.add(p)
             else:
-                self.__provers.add(EmbeddedProver(p.wrapped_function))
+                self.__provers.add(EmbeddedProver(p.wrapped_function, p.formula))

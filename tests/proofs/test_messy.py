@@ -160,11 +160,17 @@ def test_custom_prover_in_open_formula():
 
 
 def test_custom_prover_with_explicit_formula():
+
+    kb = KnowledgeBase()
+
+    IsPayload = MagicPredicate()
+
     # TODO I don't like the input being a variable, but what else can I do?
     @predicate_function(proves=IsPayload(v._x))
-    def name_here_does_not_matter(_x: dict):
-        return isinstance(_x, dict) and isinstance(x['code'], int) and isinstance(x['message'], str)
+    def name_here_does_not_matter(x: dict):
+        return isinstance(x, dict) and isinstance(x['code'], int) and isinstance(x['message'], str)
 
+    kb.add_provers(name_here_does_not_matter)
 
     assert any(kb.prove(
         IsPayload({'code': 200, 'message': 'success!'})
