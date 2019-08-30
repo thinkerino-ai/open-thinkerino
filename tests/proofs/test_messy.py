@@ -1,5 +1,5 @@
 from aitools.logic import Variable, Substitution, LogicObject, Expression
-from aitools.logic.utils import subst, logic_objects, variable_source as v
+from aitools.logic.utils import subst, logic_objects, variable_source as v, wrap
 from aitools.proofs.knowledge_base import KnowledgeBase
 from aitools.proofs.language import Implies, MagicPredicate, Not
 from aitools.proofs.proof import Proof
@@ -278,17 +278,17 @@ def test_prover_returning_substitutions():
         if val not in map:
             return None
         else:
-            return True, subst(map[val], [var])
+            return True, subst((wrap(map[val]), [var]))
 
     kb = KnowledgeBase()
 
     assert (kb.prove(Likes("lisa", "nelson")))
 
-    lisa_likes_proofs = kb.prove(Likes("lisa", v._y))
+    lisa_likes_proofs = list(kb.prove(Likes("lisa", v._y)))
     assert (len(lisa_likes_proofs) == 1)
     assert (any(p.substitution.get_bound_object_for(v._y) == 'nelson' for p in lisa_likes_proofs))
 
-    likes_lisa_proofs = kb.prove(Likes(v._y, "lisa"))
+    likes_lisa_proofs = list(kb.prove(Likes(v._y, "lisa")))
     assert (len(likes_lisa_proofs) == 1)
     assert (any(p.substitution.get_bound_object_for(v._y) == "milhouse") for p in lisa_likes_proofs)
 

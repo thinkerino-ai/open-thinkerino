@@ -7,6 +7,8 @@ from aitools.logic.core import LogicObject, Variable, Expression
 
 class Binding(LogicObject):
     def __init__(self, variables: FrozenSet[Variable], head: LogicObject = None):
+        if head is not None and not isinstance(head, LogicObject):
+            raise TypeError("head must be a LogicObject!")
         var_count = len(variables)
         if head is None:
             if var_count < 2:

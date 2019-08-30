@@ -30,6 +30,7 @@ class EmbeddedProver(Prover):
                                        Iterable[bool], Iterable[Substitution],
                                        Iterable[Tuple[bool, Substitution]], Iterable[Proof]]]) -> Iterable[Proof]:
         def _inner(res) -> Optional[Proof]:
+            # TODO take premises from the context! where else could we find them? (but then we need to PUT them there!)
             if res is None:
                 # the prover returned None, so it couldn't prove neither true nor false
                 return None
@@ -39,10 +40,16 @@ class EmbeddedProver(Prover):
                 else:
                     return None
             elif isinstance(res, Substitution):
-                raise NotImplementedError
-            elif (isinstance(raw_result, tuple) and len(raw_result) == 2 and
-                  isinstance(raw_result[0], bool) and isinstance(raw_result[1], Substitution)):
-                raise NotImplementedError
+                if requested_truth:
+                    return Proof(inference_rule=self, conclusion=formula, substitution=res)
+                else:
+                    return None
+            elif (isinstance(res, tuple) and len(res) == 2 and
+                  isinstance(res[0], bool) and isinstance(res[1], Substitution)):
+                if requested_truth == res[0]:
+                    return Proof(inference_rule=self, conclusion=formula, substitution=res[1])
+                else:
+                    return None
             elif isinstance(res, Proof):
                 raise NotImplementedError
             else:
