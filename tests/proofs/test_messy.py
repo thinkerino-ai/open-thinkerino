@@ -214,9 +214,11 @@ def test_custom_prover_incomplete():
 
 
 def test_multiple_custom_provers_for_the_same_formula():
+    IsPrime = MagicPredicate()
+
     @predicate_function(proves=IsPrime(v._n))
     def prime_prover_012345(_n: int):
-        if _n in (2, 3):
+        if _n in (2, 3, 5):
             return True
         if _n in (0, 1, 4):
             return False
@@ -232,17 +234,18 @@ def test_multiple_custom_provers_for_the_same_formula():
 
     kb = KnowledgeBase()
 
+    kb.add_provers(prime_prover_012345, prime_prover_456789, NegationProver())
 
     assert any(kb.prove(IsPrime(2)))
     assert any(kb.prove(IsPrime(7)))
-    assert any(kb.prove(~IsPrime(0)))
-    assert any(kb.prove(~IsPrime(8)))
+    assert any(kb.prove(Not(IsPrime(0))))
+    assert any(kb.prove(Not(IsPrime(8))))
 
     assert len(list(kb.prove(IsPrime(5)))) == 2
-    assert len(list(kb.prove(~IsPrime(4)))) == 2
+    assert len(list(kb.prove(Not(IsPrime(4))))) == 2
 
-    assert ~any(kb.prove(IsPrime(11)))
-    assert ~any(kb.prove(~IsPrime(11)))
+    assert not any(kb.prove(IsPrime(11)))
+    assert not any(kb.prove(Not(IsPrime(11))))
 
 
 def test_prover_returning_substitutions():
