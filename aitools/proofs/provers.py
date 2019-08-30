@@ -1,6 +1,6 @@
 from aitools.logic import Expression
 from aitools.logic.utils import variable_source as v
-from aitools.proofs.language import Implies
+from aitools.proofs.language import Implies, Not
 from aitools.proofs.proof import Prover, Proof
 
 
@@ -11,6 +11,15 @@ class KnowledgeRetriever(Prover):
         for subst in _kb.retrieve(formula):
             if _truth:
                 yield Proof(inference_rule=self, conclusion=formula, substitution=subst)
+
+
+class NegationProver(Prover):
+    def __call__(self, formula: Expression, _kb=None, _truth: bool = True):
+        """Proves the negation of a formula to be True/False by proving the formula to be False/True (respectively)"""
+        if formula.children[0] == Not and len(formula.children) == 2:
+            for proof in _kb.prove(formula.children[1], not _truth):
+                yield Proof(inference_rule=self, conclusion=formula, substitution=proof.substitution, premises=(proof,))
+
 
 
 class RestrictedModusPonens(Prover):

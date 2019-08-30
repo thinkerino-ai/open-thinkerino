@@ -31,4 +31,5 @@ class LogicInfix(LogicObject):
 
 
 And, Or, Implies, CoImplies = logic_objects(4, clazz=LogicInfix)
+# TODO magic operator ~formula to produce the same as Not(Formula)
 Not, = logic_objects(1, clazz=LogicObject)

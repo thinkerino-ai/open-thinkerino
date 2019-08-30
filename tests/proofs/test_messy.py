@@ -1,9 +1,9 @@
 from aitools.logic import Variable, Substitution, LogicObject, Expression
 from aitools.logic.utils import subst, logic_objects, variable_source as v
 from aitools.proofs.knowledge_base import KnowledgeBase
-from aitools.proofs.language import Implies, MagicPredicate
+from aitools.proofs.language import Implies, MagicPredicate, Not
 from aitools.proofs.proof import Proof
-from aitools.proofs.provers import KnowledgeRetriever
+from aitools.proofs.provers import KnowledgeRetriever, NegationProver
 from aitools.proofs.utils import predicate_function
 
 
@@ -103,6 +103,21 @@ def test_simple_deduction():
     assert all(isinstance(p, Proof) for p in proofs)
 
 
+def test_deduction_chain():
+    kb = KnowledgeBase()
+
+    IsA, cat, mammal, animal, dylan = logic_objects(5)
+
+    kb.add_formulas(
+        IsA(v._x, cat) <<Implies>> IsA(v._x, mammal),
+        IsA(v._x, mammal) <<Implies>> IsA(v._x, animal),
+        IsA(dylan, mammal)
+    )
+
+    proofs = list(kb.prove(IsA(dylan, animal)))
+
+    assert any(proofs)
+
 @predicate_function
 def IsEven(n: int):
     if n % 2 == 0:
@@ -180,21 +195,22 @@ def test_custom_prover_with_explicit_formula():
 def test_custom_prover_incomplete():
     # this prover can only prove its formula in some cases
     @predicate_function
-    def IsPrime(_n: int):
-        if _n in (2, 3, 5, 7):
+    def IsPrime(n: int):
+        if n in (2, 3, 5, 7):
             return True
-        if _n in (4, 6, 8):
+        if n in (4, 6, 8):
             return False
         # None means "Who knows?"
         return None
 
     kb = KnowledgeBase()
 
+    kb.add_provers(NegationProver())
 
     assert any(kb.prove(IsPrime(2)))
-    assert any(kb.prove(~IsPrime(4)))
+    assert any(kb.prove(Not(IsPrime(4))))
     assert not any(kb.prove(IsPrime(10)))
-    assert not any(kb.prove(~IsPrime(10)))
+    assert not any(kb.prove(Not(IsPrime(10))))
 
 
 def test_multiple_custom_provers_for_the_same_formula():
