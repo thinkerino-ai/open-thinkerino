@@ -69,7 +69,7 @@ class LogicObjectSource:
         if item not in self.__objects:
             self.__objects[item] = val = LogicObject()
         else:
-            val = self.__vars[item]
+            val = self.__objects[item]
 
         return val
 

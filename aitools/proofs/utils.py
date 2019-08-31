@@ -2,7 +2,7 @@ from functools import wraps
 from typing import Union, Optional, Any, Iterable, Tuple
 
 from aitools.logic import Substitution, Expression, LogicWrapper
-from aitools.logic.utils import expr
+from aitools.logic.utils import expr, wrap
 from aitools.proofs.context import context
 from aitools.proofs.proof import Proof, Prover
 
@@ -94,7 +94,7 @@ def predicate_function(func=None, *args, predicate_source=None, variable_source=
             if len(_args) != len(arg_names):
                 raise TypeError("Wrong argument count for {}".format(prover_function))
 
-            result = expr(predicate, *_args)
+            result = expr(predicate, *(wrap(a) for a in _args))
 
             result._embedded_prover = EmbeddedProver(prover_function, formula)
             # TODO add __bool__ function to this expression

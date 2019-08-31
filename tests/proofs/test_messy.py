@@ -300,16 +300,17 @@ def test_prover_returning_substitution_false():
     @predicate_function
     def Likes(_x, _y):
         if _x == "lisa" and isinstance(_y, Variable):
-            return False, subst("milhouse", [_y])
+            return False, subst((wrap("milhouse"), [_y]))
 
         return None
 
     kb = KnowledgeBase()
 
+    kb.add_provers(NegationProver())
 
     assert not any(kb.prove(Likes("lisa", "milhouse")))
 
-    assert any(~Likes("lisa", _y))
+    assert any(kb.prove(Not(Likes("lisa", v._y))))
 
 
 def test_prover_returning_multiple_results():
@@ -318,19 +319,21 @@ def test_prover_returning_multiple_results():
 
         if isinstance(_x, Variable):
             for el in _collection:
-                yield subst(el, [_x])
+                yield subst((wrap(el), [_x]))
         else:
-            return _x in _collection
+            yield _x in _collection
 
     kb = KnowledgeBase()
 
+    kb.add_provers(NegationProver())
+
     assert any(kb.prove(In(3, [1, 2, 3])))
-    assert any(kb.prove(~In(4, [1, 2, 3])))
+    assert any(kb.prove(Not(In(4, [1, 2, 3]))))
 
     assert not any(kb.prove(In(4, [1, 2, 3])))
-    assert not any(kb.prove(~In(3, [1, 2, 3])))
+    assert not any(kb.prove(Not(In(3, [1, 2, 3]))))
 
-    assert len(kb.prove(In(v._x, [1, 2, 3]))) == 3
+    assert len(list(kb.prove(In(v._x, [1, 2, 3])))) == 3
 
 
 def test_listener_simple_retroactive():
