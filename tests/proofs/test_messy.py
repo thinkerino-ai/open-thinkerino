@@ -342,11 +342,11 @@ def test_prover_returning_multiple_results():
 def test_listener_simple_retroactive():
     triggered = False
 
-    @listener(Is(v._x, cat))
+    @listener(Is(v._x, cat), retroactive=True)
     def deduce_meow(_x):
         nonlocal triggered
         triggered = True
-        declare(Meows(_x))
+        return Meows(_x)
 
     kb = KnowledgeBase()
 
@@ -370,7 +370,7 @@ def test_listener_simple_non_retroactive():
     def deduce_meow(_x):
         nonlocal triggered
         triggered = True
-        declare(Meows(_x))
+        return Meows(_x)
 
     kb = KnowledgeBase()
 
@@ -393,7 +393,7 @@ def test_listener_complex_conjunction():
     @listener(IsParent(v._a, v._b), IsBrother(v._c, v._a))
     def deduce_uncle(_b, _c):
         # note that since we don't care for _a we don't ask for it!
-        declare(IsUncle(_c, _b))
+        return IsUncle(_c, _b)
 
     kb = KnowledgeBase()
 
@@ -418,7 +418,7 @@ def test_listener_complex_disjunction():
     @listener(IsBarkingHuman(v._x))
     def deduce_barks(_x):
         # yeah it's a stupid example, but I'm on a train and I'm quite drunk :P
-        declare(Barks(_x))
+        return Barks(_x)
 
     kb = KnowledgeBase()
 
@@ -439,19 +439,16 @@ def test_listener_manual_generation():
         if subst is not None:
             a = subst.get_bounded_object_for(v._a)
             b = subst.get_bounded_object_for(v._b)
-            listen_for(
-                IsBrother(v._c, a),
-                lambda _c: declare(IsUncle(_c, b))
+            return listener(IsBrother(v._c, a))(
+                lambda _c: IsUncle(_c, b)
             )
-            return
 
         subst = Substitution.unify(_formula, IsBrother(v._c, v._a))
         if subst is not None:
             c = subst.get_bounded_object_for(v._c)
             a = subst.get_bounded_object_for(v._a)
-            listen_for(
-                IsParent(a, v._b),
-                lambda _b, _c: declare(IsUncle(c, _b))
+            return listener(IsParent(a, v._b))(
+                lambda _b, _c: IsUncle(c, _b)
             )
 
     with KnowledgeBase() as kb:
@@ -476,15 +473,15 @@ def test_listener_manual_generation():
 def test_listener_chain():
     @listener(A(v._x))
     def deduce_from_a_b(_x):
-        declare(B(_x))
+        return B(_x)
 
     @listener(B(v._x), retroactive=False)
     def deduce_from_b_c(_x):
-        declare(C(_x))
+        return C(_x)
 
     @listener(C(v._x))
     def deduce_from_c_d(_x):
-        declare(D(_x))
+        return D(_x)
 
     with KnowledgeBase() as kb:
         kb.add_listeners(deduce_from_b_c)
@@ -552,7 +549,6 @@ def test_listener_consume():
 # - 0-step proof -> cose che so già senza dover ragionare
 #   - with fix_knowledge() -> blocchi di codice che permettono di scrivere codice privo di reasoning
 # - magie sintattiche
-#   - declare(...) -> prende la KB corrente dal contesto e aggiunge le formule
 #   - _x == 2 -> Equals(_x, 2)
 #   - _x + 3 -> qualche oggetto che restituisce x + 3 quando il valore di x è noto (tipo il sistema può chiamare "evaluate"? anzi no! evaluators!)
 #   - A & B -> e compagnia bella
