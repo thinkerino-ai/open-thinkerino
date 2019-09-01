@@ -4,6 +4,7 @@ from aitools.logic import Variable, Substitution, LogicObject, Expression
 from aitools.logic.utils import subst, logic_objects, variable_source as v, wrap
 from aitools.proofs.knowledge_base import KnowledgeBase
 from aitools.proofs.language import Implies, MagicPredicate, Not
+from aitools.proofs.listeners import listener
 from aitools.proofs.proof import Proof
 from aitools.proofs.provers import KnowledgeRetriever, NegationProver
 from aitools.proofs.utils import predicate_function
@@ -342,7 +343,7 @@ def test_prover_returning_multiple_results():
 def test_listener_simple_retroactive():
     triggered = False
 
-    @listener(Is(v._x, cat), retroactive=True)
+    @listener(Is(v._x, cat))
     def deduce_meow(_x):
         nonlocal triggered
         triggered = True
@@ -350,13 +351,11 @@ def test_listener_simple_retroactive():
 
     kb = KnowledgeBase()
 
-    kb.add_listeners(deduce_meow)
-
-    assert not triggered, "There is only the listener, it shouldn't have triggered"
+    kb.add_formula(Is(dylan, cat))
 
     assert not any(kb.prove(Meows(dylan)))
 
-    kb.add_formula(Is(dylan, cat))
+    kb.add_listeners(deduce_meow, retroactive=True)
 
     assert triggered, "The listener should have triggered retroactively!"
 
@@ -365,8 +364,9 @@ def test_listener_simple_retroactive():
 
 def test_listener_simple_non_retroactive():
     triggered = False
+    Is, Meows, cat, dylan = logic_objects(4, clazz=MagicPredicate)
 
-    @listener(Is(v._x, cat), retroactive=False)
+    @listener(Is(v._x, cat))
     def deduce_meow(_x):
         nonlocal triggered
         triggered = True
@@ -374,19 +374,19 @@ def test_listener_simple_non_retroactive():
 
     kb = KnowledgeBase()
 
-    kb.add_listeners(deduce_meow)
+    kb.add_formulas(Is(dylan, cat))
 
-    assert not triggered, "There is only the listener, it shouldn't have triggered"
-
-    assert not any(kb.prove(Meows(dylan)))
-
-    kb.add_formula(Is(dylan, cat))
+    kb.add_listeners(deduce_meow, retroactive=False)
 
     assert not triggered, "The listener should **not** have triggered retroactively!"
 
-    assert any(kb.prove(Meows(dylan)))
+    assert not any(kb.prove(Meows(dylan)))
+
+    _ = next(iter(kb.prove(Is(dylan, cat))))
 
     assert triggered, "The listener should have triggered!"
+
+    assert any(kb.prove(Meows(dylan)))
 
 
 def test_listener_complex_conjunction():
@@ -475,7 +475,7 @@ def test_listener_chain():
     def deduce_from_a_b(_x):
         return B(_x)
 
-    @listener(B(v._x), retroactive=False)
+    @listener(B(v._x))
     def deduce_from_b_c(_x):
         return C(_x)
 
@@ -487,7 +487,7 @@ def test_listener_chain():
         kb.add_listeners(deduce_from_b_c)
         kb.add_formula(A(foo))
 
-        kb.add_listeners(deduce_from_a_b)
+        kb.add_listeners(deduce_from_a_b, retroactive=False)
         kb.add_listeners(deduce_from_c_d)
 
         assert any(kb.prove(D(foo)))
