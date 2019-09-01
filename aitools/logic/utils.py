@@ -52,9 +52,9 @@ class VariableSource:
     def __init__(self, **initial_vars: Variable):
         self.__vars = {**initial_vars}
 
-    def __getattr__(self, item):
+    def __getattr__(self, item) -> Variable:
         if item not in self.__vars:
-            self.__vars[item] = val = Variable()
+            self.__vars[item] = val = Variable(name=item)
         else:
             val = self.__vars[item]
 

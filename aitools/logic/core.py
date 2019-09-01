@@ -157,8 +157,17 @@ class LogicWrapper(LogicObject):
 
 class Variable(LogicObject):
 
+    def __init__(self, name:str=None):
+        if name is not None and not (isinstance(name, str) and name):
+            raise ValueError("Variable name must be a non-empty string!")
+        super().__init__()
+        self.name = name
+
     def __str__(self):
-        return "?v{}".format(self.id)
+        if self.name is not None:
+            return "?{}-{}".format(self.name,self.id)
+        else:
+            return "?v{}".format(self.id)
 
 
 class Expression(LogicObject):
