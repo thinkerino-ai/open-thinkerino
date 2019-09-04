@@ -120,6 +120,8 @@ def test_deduction_chain():
 
     assert any(proofs)
 
+    assert len(proofs[0].premises) > 0
+
 @predicate_function
 def IsEven(n: int):
     if n % 2 == 0:
@@ -156,7 +158,10 @@ def IsMultipleOf4(n: int):
 def test_custom_prover_chain():
     kb = KnowledgeBase()
 
-    assert any(kb.prove(IsMultipleOf4(20)))
+    proofs = list(kb.prove(IsMultipleOf4(20)))
+    assert any(proofs)
+
+    assert len(proofs[0].premises) > 0
 
     # this means we can't prove it, not that we can prove it is false
     assert not any(kb.prove(IsMultipleOf4(14)))
