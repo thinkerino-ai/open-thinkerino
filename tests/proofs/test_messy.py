@@ -406,6 +406,8 @@ def test_listener_multiple_formulas_returned():
 
 
 def test_listener_complex_conjunction():
+    IsParent, IsBrother, IsUncle, alice, bob, carl = logic_objects(6)
+
     @listener(IsParent(v._a, v._b), IsBrother(v._c, v._a))
     def deduce_uncle(_b, _c):
         # note that since we don't care for _a we don't ask for it!
@@ -425,7 +427,6 @@ def test_listener_complex_conjunction():
 
     kb.add_formulas(IsParent(alice, bob))
 
-    assert len(kb._temporary_listeners) == 0
     assert any(kb.prove(IsUncle(carl, bob)))
 
 
