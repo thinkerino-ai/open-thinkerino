@@ -9,9 +9,6 @@ class Listener():
         self.listened_formulas = listened_formulas
         self.func_arg_names = wrapped_function.__code__.co_varnames[:wrapped_function.__code__.co_argcount]
 
-    def __call__(self, *args, **kwargs):
-        return self.wrapped_function(*args, **kwargs)
-
     def extract_and_call(self, formula):
         if len(self.listened_formulas) == 1:
             return self.arg_extractor_simple(formula)
@@ -39,10 +36,26 @@ class Listener():
             if arg in bindings_by_variable_name:
                 prepared_args[arg] = bindings_by_variable_name[arg]
 
-        return self(**prepared_args)
+        return self.wrapped_function(**prepared_args)
+
+
+class _MultiListenerWrapper:
+    def __init__(self, wrapped_function, *listeners):
+        self.wrapped_function = wrapped_function
+        self.listeners = listeners
+
+    def __call__(self, *args, **kwargs):
+        return self.wrapped_function(*args, *kwargs)
+
 
 def listener(*listened_formulas: Expression):
-    def decorator(func):
-        return Listener(func, *listened_formulas)
+    def decorator(func_or_listeners):
+        if isinstance(func_or_listeners, _MultiListenerWrapper):
+            return _MultiListenerWrapper(
+                func_or_listeners,
+                Listener(func_or_listeners.wrapped_function, *listened_formulas),
+                *func_or_listeners.listeners)
+        else:
+            return _MultiListenerWrapper(func_or_listeners, Listener(func_or_listeners, *listened_formulas))
 
     return decorator

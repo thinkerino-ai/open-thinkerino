@@ -414,17 +414,20 @@ def test_listener_complex_conjunction():
 
 
 def test_listener_complex_disjunction():
+    IsDog, IsBarkingHuman, Barks, luce, bard = logic_objects(5)
+
     @listener(IsDog(v._x))
     @listener(IsBarkingHuman(v._x))
     def deduce_barks(_x):
         # yeah it's a stupid example, but I'm on a train and I'm quite drunk :P
+        # UPDATE: I'm on a plane now, not drunk, still stupid, still going with it :P
         return Barks(_x)
 
     kb = KnowledgeBase()
 
     kb.add_listeners(deduce_barks)
 
-    # if you ever heard The Fox: yep yep yep yep yep yepyep yepyep yepyep :P
+    # if you ever heard The Fox: yep yep yep yep yep yepyep yepyep :P
     kb.add_formulas(IsDog(luce), IsBarkingHuman(bard))
 
     assert any(kb.prove(Barks(luce)))

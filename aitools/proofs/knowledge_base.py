@@ -4,7 +4,7 @@ from typing import Optional, Iterable, Set
 
 from aitools.logic import Expression, Substitution
 from aitools.proofs.context import contextual
-from aitools.proofs.listeners import Listener
+from aitools.proofs.listeners import Listener, _MultiListenerWrapper
 from aitools.proofs.proof import Prover, Proof, ProofSet
 from aitools.proofs.provers import KnowledgeRetriever, RestrictedModusPonens
 from aitools.proofs.utils import EmbeddedProver
@@ -50,12 +50,16 @@ class KnowledgeBase:
             else:
                 self.__provers.add(EmbeddedProver(p.wrapped_function, p.formula))
 
-    def add_listeners(self, *listeners: Listener, retroactive: bool = False):
+    def add_listeners(self, *listeners: typing.Union[Listener, _MultiListenerWrapper], retroactive: bool = False):
         if retroactive:
             raise NotImplementedError("Not implemented yet!")
 
-        for l in listeners:
-            self.__listeners.add(l)
+        for el in listeners:
+            if isinstance(el, Listener):
+                self.__listeners.add(el)
+            elif isinstance(el, _MultiListenerWrapper):
+                for l in el.listeners:
+                    self.__listeners.add(l)
 
     def prove(self, formula: Expression, truth: bool = True) -> ProofSet:
 
@@ -91,7 +95,7 @@ class KnowledgeBase:
 
             output = (raw_output,) if isinstance(raw_output, Expression) else raw_output
 
-            # TODO it would help to keep these separated from the actual formulas, to prevent overflow
+            # TODO it would help to keep these separated from the actual formulas, to prevent overflowing memory
             self.add_formulas(*output)
 
 
