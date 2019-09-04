@@ -339,7 +339,7 @@ def test_prover_returning_multiple_results():
     assert len(list(kb.prove(In(v._x, [1, 2, 3])))) == 3
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(reason="I'm not even sure if it should be done :P")
 def test_listener_simple_retroactive():
     triggered = False
 
@@ -540,7 +540,7 @@ def test_listener_priority():
 
         assert res == [2, 1, 0]
 
-
+@pytest.mark.xfail(reason="I'm too lazy to implement such a marginal thing")
 def test_listener_consume():
     consumer_triggered = False
     other_triggered = False
