@@ -103,7 +103,8 @@ class KnowledgeBase:
             if raw_output is None:
                 return
 
-            output = (raw_output,) if isinstance(raw_output, (Expression, Listener)) else raw_output
+            output = (raw_output,) if isinstance(raw_output, (Expression, Listener, _MultiListenerWrapper)) \
+                else raw_output
 
             # TODO it would help to keep these separated from the actual formulas, to prevent overflowing memory
             for obj in output:
@@ -111,6 +112,8 @@ class KnowledgeBase:
                     self.add_formulas(obj)
                 elif isinstance(obj, Listener):
                     self.add_listeners(obj, temporary=True)
+                elif isinstance(obj, _MultiListenerWrapper):
+                    self.add_listeners(*obj.listeners, temporary=True)
 
     def __get_listeners_for(self, formula: Expression, *, temporary=False):
         # TODO indexing (we already take the formula as input to that purpose)

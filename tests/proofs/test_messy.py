@@ -4,7 +4,7 @@ from aitools.logic import Variable, Substitution, LogicObject, Expression
 from aitools.logic.utils import subst, logic_objects, variable_source as v, wrap
 from aitools.proofs.knowledge_base import KnowledgeBase
 from aitools.proofs.language import Implies, MagicPredicate, Not
-from aitools.proofs.listeners import listener
+from aitools.proofs.listeners import listener, Listener
 from aitools.proofs.proof import Proof
 from aitools.proofs.provers import KnowledgeRetriever, NegationProver
 from aitools.proofs.utils import predicate_function
@@ -452,45 +452,44 @@ def test_listener_complex_disjunction():
 
 
 def test_listener_manual_generation():
+    IsParent, IsBrother, IsUncle, alice, bob, carl = logic_objects(6)
+
     @listener(v._formula)
     def deduce_uncle_but_in_a_weird_way(_formula):
         # this is one of the dumbest ways of doing it, but it shows what you can do with 'listen_for'
         subst = Substitution.unify(_formula, IsParent(v._a, v._b))
         if subst is not None:
-            a = subst.get_bounded_object_for(v._a)
-            b = subst.get_bounded_object_for(v._b)
-            return listener(IsBrother(v._c, a))(
-                lambda _c: IsUncle(_c, b)
-            )
+            a = subst.get_bound_object_for(v._a)
+            b = subst.get_bound_object_for(v._b)
+            return Listener(lambda _c: IsUncle(_c, b), IsBrother(v._c, a), previous_substitution=subst)
 
         subst = Substitution.unify(_formula, IsBrother(v._c, v._a))
         if subst is not None:
-            c = subst.get_bounded_object_for(v._c)
-            a = subst.get_bounded_object_for(v._a)
-            return listener(IsParent(a, v._b))(
-                lambda _b, _c: IsUncle(c, _b)
-            )
+            c = subst.get_bound_object_for(v._c)
+            a = subst.get_bound_object_for(v._a)
+            return Listener(lambda _b, _c: IsUncle(c, _b), IsParent(a, v._b), previous_substitution=subst)
 
-    with KnowledgeBase() as kb:
+    kb = KnowledgeBase()
 
-        kb.add_listeners(deduce_uncle_but_in_a_weird_way)
-        kb.add_formula(IsParent(alice, bob))
-        assert len(kb._temporary_listeners) == 1
-        kb.add_formula(IsBrother(carl, alice))
-        assert len(kb._temporary_listeners) == 0
-        assert any(kb.prove(IsUncle(carl, bob)))
+    kb.add_listeners(deduce_uncle_but_in_a_weird_way)
+    kb.add_formulas(IsParent(alice, bob))
+    assert len(kb._temporary_listeners) == 1
+    kb.add_formulas(IsBrother(carl, alice))
 
-    with KnowledgeBase() as kb:
+    assert any(kb.prove(IsUncle(carl, bob)))
 
-        kb.add_listeners(deduce_uncle_but_in_a_weird_way)
-        kb.add_formula(IsBrother(carl, alice))
-        assert len(kb._temporary_listeners) == 1
-        kb.add_formula(IsParent(alice, bob))
-        assert len(kb._temporary_listeners) == 0
-        assert any(kb.prove(IsUncle(carl, bob)))
+    kb = KnowledgeBase()
+
+    kb.add_listeners(deduce_uncle_but_in_a_weird_way)
+    kb.add_formulas(IsBrother(carl, alice))
+    assert len(kb._temporary_listeners) == 1
+    kb.add_formulas(IsParent(alice, bob))
+    assert any(kb.prove(IsUncle(carl, bob)))
 
 
 def test_listener_chain():
+    A, B, C, D, foo = logic_objects(5)
+
     @listener(A(v._x))
     def deduce_from_a_b(_x):
         return B(_x)
@@ -503,14 +502,17 @@ def test_listener_chain():
     def deduce_from_c_d(_x):
         return D(_x)
 
-    with KnowledgeBase() as kb:
-        kb.add_listeners(deduce_from_b_c)
-        kb.add_formula(A(foo))
+    kb = KnowledgeBase()
 
-        kb.add_listeners(deduce_from_a_b, retroactive=False)
-        kb.add_listeners(deduce_from_c_d)
+    kb.add_listeners(deduce_from_b_c)
+    kb.add_listeners(deduce_from_a_b)
+    kb.add_listeners(deduce_from_c_d)
 
-        assert any(kb.prove(D(foo)))
+    assert not any(kb.prove(D(foo)))
+
+    kb.add_formulas(A(foo))
+
+    assert any(kb.prove(D(foo)))
 
 
 def test_listener_priority():
