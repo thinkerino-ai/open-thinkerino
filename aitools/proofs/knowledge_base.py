@@ -15,7 +15,7 @@ class KnowledgeBase:
         self.__known_formulas: Set[Expression] = set()
         self.__provers: Set[Prover] = set()
         # TODO typing of __listeners
-        self.__listeners = set()
+        self.__listeners: Set[Listener] = set()
 
         self.__initialize_default_provers()
 
@@ -50,7 +50,7 @@ class KnowledgeBase:
             else:
                 self.__provers.add(EmbeddedProver(p.wrapped_function, p.formula))
 
-    def add_listeners(self, *listeners, retroactive: bool = False):
+    def add_listeners(self, *listeners: Listener, retroactive: bool = False):
         if retroactive:
             raise NotImplementedError("Not implemented yet!")
 
@@ -85,7 +85,7 @@ class KnowledgeBase:
 
     def __on_formula_proven(self, formula):
         for listener in self.__get_listeners_for(formula):
-            raw_output = listener._arg_extractor(formula)
+            raw_output = listener.extract_and_call(formula)
             if raw_output is None:
                 continue
 
