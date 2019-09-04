@@ -66,7 +66,6 @@ def test_proof_known_formula():
 
 
 def test_proof_known_open_formula():
-    # TODO maybe break this up in different tests with a single proof fixture?
     kb = KnowledgeBase()
 
     IsA, dylan, hugo, cat = logic_objects(4, clazz=LogicObject)
@@ -183,7 +182,6 @@ def test_custom_prover_with_explicit_formula():
 
     IsPayload = MagicPredicate()
 
-    # TODO I don't like the input being a variable, but what else can I do?
     @predicate_function(proves=IsPayload(v._x))
     def name_here_does_not_matter(x: dict):
         return isinstance(x, dict) and isinstance(x['code'], int) and isinstance(x['message'], str)
@@ -418,12 +416,8 @@ def test_listener_complex_conjunction():
 
     kb.add_listeners(deduce_uncle)
 
-    # TODO put checks about _temporary_listeners in a different test, for now I'm just writing things quickly
-    assert len(kb._temporary_listeners) == 0
-
     kb.add_formulas(IsBrother(carl, alice))
 
-    assert len(kb._temporary_listeners) == 1
     assert not any(kb.prove(IsUncle(carl, bob)))
 
     kb.add_formulas(IsParent(alice, bob))
@@ -474,7 +468,7 @@ def test_listener_manual_generation():
 
     kb.add_listeners(deduce_uncle_but_in_a_weird_way)
     kb.add_formulas(IsParent(alice, bob))
-    assert len(kb._temporary_listeners) == 1
+
     kb.add_formulas(IsBrother(carl, alice))
 
     assert any(kb.prove(IsUncle(carl, bob)))
@@ -483,7 +477,7 @@ def test_listener_manual_generation():
 
     kb.add_listeners(deduce_uncle_but_in_a_weird_way)
     kb.add_formulas(IsBrother(carl, alice))
-    assert len(kb._temporary_listeners) == 1
+
     kb.add_formulas(IsParent(alice, bob))
     assert any(kb.prove(IsUncle(carl, bob)))
 

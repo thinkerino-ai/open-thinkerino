@@ -7,7 +7,6 @@ from aitools.proofs.context import context
 from aitools.proofs.proof import Proof, Prover
 
 
-# TODO repr or str to show the prover_function
 class EmbeddedProver(Prover):
     def __init__(self, prover_function, proved_formula):
         self.prover_function = prover_function
@@ -30,7 +29,7 @@ class EmbeddedProver(Prover):
                                        Iterable[bool], Iterable[Substitution],
                                        Iterable[Tuple[bool, Substitution]], Iterable[Proof]]]) -> Iterable[Proof]:
         def _inner(res) -> Optional[Proof]:
-            # TODO take premises from the context! where else could we find them? (but then we need to PUT them there!)
+            # TODO (IMPORTANT) take premises from the context! where else could we find them? (but then we need to PUT them there!)
             if res is None:
                 # the prover returned None, so it couldn't prove neither true nor false
                 return None
@@ -68,6 +67,8 @@ class EmbeddedProver(Prover):
             processed = (_inner(r) for r in raw_result)
             yield from (p for p in processed if p is not None)
 
+    def __str__(self):
+        return "<EmbeddedProver> proving {} with {}".format(self.proved_formula, self.prover_function)
 
 def predicate_function(func=None, *args, predicate_source=None, variable_source=None, proves:Expression=None):
     got_args = len(args) > 0 or predicate_source is not None or variable_source is not None or proves is not None
