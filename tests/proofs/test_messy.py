@@ -352,7 +352,7 @@ def test_listener_simple_retroactive():
 
     kb = KnowledgeBase()
 
-    kb.add_formula(Is(dylan, cat))
+    kb.add_formulas(Is(dylan, cat))
 
     assert not any(kb.prove(Meows(dylan)))
 
@@ -519,27 +519,30 @@ def test_listener_chain():
 def test_listener_priority():
     res = []
 
-    @listener(Go, priority=1)
+    Go = LogicObject()
+
+    @listener(Go(), priority=1)
     def listener_1():
         res.append(1)
 
     # default priority is 0
-    @listener(Go)
+    @listener(Go())
     def listener_0():
         res.append(0)
 
-    @listener(Go, priority=2)
+    @listener(Go(), priority=2)
     def listener_2():
         res.append(2)
 
-    with KnowledgeBase as kb:
-        kb.add_listeners(listener_1, listener_0, listener_2)
+    kb = KnowledgeBase()
+    kb.add_listeners(listener_1, listener_0, listener_2)
 
-        assert res == []
+    assert res == []
 
-        kb.add_formula(Go)
+    kb.add_formulas(Go())
 
-        assert res == [2, 1, 0]
+    assert res == [2, 1, 0]
+
 
 @pytest.mark.xfail(reason="I'm too lazy to implement such a marginal thing")
 def test_listener_consume():
@@ -563,12 +566,13 @@ def test_listener_consume():
         other_triggered = True
         consume()
 
-    with KnowledgeBase as kb:
-        kb.add_listeners(consumer, other)
-        assert not consumer_triggered and not other_triggered
+    kb = KnowledgeBase()
+    kb.add_listeners(consumer, other)
+    assert not consumer_triggered and not other_triggered
 
-        kb.add_formula(Go)
-        assert consumer_triggered and not other_triggered
+    kb.add_formulas(Go)
+    assert consumer_triggered and not other_triggered
+
 
 # altri casi:
 # - evaluator (come il prover, ma restituisce un valore/oggetto anziché True/False/Substitution, oppure solleva eccezione se l'oggetto non è ancora abbastanza bound)

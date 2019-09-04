@@ -4,11 +4,12 @@ from typing import Union, Iterable, Optional
 from aitools.logic import Expression, Substitution, Variable
 
 class Listener():
-    def __init__(self, wrapped_function, *listened_formulas, previous_substitution: Substitution = None):
+    def __init__(self, wrapped_function, *listened_formulas, previous_substitution: Substitution = None, priority=0):
         self.wrapped_function = wrapped_function
         self.listened_formulas = listened_formulas
         self.func_arg_names = wrapped_function.__code__.co_varnames[:wrapped_function.__code__.co_argcount]
         self.previous_substitution = previous_substitution
+        self.priority = priority
 
     def extract_and_call(self, formula):
         if len(self.listened_formulas) == 1:
@@ -71,14 +72,15 @@ class _MultiListenerWrapper:
         return self.wrapped_function(*args, *kwargs)
 
 
-def listener(*listened_formulas: Expression):
+def listener(*listened_formulas: Expression, priority=0):
     def decorator(func_or_listeners):
         if isinstance(func_or_listeners, _MultiListenerWrapper):
             return _MultiListenerWrapper(
                 func_or_listeners,
-                Listener(func_or_listeners.wrapped_function, *listened_formulas),
+                Listener(func_or_listeners.wrapped_function, *listened_formulas, priority=priority),
                 *func_or_listeners.listeners)
         else:
-            return _MultiListenerWrapper(func_or_listeners, Listener(func_or_listeners, *listened_formulas))
+            return _MultiListenerWrapper(func_or_listeners,
+                                         Listener(func_or_listeners, *listened_formulas, priority=priority))
 
     return decorator

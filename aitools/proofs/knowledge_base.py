@@ -118,5 +118,6 @@ class KnowledgeBase:
     def __get_listeners_for(self, formula: Expression, *, temporary=False):
         # TODO indexing (we already take the formula as input to that purpose)
         source = self._listeners if not temporary else self._temporary_listeners
-        for l in source:
-            yield l
+        # TODO use an ordered data structure! this is like the inefficientest of inefficiencies
+        for listener in sorted(source, key=lambda l: l.priority, reverse=True):
+            yield listener

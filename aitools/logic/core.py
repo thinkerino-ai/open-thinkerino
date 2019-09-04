@@ -29,7 +29,7 @@ class LogicObject:
     def __hash__(self):
         return hash(self.id)
 
-    def __call__(self, *other_children):
+    def __call__(self, *other_children) -> Expression:
         return Expression(self, *other_children)
 
 
