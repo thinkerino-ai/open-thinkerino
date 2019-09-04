@@ -341,6 +341,7 @@ def test_prover_returning_multiple_results():
 
 @pytest.mark.xfail(reason="I'm not even sure if it should be done :P")
 def test_listener_simple_retroactive():
+    Is, Meows, cat, dylan = LogicObject(4)
     triggered = False
 
     @listener(Is(v._x, cat))
@@ -542,6 +543,11 @@ def test_listener_priority():
 
 @pytest.mark.xfail(reason="I'm too lazy to implement such a marginal thing")
 def test_listener_consume():
+    def consume():
+        pass
+
+    Go = LogicObject()
+
     consumer_triggered = False
     other_triggered = False
 
