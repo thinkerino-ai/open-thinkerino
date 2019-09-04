@@ -364,7 +364,7 @@ def test_listener_simple_retroactive():
 
 def test_listener_simple_non_retroactive():
     triggered = False
-    Is, Meows, cat, dylan = logic_objects(4, clazz=MagicPredicate)
+    Is, Meows, cat, dylan = logic_objects(4)
 
     @listener(Is(v._x, cat))
     def deduce_meow(_x):
@@ -387,6 +387,22 @@ def test_listener_simple_non_retroactive():
     assert triggered, "The listener should have triggered!"
 
     assert any(kb.prove(Meows(dylan)))
+
+
+def test_listener_multiple_formulas_returned():
+    Is, Meows, Purrs, cat, dylan = logic_objects(5)
+
+    @listener(Is(v._x, cat))
+    def deduce_meow_and_purr(_x):
+        return Meows(_x), Purrs(_x)
+
+    kb = KnowledgeBase()
+
+    kb.add_listeners(deduce_meow_and_purr)
+    kb.add_formulas(Is(dylan, cat))
+
+    assert any(kb.prove(Meows(dylan)))
+    assert any(kb.prove(Purrs(dylan)))
 
 
 def test_listener_complex_conjunction():
