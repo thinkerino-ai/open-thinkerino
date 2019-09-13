@@ -15,7 +15,6 @@ class EmbeddedProver(Prover):
     def __call__(self, formula: Expression, _kb=None, _truth: bool = True) -> Iterable[Proof]:
         if (self.proved_formula.children[0] == formula.children[0] and
                 len(self.proved_formula.children) == len(formula.children)):
-            # TODO use _kb somehow :P I'm too tired to understand how/if/why/boop, probably via context?
             unwrapped_children = (c if not isinstance(c, LogicWrapper) else c.value for c in formula.children[1:])
             yield from self.normalize_results(formula=formula,
                                               requested_truth=_truth,
