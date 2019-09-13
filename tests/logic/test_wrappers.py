@@ -11,11 +11,15 @@ class TestLogicWrappers(unittest.TestCase):
         v1 = Variable()
         a = LogicObject()
 
-        (v1, a, "hello") >> expr
+        e = expr(v1, a, "hello")
+
+        self.assertIsInstance(e.children[0], Variable, f"{e.children[0]} should be a Variable")
+        self.assertIsInstance(e.children[1], LogicObject, f"{e.children[1]} should be a LogicObject")
+        self.assertIsInstance(e.children[2], LogicWrapper, f"{e.children[2]} should be a LogicWrapper")
 
     def testArrayConstantInDSL(self):
         src = ["hello", 2]
-        e1 = src >> expr
+        e1 = expr(src)
 
         self.assertIsInstance(e1, Expression, f"{e1} should be an Expression!")
         self.assertEqual(len(e1.children), len(src), f"Length of {e1.children} and {src} should be equal!")
@@ -24,16 +28,16 @@ class TestLogicWrappers(unittest.TestCase):
 
     def testWrappedArrayConstantInDSL(self):
         src = ["hello", 2]
-        e1 = wrap(src) >> expr
+        e1 = expr(wrap(src))
 
         self.assertIsInstance(e1, LogicWrapper, f"{e1} should be a LogicWrapper!")
         self.assertEqual(e1.value, src, f"The value of {e1} should be {src}")
 
     def testUtilsWrapSet(self):
-        src1 = {1,2,3}
-        src2 = [1,2,3]
+        src1 = {1, 2, 3}
+        src2 = [1, 2, 3]
 
-        e1 = (src1, src2) >> expr
+        e1 = expr(src1, src2)
         
         # sets are wrapped, lists are mapped
         self.assertIsInstance(e1.children[0], LogicWrapper)
@@ -44,3 +48,55 @@ class TestLogicWrappers(unittest.TestCase):
 
         # the second element is a list of wrappers
         self.assertEqual(e1.children[1].children, tuple(map(wrap, src2)))
+
+    def test_magic_methods(self):
+        assert (LogicWrapper(5) + LogicWrapper(2)) == (5 + 2)
+        assert (LogicWrapper(5) - LogicWrapper(2)) == (5 - 2)
+        assert (LogicWrapper(5) * LogicWrapper(2)) == (5 * 2)
+        assert (LogicWrapper(5) / LogicWrapper(2)) == (5 / 2)
+        assert (LogicWrapper(5) // LogicWrapper(2)) == (5 // 2)
+        assert (LogicWrapper(5) % LogicWrapper(2)) == (5 % 2)
+        assert (LogicWrapper(5) ** LogicWrapper(2)) == (5 ** 2)
+        assert (LogicWrapper(5) >> LogicWrapper(2)) == (5 >> 2)
+        assert (LogicWrapper(5) << LogicWrapper(2)) == (5 << 2)
+        assert (LogicWrapper(5) & LogicWrapper(2)) == (5 & 2)
+        assert (LogicWrapper(5) | LogicWrapper(2)) == (5 | 2)
+        assert (LogicWrapper(5) ^ LogicWrapper(2)) == (5 ^ 2)
+        assert (LogicWrapper(5) < LogicWrapper(2)) == (5 < 2)
+        assert (LogicWrapper(5) > LogicWrapper(2)) == (5 > 2)
+        assert (LogicWrapper(5) <= LogicWrapper(2)) == (5 <= 2)
+        assert (LogicWrapper(5) >= LogicWrapper(2)) == (5 >= 2)
+
+        assert (LogicWrapper(5) + 2) == (5 + 2)
+        assert (LogicWrapper(5) - 2) == (5 - 2)
+        assert (LogicWrapper(5) * 2) == (5 * 2)
+        assert (LogicWrapper(5) / 2) == (5 / 2)
+        assert (LogicWrapper(5) // 2) == (5 // 2)
+        assert (LogicWrapper(5) % 2) == (5 % 2)
+        assert (LogicWrapper(5) ** 2) == (5 ** 2)
+        assert (LogicWrapper(5) >> 2) == (5 >> 2)
+        assert (LogicWrapper(5) << 2) == (5 << 2)
+        assert (LogicWrapper(5) & 2) == (5 & 2)
+        assert (LogicWrapper(5) | 2) == (5 | 2)
+        assert (LogicWrapper(5) ^ 2) == (5 ^ 2)
+        assert (LogicWrapper(5) < 2) == (5 < 2)
+        assert (LogicWrapper(5) > 2) == (5 > 2)
+        assert (LogicWrapper(5) <= 2) == (5 <= 2)
+        assert (LogicWrapper(5) >= 2) == (5 >= 2)
+
+        assert (5 + LogicWrapper(2)) == (5 + 2)
+        assert (5 - LogicWrapper(2)) == (5 - 2)
+        assert (5 * LogicWrapper(2)) == (5 * 2)
+        assert (5 / LogicWrapper(2)) == (5 / 2)
+        assert (5 // LogicWrapper(2)) == (5 // 2)
+        assert (5 % LogicWrapper(2)) == (5 % 2)
+        assert (5 ** LogicWrapper(2)) == (5 ** 2)
+        assert (5 >> LogicWrapper(2)) == (5 >> 2)
+        assert (5 << LogicWrapper(2)) == (5 << 2)
+        assert (5 & LogicWrapper(2)) == (5 & 2)
+        assert (5 | LogicWrapper(2)) == (5 | 2)
+        assert (5 ^ LogicWrapper(2)) == (5 ^ 2)
+        assert (5 < LogicWrapper(2)) == (5 < 2)
+        assert (5 > LogicWrapper(2)) == (5 > 2)
+        assert (5 <= LogicWrapper(2)) == (5 <= 2)
+        assert (5 >= LogicWrapper(2)) == (5 >= 2)
