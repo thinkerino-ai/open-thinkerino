@@ -10,7 +10,7 @@ from aitools.proofs.provers import KnowledgeRetriever, RestrictedModusPonens
 from aitools.proofs.utils import EmbeddedProver
 
 
-class KnowledgeBase:
+class DummyKnowledgeBase:
     def __init__(self):
         self._known_formulas: Set[Expression] = set()
         self._provers: Set[Prover] = set()

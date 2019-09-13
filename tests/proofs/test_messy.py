@@ -2,7 +2,7 @@ import pytest
 
 from aitools.logic import Variable, Substitution, LogicObject, Expression
 from aitools.logic.utils import subst, logic_objects, variable_source as v, wrap
-from aitools.proofs.knowledge_base import KnowledgeBase
+from aitools.proofs.knowledge_bases.dummy import DummyKnowledgeBase
 from aitools.proofs.language import Implies, MagicPredicate, Not
 from aitools.proofs.listeners import listener, Listener
 from aitools.proofs.proof import Proof
@@ -11,7 +11,7 @@ from aitools.proofs.utils import predicate_function
 
 
 def test_retrieve_known_formula():
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     IsA, dylan, cat = logic_objects(3, clazz=LogicObject)
 
@@ -25,7 +25,7 @@ def test_retrieve_known_formula():
 
 
 def test_retrieve_known_open_formula():
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     IsA, dylan, cat, hugo = logic_objects(4, clazz=LogicObject)
 
@@ -43,6 +43,15 @@ def test_retrieve_known_open_formula():
     assert any(substitution.get_bound_object_for(v._x) == hugo for substitution in substitutions)
 
 
+def test_open_formulas_added_only_once():
+    kb = DummyKnowledgeBase()
+    Foo, a, b = logic_objects(3)
+
+    kb.add_formulas(Foo(a, b), Foo(v.x, v.y), Foo(v.x, v.x), Foo(v.w, v.z))
+
+    assert(len(kb._known_formulas) == 3)
+
+
 def _is_known_formula_proof_of(proof: Proof, formula: Expression) -> bool:
     return (isinstance(proof, Proof) and not any(proof.premises) and
             isinstance(proof.inference_rule, KnowledgeRetriever) and
@@ -51,7 +60,7 @@ def _is_known_formula_proof_of(proof: Proof, formula: Expression) -> bool:
 
 def test_proof_known_formula():
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     IsA, dylan, cat = logic_objects(3, clazz=LogicObject)
 
@@ -66,7 +75,7 @@ def test_proof_known_formula():
 
 
 def test_proof_known_open_formula():
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     IsA, dylan, hugo, cat = logic_objects(4, clazz=LogicObject)
 
@@ -90,7 +99,7 @@ def test_implication_shortcut():
 
 
 def test_simple_deduction():
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     IsA, cat, animal, dylan = logic_objects(4, clazz=LogicObject)
 
@@ -106,7 +115,7 @@ def test_simple_deduction():
 
 
 def test_deduction_chain():
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     IsA, cat, mammal, animal, dylan = logic_objects(5)
 
@@ -131,7 +140,7 @@ def IsEven(n: int):
 
 
 def test_simple_custom_prover_passing_python_value():
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     assert any(kb.prove(IsEven(2)))
 
@@ -140,7 +149,7 @@ def test_simple_custom_prover_passing_python_value():
 
 
 def test_simple_custom_prover_to_be_false():
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     # now *this* means that we can prove it is false :P
     assert any(kb.prove(IsEven(3), truth=False))
@@ -157,14 +166,14 @@ def IsMultipleOf4(n: int):
 
 @pytest.mark.xfail(reason="This needs to be implemented, but it's too complex for my little sleepy brain right now :P")
 def test_custom_prover_chain_adds_premises():
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     proofs = list(kb.prove(IsMultipleOf4(20)))
     assert len(proofs[0].premises) > 0
 
 
 def test_custom_prover_chain():
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     proofs = list(kb.prove(IsMultipleOf4(20)))
     assert any(proofs)
@@ -174,7 +183,7 @@ def test_custom_prover_chain():
 
 
 def test_custom_prover_in_open_formula():
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     IsNice = MagicPredicate()
 
@@ -189,7 +198,7 @@ def test_custom_prover_in_open_formula():
 
 def test_custom_prover_with_explicit_formula():
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     IsPayload = MagicPredicate()
 
@@ -215,7 +224,7 @@ def test_custom_prover_incomplete():
         # None means "Who knows?"
         return None
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     kb.add_provers(NegationProver())
 
@@ -244,7 +253,7 @@ def test_multiple_custom_provers_for_the_same_formula():
             return False
         return None
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     kb.add_provers(prime_prover_012345, prime_prover_456789, NegationProver())
 
@@ -292,7 +301,7 @@ def test_prover_returning_substitutions():
         else:
             return True, subst((wrap(map[val]), [var]))
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     assert (kb.prove(Likes("lisa", "nelson")))
 
@@ -316,7 +325,7 @@ def test_prover_returning_substitution_false():
 
         return None
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     kb.add_provers(NegationProver())
 
@@ -335,7 +344,7 @@ def test_prover_returning_multiple_results():
         else:
             yield _x in _collection
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     kb.add_provers(NegationProver())
 
@@ -359,7 +368,7 @@ def test_listener_simple_retroactive():
         triggered = True
         return Meows(_x)
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     kb.add_formulas(Is(dylan, cat))
 
@@ -382,7 +391,7 @@ def test_listener_simple_non_retroactive():
         triggered = True
         return Meows(_x)
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     kb.add_formulas(Is(dylan, cat))
 
@@ -406,7 +415,7 @@ def test_listener_multiple_formulas_returned():
     def deduce_meow_and_purr(_x):
         return Meows(_x), Purrs(_x)
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     kb.add_listeners(deduce_meow_and_purr)
     kb.add_formulas(Is(dylan, cat))
@@ -423,7 +432,7 @@ def test_listener_complex_conjunction():
         # note that since we don't care for _a we don't ask for it!
         return IsUncle(_c, _b)
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     kb.add_listeners(deduce_uncle)
 
@@ -446,7 +455,7 @@ def test_listener_complex_disjunction():
         # UPDATE: I'm on a plane now, not drunk, still stupid, still going with it :P
         return Barks(_x)
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     kb.add_listeners(deduce_barks)
 
@@ -475,7 +484,7 @@ def test_listener_manual_generation():
             a = subst.get_bound_object_for(v._a)
             return Listener(lambda _b, _c: IsUncle(c, _b), IsParent(a, v._b), previous_substitution=subst)
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     kb.add_listeners(deduce_uncle_but_in_a_weird_way)
     kb.add_formulas(IsParent(alice, bob))
@@ -484,7 +493,7 @@ def test_listener_manual_generation():
 
     assert any(kb.prove(IsUncle(carl, bob)))
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     kb.add_listeners(deduce_uncle_but_in_a_weird_way)
     kb.add_formulas(IsBrother(carl, alice))
@@ -508,7 +517,7 @@ def test_listener_chain():
     def deduce_from_c_d(_x):
         return D(_x)
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
 
     kb.add_listeners(deduce_from_b_c)
     kb.add_listeners(deduce_from_a_b)
@@ -539,7 +548,7 @@ def test_listener_priority():
     def listener_2():
         res.append(2)
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
     kb.add_listeners(listener_1, listener_0, listener_2)
 
     assert res == []
@@ -571,7 +580,7 @@ def test_listener_consume():
         other_triggered = True
         consume()
 
-    kb = KnowledgeBase()
+    kb = DummyKnowledgeBase()
     kb.add_listeners(consumer, other)
     assert not consumer_triggered and not other_triggered
 
