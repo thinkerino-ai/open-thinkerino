@@ -1,11 +1,10 @@
 import threading
 from functools import wraps
 from inspect import isgeneratorfunction
-from typing import Iterable
 
 from aitools.logic import Expression
 from aitools.logic.utils import LogicObjectSource, VariableSource
-from aitools.proofs.proof import Proof
+from aitools.proofs.proof import ProofSet
 
 
 def make_property(attr_name):
@@ -38,7 +37,7 @@ context.predicate_source = LogicObjectSource()
 context.variable_source = VariableSource()
 
 
-def prove(formula: Expression, truth: bool = True) -> Iterable[Proof]:
+def prove(formula: Expression, truth: bool = True) -> ProofSet:
     return context.kb.prove(formula, truth)
 
 

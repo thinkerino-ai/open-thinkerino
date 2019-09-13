@@ -28,7 +28,7 @@ class EmbeddedProver(Prover):
                                        Iterable[bool], Iterable[Substitution],
                                        Iterable[Tuple[bool, Substitution]], Iterable[Proof]]]) -> Iterable[Proof]:
         def _inner(res) -> Optional[Proof]:
-            # TODO (IMPORTANT) take premises from the context! where else could we find them? (but then we need to PUT them there!)
+            # TODO take premises from the context! where else could we find them? (but then we need to PUT them there! probably the best way to do it is to require some sort of context manager to be used in the prover function)
             if res is None:
                 # the prover returned None, so it couldn't prove neither true nor false
                 return None
