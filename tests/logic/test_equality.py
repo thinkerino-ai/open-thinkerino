@@ -1,24 +1,24 @@
 import unittest
 
 from aitools.logic import LogicObject
-from aitools.logic.utils import logicObjects, expr, binding, variables
+from aitools.logic.utils import logic_objects, expr, binding, variables
 
 
 class TestEquality(unittest.TestCase):
 
     def testExpressionEqualitySuccess(self):
-        a, b, c, d = logicObjects(4)
+        a, b, c, d = logic_objects(4)
 
-        e1 = (a, (b, c), d) >> expr
-        e2 = (a, (b, c), d) >> expr
+        e1 = expr(a, (b, c), d)
+        e2 = expr(a, (b, c), d)
 
         self.assertEqual(e1, e2, f"{e1} and {e2} should be equal!")
 
     def testExpressionEqualityFailure(self):
-        a, b, c, d = logicObjects(4)
+        a, b, c, d = logic_objects(4)
 
-        e1 = (a, (b, c), d) >> expr
-        e2 = (a, (b, c), a) >> expr
+        e1 = expr(a, (b, c), d)
+        e2 = expr(a, (b, c), a)
 
         self.assertNotEqual(e1, e2, f"{e1} and {e2} should not be equal!")
 
@@ -51,7 +51,7 @@ class TestEquality(unittest.TestCase):
         self.assertNotEqual(b1, b2)
 
     def testBindingEqualityFailureHead(self):
-        a, b = logicObjects(2)
+        a, b = logic_objects(2)
 
         v1, v2 = variables(2)
 
@@ -61,7 +61,7 @@ class TestEquality(unittest.TestCase):
         self.assertNotEqual(b1, b2)
 
     def testConstantsEquality(self):
-        e1 = 2 >> expr
-        e2 = 2 >> expr
+        e1 = expr(2)
+        e2 = expr(2)
 
         self.assertEqual(e1, e2)

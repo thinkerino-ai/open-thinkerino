@@ -5,12 +5,13 @@ from aitools.logic.unification import Binding, Substitution
 from aitools.logic import Variable, Expression, LogicWrapper, LogicObject
 
 
-def logicObjects(count: int):
-    return (LogicObject() for _ in range(count))
+def logic_objects(count: int, *, clazz=LogicObject):
+    return (clazz() for _ in range(count))
 
 
 def variables(count: int):
     return (Variable() for _ in range(count))
+
 
 def wrap(obj: Any):
     if isinstance(obj, LogicObject):
@@ -18,27 +19,29 @@ def wrap(obj: Any):
     else:
         return LogicWrapper(obj)
 
-class ExpressionMaker:
-    @staticmethod
-    def makeExpression(obj) -> LogicObject:
-        if isinstance(obj, LogicObject):
-            return obj
+
+def expr(*args) -> LogicObject:
+    if len(args) == 0:
+        raise ValueError("At least one element!")
+    elif len(args) == 1:
+        obj = args[0]
+    else:
+        obj = args
+
+    if isinstance(obj, LogicObject):
+        return obj
+    else:
+        # supports only sequences
+        if isinstance(obj, Sequence) and not isinstance(obj, str):
+            return Expression(*map(expr, obj))
         else:
-            # supports only sequences
-            if isinstance(obj, Sequence) and not isinstance(obj, str):
-                return Expression(*map(ExpressionMaker.makeExpression, obj))
-            else:
-                return LogicWrapper(obj)
-
-    def __rrshift__(self, other):
-        return self.makeExpression(other)
+            return LogicWrapper(obj)
 
 
-expr: ExpressionMaker = ExpressionMaker()
 
 
-def binding(head, variables) -> Binding:
-    return Binding(frozenset(variables), head=head)
+def binding(head, vars) -> Binding:
+    return Binding(frozenset(vars), head=head)
 
 
 def subst(*bindings) -> Substitution:
@@ -47,15 +50,30 @@ def subst(*bindings) -> Substitution:
 
 class VariableSource:
     def __init__(self, **initial_vars: Variable):
-        self.__vars = initial_vars
+        self.__vars = {**initial_vars}
 
-    def __getattr__(self, item):
+    def __getattr__(self, item) -> Variable:
         if item not in self.__vars:
-            self.__vars[item] = val = Variable()
+            self.__vars[item] = val = Variable(name=item)
         else:
             val = self.__vars[item]
 
         return val
 
 
+class LogicObjectSource:
+    def __init__(self, **initial_objects: LogicObject):
+        self.__objects = {**initial_objects}
+
+    def __getattr__(self, item):
+        if item not in self.__objects:
+            self.__objects[item] = val = LogicObject()
+        else:
+            val = self.__objects[item]
+
+        return val
+
+
 variable_source = VariableSource()
+
+logic_object_source = LogicObjectSource()
