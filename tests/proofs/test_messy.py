@@ -43,6 +43,27 @@ def test_retrieve_known_open_formula():
     assert any(substitution.get_bound_object_for(v._x) == hugo for substitution in substitutions)
 
 
+def test_open_formulas_added_only_once():
+    kb = KnowledgeBase()
+    Foo, a, b = logic_objects(3)
+
+    kb.add_formulas(Foo(a, b), Foo(v.x, v.y), Foo(v.x, v.x), Foo(v.w, v.z))
+
+    assert len(kb._known_formulas) == 3
+
+
+def test_formulas_get_normalized():
+    kb = KnowledgeBase()
+    Foo, Bar, Baz, a, b = logic_objects(5)
+
+    kb.add_formulas(
+        Foo(a, b),
+        Foo(v.x, v.y) <<Implies>> Bar(v.x),
+        Bar(v.y) <<Implies>> Baz(v.y)
+    )
+
+    assert any(kb.prove(Baz(a)))
+
 def _is_known_formula_proof_of(proof: Proof, formula: Expression) -> bool:
     return (isinstance(proof, Proof) and not any(proof.premises) and
             isinstance(proof.inference_rule, KnowledgeRetriever) and
