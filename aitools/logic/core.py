@@ -9,16 +9,23 @@ class LogicObject:
     """An object with a unique ID"""
     _lastID = 0
 
-    def __init__(self):
+    def __init__(self, name=None):
         self.id = LogicObject._lastID
         LogicObject._lastID = LogicObject._lastID + 1
+        self.name = name
         super().__init__()
 
     def __repr__(self):
-        return "{}({})".format(type(self).__name__, self.id)
+        if self.name:
+            return "{}({}-{})".format(type(self).__name__, self.name, self.id)
+        else:
+            return "{}({})".format(type(self).__name__, self.id)
 
     def __str__(self):
-        return "o{}".format(self.id)
+        if self.name:
+            return "{}{}".format(self.name, self.id)
+        else:
+            return "o{}".format(self.id)
 
     def __contains__(self, obj):
         return False

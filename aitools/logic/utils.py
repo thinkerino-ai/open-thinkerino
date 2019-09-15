@@ -1,16 +1,16 @@
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Iterable, Union
 
 from aitools.logic.unification import Binding, Substitution
 from aitools.logic import Variable, Expression, LogicWrapper, LogicObject
 
 
-def logic_objects(count: int, *, clazz=LogicObject):
-    return (clazz() for _ in range(count))
+def logic_objects(count_or_names: Union[int, str, Iterable[str]], *, clazz=LogicObject):
+    return (clazz() for _ in range(count_or_names))
 
 
-def variables(count: int):
-    return (Variable() for _ in range(count))
+def variables(count_or_names: Union[int, str, Iterable[str]]):
+    return (Variable() for _ in range(count_or_names))
 
 
 def wrap(obj: Any):

@@ -28,6 +28,14 @@ class LogicInfix(LogicObject):
     def __rshift__(self, other):
         return self.function(other)
 
+    def __repr__(self):
+        if self.name:
+            return "{}({}-{})".format(type(self).__name__, self.name)
+        else:
+            return "{}({})".format(type(self).__name__)
+
+    def __str__(self):
+        return "{}{}".format(self.name)
 
 
 And, Or, Implies, CoImplies = logic_objects(4, clazz=LogicInfix)
