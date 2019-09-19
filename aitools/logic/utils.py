@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import Any, Iterable, Union, Dict
 
 from aitools.logic.unification import Binding, Substitution
-from aitools.logic import Variable, Expression, LogicWrapper, LogicObject
+from aitools.logic import Variable, Constant, Expression, LogicWrapper, LogicObject
 
 
 def renew_variables(expression: Expression) -> Expression:
@@ -19,7 +19,7 @@ def renew_variables(expression: Expression) -> Expression:
     return _inner(expression, {})
 
 
-def logic_objects(count_or_names: Union[int, str, Iterable[str]], *, clazz=LogicObject):
+def constants(count_or_names: Union[int, str, Iterable[str]], *, clazz=Constant):
     if isinstance(count_or_names, int):
         return (clazz() for _ in range(count_or_names))
     elif isinstance(count_or_names, str):
@@ -85,16 +85,14 @@ class VariableSource:
         return val
 
 
-class LogicObjectSource:
-    def __init__(self, **initial_objects: LogicObject):
-        self.__objects = {**initial_objects}
+class ConstantSource:
+    def __init__(self, **initial_constants: Constant):
+        self.__constants = {**initial_constants}
 
     def __getattr__(self, item):
-        if item not in self.__objects:
-            self.__objects[item] = val = LogicObject()
+        if item not in self.__constants:
+            self.__constants[item] = val = Constant()
         else:
-            val = self.__objects[item]
+            val = self.__constants[item]
 
         return val
-
-logic_object_source = LogicObjectSource()

@@ -9,10 +9,9 @@ class LogicObject:
     """An object with a unique ID"""
     _lastID = 0
 
-    def __init__(self, name=None):
+    def __init__(self):
         self.id = LogicObject._lastID
         LogicObject._lastID = LogicObject._lastID + 1
-        self.name = name
         super().__init__()
 
     def __repr__(self):
@@ -22,10 +21,7 @@ class LogicObject:
             return "{}({})".format(type(self).__name__, self.id)
 
     def __str__(self):
-        if self.name:
-            return "{}{}".format(self.name, self.id)
-        else:
-            return "o{}".format(self.id)
+        return "o{}".format(self.id)
 
     def __contains__(self, obj):
         return False
@@ -162,9 +158,23 @@ class LogicWrapper(LogicObject):
         return self.value.__invert__()
 
 
+class Constant(LogicObject):
+    def __init__(self, name:str = None):
+        if name is not None and not (isinstance(name, str) and name):
+            raise ValueError("Constant name must be a non-empty string!")
+        super().__init__()
+        self.name = name
+
+    def __str__(self):
+        if self.name is not None:
+            return "?{}{}".format(self.name,self.id)
+        else:
+            return "?o{}".format(self.id)
+
+
 class Variable(LogicObject):
 
-    def __init__(self, name:str=None):
+    def __init__(self, name:str = None):
         if name is not None and not (isinstance(name, str) and name):
             raise ValueError("Variable name must be a non-empty string!")
         super().__init__()

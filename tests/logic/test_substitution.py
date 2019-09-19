@@ -1,13 +1,13 @@
 import unittest
 
-from aitools.logic.utils import variables, logic_objects, subst, expr
+from aitools.logic.utils import variables, constants, subst, expr
 
 
 class TestSubstitution(unittest.TestCase):
 
     def testComplexSubstitution(self):
         x, y, z = variables(3)
-        a, b, c, d = logic_objects(4)
+        a, b, c, d = constants(4)
 
         e = expr(x, a)
 
@@ -22,7 +22,7 @@ class TestSubstitution(unittest.TestCase):
 
     def testInfiniteSubstitution(self):
         x, = variables(1)
-        a, = logic_objects(1)
+        a, = constants(1)
 
         e = expr(x, a)
 
@@ -37,7 +37,7 @@ class TestSubstitution(unittest.TestCase):
     def testGetBoundObject(self):
         x, y = variables(2)
 
-        a, b, c, d = logic_objects(4)
+        a, b, c, d = constants(4)
 
         e = expr(a, (b, c), d)
 
@@ -57,7 +57,7 @@ class TestSubstitution(unittest.TestCase):
 
     def test_tricky_substitution(self):
         x, y, z = variables(3)
-        a, b, c = logic_objects(3)
+        a, b, c = constants(3)
 
         s = subst((b, [y]), (a(y), [x]))
 

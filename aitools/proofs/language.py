@@ -1,8 +1,8 @@
 """Some basic symbols"""
 
 # Logic Operators
-from aitools.logic import LogicObject, Expression, LogicWrapper
-from aitools.logic.utils import logic_objects
+from aitools.logic import LogicObject, LogicWrapper, Constant
+from aitools.logic.utils import constants
 
 
 class MagicPredicate(LogicObject):
@@ -10,7 +10,7 @@ class MagicPredicate(LogicObject):
         return super().__call__(*(c if isinstance(c, LogicObject) else LogicWrapper(c) for c in other_children))
 
 
-class LogicInfix(LogicObject):
+class LogicInfix(Constant):
     def __init__(self, function=None):
         super().__init__()
         self.function = function or self.__call__
@@ -41,6 +41,6 @@ class LogicInfix(LogicObject):
             return repr(self)
 
 
-And, Or, Implies, CoImplies = logic_objects(4, clazz=LogicInfix)
+And, Or, Implies, CoImplies = constants(4, clazz=LogicInfix)
 # TODO magic operator ~formula to produce the same as Not(Formula)
-Not, = logic_objects(1, clazz=LogicObject)
+Not = Constant()
