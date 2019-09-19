@@ -54,7 +54,7 @@ def test_open_formulas_added_only_once():
 
 def test_formulas_get_normalized():
     kb = KnowledgeBase()
-    Foo, Bar, Baz, a, b = logic_objects(5)
+    Foo, Bar, Baz, a, b = logic_objects("Foo, Bar, Baz, a, b")
 
     kb.add_formulas(
         Foo(a, b),
@@ -62,7 +62,10 @@ def test_formulas_get_normalized():
         Bar(v.y) <<Implies>> Baz(v.y)
     )
 
-    assert any(kb.prove(Baz(a)))
+    proofs = list(kb.prove(Baz(a)))
+    assert any(proofs)
+    print(repr(proofs))
+
 
 def _is_known_formula_proof_of(proof: Proof, formula: Expression) -> bool:
     return (isinstance(proof, Proof) and not any(proof.premises) and

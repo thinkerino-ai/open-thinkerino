@@ -30,12 +30,15 @@ class LogicInfix(LogicObject):
 
     def __repr__(self):
         if self.name:
-            return "{}({}-{})".format(type(self).__name__, self.name)
+            return "{}({})".format(type(self).__name__, self.name)
         else:
-            return "{}({})".format(type(self).__name__)
+            return "{}{}".format(type(self).__name__, self.id)
 
     def __str__(self):
-        return "{}{}".format(self.name)
+        if self.name:
+            return "{}".format(self.name)
+        else:
+            return repr(self)
 
 
 And, Or, Implies, CoImplies = logic_objects(4, clazz=LogicInfix)

@@ -17,7 +17,7 @@ class LogicObject:
 
     def __repr__(self):
         if self.name:
-            return "{}({}-{})".format(type(self).__name__, self.name, self.id)
+            return "{}({}{})".format(type(self).__name__, self.name, self.id)
         else:
             return "{}({})".format(type(self).__name__, self.id)
 
@@ -172,7 +172,7 @@ class Variable(LogicObject):
 
     def __str__(self):
         if self.name is not None:
-            return "?{}-{}".format(self.name,self.id)
+            return "?{}{}".format(self.name,self.id)
         else:
             return "?v{}".format(self.id)
 

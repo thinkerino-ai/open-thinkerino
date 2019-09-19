@@ -6,11 +6,21 @@ from aitools.logic import Variable, Expression, LogicWrapper, LogicObject
 
 
 def logic_objects(count_or_names: Union[int, str, Iterable[str]], *, clazz=LogicObject):
-    return (clazz() for _ in range(count_or_names))
+    if isinstance(count_or_names, int):
+        return (clazz() for _ in range(count_or_names))
+    elif isinstance(count_or_names, str):
+        return (clazz(name=name.strip()) for name in count_or_names.split(','))
+    else:
+        return (clazz(name=name) for name in count_or_names)
 
 
 def variables(count_or_names: Union[int, str, Iterable[str]]):
-    return (Variable() for _ in range(count_or_names))
+    if isinstance(count_or_names, int):
+        return (Variable() for _ in range(count_or_names))
+    elif isinstance(count_or_names, str):
+        return (Variable(name=name.strip()) for name in count_or_names.split(','))
+    else:
+        return (Variable(name=name) for name in count_or_names)
 
 
 def wrap(obj: Any):
