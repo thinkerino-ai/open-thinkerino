@@ -8,7 +8,7 @@ from aitools.logic import Variable, Constant, Expression, LogicWrapper, LogicObj
 def renew_variables(expression: Expression) -> Expression:
     def _inner(obj, mapping):
         if isinstance(obj, Variable):
-            result = mapping.get(obj, Variable())
+            result = mapping.get(obj, Variable(name=obj.name))
             mapping[obj] = result
         elif isinstance(obj, Expression):
             result = Expression(*(_inner(c, mapping) for c in obj.children))
@@ -91,7 +91,7 @@ class ConstantSource:
 
     def __getattr__(self, item):
         if item not in self.__constants:
-            self.__constants[item] = val = Constant()
+            self.__constants[item] = val = Constant(name=item)
         else:
             val = self.__constants[item]
 

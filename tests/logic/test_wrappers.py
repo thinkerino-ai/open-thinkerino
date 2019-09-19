@@ -7,8 +7,8 @@ from aitools.logic.utils import expr, wrap
 class TestLogicWrappers(unittest.TestCase):
 
     def testStringConstantInDSL(self):
-        v1 = Variable()
-        a = Constant()
+        v1 = Variable(name='v1')
+        a = Constant(name='a')
 
         e = expr(v1, a, "hello")
 

@@ -10,9 +10,23 @@ class MagicPredicate(LogicObject):
         return super().__call__(*(c if isinstance(c, LogicObject) else LogicWrapper(c) for c in other_children))
 
 
-class LogicInfix(Constant):
-    def __init__(self, function=None):
-        super().__init__()
+class LogicOperator(Constant):
+    def __repr__(self):
+        if self.name:
+            return "{}({})".format(type(self).__name__, self.name)
+        else:
+            return "{}{}".format(type(self).__name__, self.id)
+
+    def __str__(self):
+        if self.name:
+            return "{}".format(self.name)
+        else:
+            return repr(self)
+
+
+class LogicInfix(LogicOperator):
+    def __init__(self, function=None, **kwargs):
+        super().__init__(**kwargs)
         self.function = function or self.__call__
 
     """Heavily inspired by (aka copy-pasted from) Infix at https://github.com/ActiveState/code"""
@@ -28,19 +42,7 @@ class LogicInfix(Constant):
     def __rshift__(self, other):
         return self.function(other)
 
-    def __repr__(self):
-        if self.name:
-            return "{}({})".format(type(self).__name__, self.name)
-        else:
-            return "{}{}".format(type(self).__name__, self.id)
 
-    def __str__(self):
-        if self.name:
-            return "{}".format(self.name)
-        else:
-            return repr(self)
-
-
-And, Or, Implies, CoImplies = constants(4, clazz=LogicInfix)
+And, Or, Implies, CoImplies = constants('And, Or, Implies, CoImplies', clazz=LogicInfix)
 # TODO magic operator ~formula to produce the same as Not(Formula)
-Not = Constant()
+Not = LogicOperator(name='Not')

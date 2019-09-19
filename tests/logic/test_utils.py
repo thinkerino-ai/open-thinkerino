@@ -3,7 +3,7 @@ from aitools.logic.utils import expr, constants, subst, VariableSource, renew_va
 
 
 def test_logic_object_invocation():
-    a, b, c, d = constants(4)
+    a, b, c, d = constants('a, b, c, d')
 
     e1 = expr(a, b, c, d)
     e2 = a(b, c, d)
@@ -13,7 +13,7 @@ def test_logic_object_invocation():
 
 def test_variable_source():
     v = VariableSource()
-    a, b, c, d = constants(4)
+    a, b, c, d = constants('a, b, c, d')
 
     e1 = expr(a, (b, c), (v.x, b, d))
     e2 = expr(a, (v.x, c), (v.y, v.x, d))
@@ -28,7 +28,7 @@ def test_variable_source():
 
 def test_renew_variables():
     v = VariableSource()
-    a, b, c = constants(3)
+    a, b, c = constants('a, b, c')
     e1 = expr(v.x, v.y, v.x)
     e2 = renew_variables(e1)
 
@@ -38,7 +38,7 @@ def test_renew_variables():
 
 def test_renew_variables_preserves_unification():
     v = VariableSource()
-    a, b, c, d = constants(4)
+    a, b, c, d = constants('a, b, c, d')
 
     e1 = expr(v.x, (v.y, v.z), d)
     e2 = renew_variables(e1)

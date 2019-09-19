@@ -13,7 +13,7 @@ from aitools.proofs.utils import predicate_function
 def test_retrieve_known_formula():
     kb = KnowledgeBase()
 
-    IsA, dylan, cat = constants(3)
+    IsA, dylan, cat = constants('IsA, dylan, cat')
 
     kb.add_formulas(IsA(dylan, cat))
 
@@ -28,7 +28,7 @@ def test_retrieve_known_open_formula():
     v = VariableSource()
     kb = KnowledgeBase()
 
-    IsA, dylan, cat, hugo = constants(4)
+    IsA, dylan, cat, hugo = constants('IsA, dylan, cat, hugo')
 
     kb.add_formulas(
         IsA(dylan, cat),
@@ -47,7 +47,7 @@ def test_retrieve_known_open_formula():
 def test_open_formulas_added_only_once():
     v = VariableSource()
     kb = KnowledgeBase()
-    Foo, a, b = constants(3)
+    Foo, a, b = constants('Foo, a, b')
 
     kb.add_formulas(Foo(a, b), Foo(v.x, v.y), Foo(v.x, v.x), Foo(v.w, v.z))
 
@@ -57,7 +57,7 @@ def test_open_formulas_added_only_once():
 def test_formulas_must_be_normalized():
     v = VariableSource()
     kb = KnowledgeBase()
-    Foo, Bar, Baz, a, b = constants("Foo, Bar, Baz, a, b")
+    Foo, Bar, Baz, a, b = constants('Foo, Bar, Baz, a, b')
 
     kb.add_formulas(
         Foo(a, b),
@@ -82,7 +82,7 @@ def test_proof_known_formula():
 
     kb = KnowledgeBase()
 
-    IsA, dylan, cat = constants(3)
+    IsA, dylan, cat = constants('IsA, dylan, cat')
 
     kb.add_formulas(IsA(dylan, cat))
 
@@ -98,7 +98,7 @@ def test_proof_known_open_formula():
     v = VariableSource()
     kb = KnowledgeBase()
 
-    IsA, dylan, hugo, cat = constants(4)
+    IsA, dylan, hugo, cat = constants('IsA, dylan, hugo, cat')
 
     kb.add_formulas(
         IsA(dylan, cat),
@@ -116,7 +116,7 @@ def test_proof_known_open_formula():
 
 def test_implication_shortcut():
     v = VariableSource()
-    IsA, cat, animal = constants(3, clazz=Constant)
+    IsA, cat, animal = constants('IsA, cat, animal')
     assert (IsA(v._x, cat) <<Implies>> IsA(v._x, animal)) == (Implies(IsA(v._x, cat), IsA(v._x, animal)))
 
 
@@ -124,7 +124,7 @@ def test_simple_deduction():
     v = VariableSource()
     kb = KnowledgeBase()
 
-    IsA, cat, animal, dylan = constants(4)
+    IsA, cat, animal, dylan = constants('IsA, cat, animal, dylan')
 
     kb.add_formulas(
         IsA(v._x, cat) <<Implies>> IsA(v._x, animal)
@@ -141,7 +141,7 @@ def test_deduction_chain():
     v = VariableSource()
     kb = KnowledgeBase()
 
-    IsA, cat, mammal, animal, dylan = constants(5)
+    IsA, cat, mammal, animal, dylan = constants('IsA, cat, mammal, animal, dylan')
 
     kb.add_formulas(
         IsA(v._x, cat) <<Implies>> IsA(v._x, mammal),
@@ -388,7 +388,8 @@ def test_prover_returning_multiple_results():
 
 @pytest.mark.xfail(reason="I'm not even sure if it should be done :P")
 def test_listener_simple_retroactive():
-    Is, Meows, cat, dylan = constants(4)
+    v = VariableSource()
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
     triggered = False
 
     @listener(Is(v._x, cat))
@@ -413,7 +414,7 @@ def test_listener_simple_retroactive():
 def test_listener_simple_non_retroactive():
     v = VariableSource()
     triggered = False
-    Is, Meows, cat, dylan = constants(4)
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
 
     @listener(Is(v._x, cat))
     def deduce_meow(_x):
@@ -440,7 +441,7 @@ def test_listener_simple_non_retroactive():
 
 def test_listener_multiple_formulas_returned():
     v = VariableSource()
-    Is, Meows, Purrs, cat, dylan = constants(5)
+    Is, Meows, Purrs, cat, dylan = constants('Is, Meows, Purrs, cat, dylan')
 
     @listener(Is(v._x, cat))
     def deduce_meow_and_purr(_x):
@@ -457,7 +458,7 @@ def test_listener_multiple_formulas_returned():
 
 def test_listener_complex_conjunction():
     v = VariableSource()
-    IsParent, IsBrother, IsUncle, alice, bob, carl = constants(6)
+    IsParent, IsBrother, IsUncle, alice, bob, carl = constants('IsParent, IsBrother, IsUncle, alice, bob, carl')
 
     @listener(IsParent(v._a, v._b), IsBrother(v._c, v._a))
     def deduce_uncle(_b, _c):
@@ -479,7 +480,7 @@ def test_listener_complex_conjunction():
 
 def test_listener_complex_disjunction():
     v = VariableSource()
-    IsDog, IsBarkingHuman, Barks, luce, bard = constants(5)
+    IsDog, IsBarkingHuman, Barks, luce, bard = constants('IsDog, IsBarkingHuman, Barks, luce, bard')
 
     @listener(IsDog(v._x))
     @listener(IsBarkingHuman(v._x))
@@ -501,7 +502,7 @@ def test_listener_complex_disjunction():
 
 def test_listener_manual_generation():
     v = VariableSource()
-    IsParent, IsBrother, IsUncle, alice, bob, carl = constants(6)
+    IsParent, IsBrother, IsUncle, alice, bob, carl = constants('IsParent, IsBrother, IsUncle, alice, bob, carl')
 
     @listener(v._formula)
     def deduce_uncle_but_in_a_weird_way(_formula):
@@ -538,7 +539,7 @@ def test_listener_manual_generation():
 
 def test_listener_chain():
     v = VariableSource()
-    A, B, C, D, foo = constants(5)
+    A, B, C, D, foo = constants('A, B, C, D, foo')
 
     @listener(A(v._x))
     def deduce_from_a_b(_x):
@@ -568,7 +569,7 @@ def test_listener_chain():
 def test_listener_priority():
     res = []
 
-    Go = Constant()
+    Go = Constant(name='Go')
 
     @listener(Go(), priority=1)
     def listener_1():
@@ -598,7 +599,7 @@ def test_listener_consume():
     def consume():
         pass
 
-    Go = Constant()
+    Go = Constant(name='Go')
 
     consumer_triggered = False
     other_triggered = False
