@@ -117,7 +117,9 @@ class Substitution(LogicObject):
     def get_bound_object_for(self, variable):
         if not isinstance(variable, Variable):
             raise TypeError("Only variables can be bound to an expression")
-        return self._bindings_by_variable[variable].get_bound_object_for()
+        binding = self._bindings_by_variable.get(variable, None)
+
+        return binding.get_bound_object_for() if binding is not None else None
 
     @classmethod
     def unify(cls, a, b, *, previous=None):

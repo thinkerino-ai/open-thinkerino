@@ -1,7 +1,7 @@
 import pytest
 
 from aitools.logic import Variable, Substitution, LogicObject, Expression
-from aitools.logic.utils import subst, logic_objects, variable_source as v, wrap
+from aitools.logic.utils import subst, logic_objects, wrap, VariableSource
 from aitools.proofs.knowledge_base import KnowledgeBase
 from aitools.proofs.language import Implies, MagicPredicate, Not
 from aitools.proofs.listeners import listener, Listener
@@ -25,6 +25,7 @@ def test_retrieve_known_formula():
 
 
 def test_retrieve_known_open_formula():
+    v = VariableSource()
     kb = KnowledgeBase()
 
     IsA, dylan, cat, hugo = logic_objects(4, clazz=LogicObject)
@@ -44,6 +45,7 @@ def test_retrieve_known_open_formula():
 
 
 def test_open_formulas_added_only_once():
+    v = VariableSource()
     kb = KnowledgeBase()
     Foo, a, b = logic_objects(3)
 
@@ -52,7 +54,8 @@ def test_open_formulas_added_only_once():
     assert len(kb._known_formulas) == 3
 
 
-def test_formulas_get_normalized():
+def test_formulas_must_be_normalized():
+    v = VariableSource()
     kb = KnowledgeBase()
     Foo, Bar, Baz, a, b = logic_objects("Foo, Bar, Baz, a, b")
 
@@ -62,6 +65,8 @@ def test_formulas_get_normalized():
         Bar(v.y) <<Implies>> Baz(v.y)
     )
 
+    #ERROR continuare da qui, non funziona perché la retrieve deve sempre normalizzare le variabili prima
+    #NOTA CHE HO AGGIUNTO GIA' LA RENEW ALLA add_formulas
     proofs = list(kb.prove(Baz(a)))
     assert any(proofs)
     print(repr(proofs))
@@ -90,6 +95,7 @@ def test_proof_known_formula():
 
 
 def test_proof_known_open_formula():
+    v = VariableSource()
     kb = KnowledgeBase()
 
     IsA, dylan, hugo, cat = logic_objects(4, clazz=LogicObject)
@@ -109,11 +115,13 @@ def test_proof_known_open_formula():
 
 
 def test_implication_shortcut():
+    v = VariableSource()
     IsA, cat, animal = logic_objects(3, clazz=LogicObject)
     assert (IsA(v._x, cat) <<Implies>> IsA(v._x, animal)) == (Implies(IsA(v._x, cat), IsA(v._x, animal)))
 
 
 def test_simple_deduction():
+    v = VariableSource()
     kb = KnowledgeBase()
 
     IsA, cat, animal, dylan = logic_objects(4, clazz=LogicObject)
@@ -130,6 +138,7 @@ def test_simple_deduction():
 
 
 def test_deduction_chain():
+    v = VariableSource()
     kb = KnowledgeBase()
 
     IsA, cat, mammal, animal, dylan = logic_objects(5)
@@ -198,6 +207,7 @@ def test_custom_prover_chain():
 
 
 def test_custom_prover_in_open_formula():
+    v = VariableSource()
     kb = KnowledgeBase()
 
     IsNice = MagicPredicate()
@@ -212,7 +222,7 @@ def test_custom_prover_in_open_formula():
 
 
 def test_custom_prover_with_explicit_formula():
-
+    v = VariableSource()
     kb = KnowledgeBase()
 
     IsPayload = MagicPredicate()
@@ -250,6 +260,7 @@ def test_custom_prover_incomplete():
 
 
 def test_multiple_custom_provers_for_the_same_formula():
+    v = VariableSource()
     IsPrime = MagicPredicate()
 
     @predicate_function(proves=IsPrime(v._n))
@@ -285,6 +296,7 @@ def test_multiple_custom_provers_for_the_same_formula():
 
 
 def test_prover_returning_substitutions():
+    v = VariableSource()
     @predicate_function
     def Likes(_x: str, _y: str):
         """We prove that lisa likes nelson and milhouse likes lisa.
@@ -333,6 +345,7 @@ def test_prover_returning_substitutions():
 
 
 def test_prover_returning_substitution_false():
+    v = VariableSource()
     @predicate_function
     def Likes(_x, _y):
         if _x == "lisa" and isinstance(_y, Variable):
@@ -350,6 +363,7 @@ def test_prover_returning_substitution_false():
 
 
 def test_prover_returning_multiple_results():
+    v = VariableSource()
     @predicate_function
     def In(_x, _collection):
 
@@ -397,6 +411,7 @@ def test_listener_simple_retroactive():
 
 
 def test_listener_simple_non_retroactive():
+    v = VariableSource()
     triggered = False
     Is, Meows, cat, dylan = logic_objects(4)
 
@@ -424,6 +439,7 @@ def test_listener_simple_non_retroactive():
 
 
 def test_listener_multiple_formulas_returned():
+    v = VariableSource()
     Is, Meows, Purrs, cat, dylan = logic_objects(5)
 
     @listener(Is(v._x, cat))
@@ -440,6 +456,7 @@ def test_listener_multiple_formulas_returned():
 
 
 def test_listener_complex_conjunction():
+    v = VariableSource()
     IsParent, IsBrother, IsUncle, alice, bob, carl = logic_objects(6)
 
     @listener(IsParent(v._a, v._b), IsBrother(v._c, v._a))
@@ -461,6 +478,7 @@ def test_listener_complex_conjunction():
 
 
 def test_listener_complex_disjunction():
+    v = VariableSource()
     IsDog, IsBarkingHuman, Barks, luce, bard = logic_objects(5)
 
     @listener(IsDog(v._x))
@@ -482,6 +500,7 @@ def test_listener_complex_disjunction():
 
 
 def test_listener_manual_generation():
+    v = VariableSource()
     IsParent, IsBrother, IsUncle, alice, bob, carl = logic_objects(6)
 
     @listener(v._formula)
@@ -518,6 +537,7 @@ def test_listener_manual_generation():
 
 
 def test_listener_chain():
+    v = VariableSource()
     A, B, C, D, foo = logic_objects(5)
 
     @listener(A(v._x))

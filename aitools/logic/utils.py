@@ -1,8 +1,22 @@
 from collections.abc import Sequence
-from typing import Any, Iterable, Union
+from typing import Any, Iterable, Union, Dict
 
 from aitools.logic.unification import Binding, Substitution
 from aitools.logic import Variable, Expression, LogicWrapper, LogicObject
+
+
+def renew_variables(expression: Expression) -> Expression:
+    def _inner(obj, mapping):
+        if isinstance(obj, Variable):
+            result = mapping.get(obj, Variable())
+            mapping[obj] = result
+        elif isinstance(obj, Expression):
+            result = Expression(*(_inner(c, mapping) for c in obj.children))
+        else:
+            result = obj
+        return result
+
+    return _inner(expression, {})
 
 
 def logic_objects(count_or_names: Union[int, str, Iterable[str]], *, clazz=LogicObject):
@@ -82,8 +96,5 @@ class LogicObjectSource:
             val = self.__objects[item]
 
         return val
-
-
-variable_source = VariableSource()
 
 logic_object_source = LogicObjectSource()

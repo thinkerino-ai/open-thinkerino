@@ -1,5 +1,5 @@
 from aitools.logic import Expression, Substitution
-from aitools.logic.utils import variable_source as v
+from aitools.logic.utils import VariableSource
 from aitools.proofs.language import Implies, Not
 from aitools.proofs.proof import Prover, Proof
 
@@ -26,6 +26,7 @@ class RestrictedModusPonens(Prover):
     Also, it can only prove formulas to be True"""
 
     def __call__(self, formula: Expression, _kb=None, _truth: bool = True, _previous_substitution: Substitution = None):
+        v = VariableSource()
         if _truth and not formula.children[0] == Implies:
             rule_pattern = Implies(v._premise, formula)
 
