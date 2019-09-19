@@ -1,9 +1,8 @@
 import unittest
 from typing import Optional
 
-from aitools.logic import Substitution, Variable
-from aitools.logic.core import LogicObject
-from aitools.logic.utils import logic_objects, expr, variables, subst, binding, wrap
+from aitools.logic import Substitution, Variable, LogicObject
+from aitools.logic.utils import constants, expr, variables, subst, binding, wrap
 
 
 class TestUnification(unittest.TestCase):
@@ -17,18 +16,18 @@ class TestUnification(unittest.TestCase):
                          f"Unification between {e1} and {e2} should give {expected_result}, got {result} instead")
 
     def testUnificationBetweenLogicObjectsFailure(self):
-        a, b = logic_objects(2)
+        a, b = constants('a, b')
 
         self.assertUnificationResult(a, b, None)
 
     def testUnificationBetweenLogicObjectsSuccess(self):
-        a, = logic_objects(1)
+        a, = constants('a')
 
         expected_result = subst()
         self.assertUnificationResult(a, a, expected_result)
 
     def testUnificationBetweenExpressionsSuccess(self):
-        a, b, c, d = logic_objects(4)
+        a, b, c, d = constants('a, b, c, d')
         e1 = expr(a, (b, c), d)
         e2 = expr(a, (b, c), d)
 
@@ -36,15 +35,15 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(e1, e2, expected_result)
 
     def testUnificationBetweenExpressionsFailure(self):
-        a, b, c, d = logic_objects(4)
+        a, b, c, d = constants('a, b, c, d')
         e1 = expr(a, (b, c), d)
         e2 = expr(a, (b, c), a)
 
         self.assertUnificationResult(e1, e2, None)
 
     def testUnificationWithVariablesSuccessSimple(self):
-        v1, = variables(1)
-        a, b, c, d = logic_objects(4)
+        v1, = variables('v1')
+        a, b, c, d = constants('a, b, c, d')
 
         expr_d = expr([d])
         e1 = expr(a, (b, c), expr_d)
@@ -54,8 +53,8 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(v1, e1, expected_result)
 
     def testUnificationWithVariablesSuccessComplex(self):
-        v1, v2 = variables(2)
-        a, b, c, d = logic_objects(4)
+        v1, v2 = variables('v1, v2')
+        a, b, c, d = constants('a, b, c, d')
 
         expr_d = expr([d])
         e1 = expr(a, (b, c), expr_d)
@@ -66,8 +65,8 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(e1, e2, expected_result)
 
     def testUnificationWithVariablesFailureConflict(self):
-        v1, = variables(1)
-        a, b, c, d = logic_objects(4)
+        v1, = variables('v1')
+        a, b, c, d = constants('a, b, c, d ')
 
         expr_d = expr([d])
         e1 = expr(a, (b, c), expr_d)
@@ -76,8 +75,8 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(e1, e3, None)
 
     def testUnificationWithVariablesSuccessEquality(self):
-        v1, v2 = variables(2)
-        a, c = logic_objects(2)
+        v1, v2 = variables('v1, v2')
+        a, c = constants('a, c')
 
         e2 = expr(a, (v1, c), v2)
         e3 = expr(a, (v1, c), v1)
@@ -87,8 +86,8 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(e2, e3, expected_result)
 
     def testUnificationWithVariablesFailureContained(self):
-        v1, v2 = variables(2)
-        a, c, d = logic_objects(3)
+        v1, v2 = variables('v1, v2')
+        a, c, d = constants('a, c, d')
 
         expr_d = expr([d])
         e2 = expr(a, (v1, c), v2)
@@ -97,8 +96,8 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(e2, e4, None)
 
     def testUnificationWithVariablesSuccessSameExpression(self):
-        v1, v2 = variables(2)
-        a, b, c, d = logic_objects(4)
+        v1, v2 = variables('v1, v2')
+        a, b, c, d = constants('a, b, c, d')
 
         bc_expr1 = expr(b, c)
         bc_expr2 = expr(b, c)
@@ -110,8 +109,8 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(e1, e2, expected_result)
 
     def testUnificationWithPreviousSimpleSucceeding(self):
-        x = Variable()
-        a, b, c, d = logic_objects(4)
+        x = Variable(name='x')
+        a, b, c, d = constants('a, b, c, d')
 
         bc_expr = expr(b, c)
         e1 = expr(a, bc_expr, d)
@@ -122,8 +121,8 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(e1, e2, previous, previous=previous)
 
     def testUnificationWithPreviousSimpleFailing(self):
-        x = Variable()
-        a, b, c, d = logic_objects(4)
+        x = Variable(name='x')
+        a, b, c, d = constants('a, b, c, d')
 
         bc_expr = expr(b, c)
         e1 = expr(a, bc_expr, d)
@@ -134,8 +133,8 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(e1, e2, None, previous=previous)
 
     def testUnificationWithPreviousSuccessBoundToSameExpression(self):
-        x, y, z = variables(3)
-        a, d = logic_objects(2)
+        x, y, z = variables('x, y, z')
+        a, d = constants('a, d')
 
         e2 = expr(a, x, z)
         e3 = expr(a, y, d)
@@ -147,8 +146,8 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(e2, e3, expected_result, previous=previous)
 
     def testUnificationWithPreviousSuccessBoundToUnifiableExpressions(self):
-        x, y, z = variables(3)
-        a, b, c, d = logic_objects(4)
+        x, y, z = variables('x, y, z')
+        a, b, c, d = constants('a, b, c, d')
 
         bc_expr = expr(b, c)
         bz_expr = expr(b, z)
@@ -162,8 +161,8 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(e2, e3, expected_result, previous=previous)
 
     def testUnificationWithPreviousFailureBoundToDifferentExpressions(self):
-        x, y = variables(2)
-        a, b, d = logic_objects(3)
+        x, y = variables('x, y')
+        a, b, d = constants('a, b, d')
 
         e2 = expr(a, x, d)
         e3 = expr(a, y, d)
@@ -173,8 +172,8 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(e2, e3, None, previous=previous)
 
     def testUnificationWithPrevious(self):
-        w, x, y, z = variables(4)
-        a, d = logic_objects(2)
+        w, x, y, z = variables('w, x, y, z')
+        a, d = constants('a, d')
 
         e2 = expr(a, x, d)
         e3 = expr(a, y, d)
@@ -186,7 +185,7 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(e2, e3, expected_result, previous=previous)
 
     def testUnificationWithRepeatedConstants(self):
-        v1 = Variable()
+        v1 = Variable(name='x')
 
         e1 = expr(2, v1)
         e2 = expr(2, "hi")
@@ -195,8 +194,8 @@ class TestUnification(unittest.TestCase):
         self.assertUnificationResult(e1, e2, expected_result)
 
     def testUnificationWeirdFailingCase(self):
-        v1, v2 = variables(2)
-        c, d = logic_objects(2)
+        v1, v2 = variables('v1, v2')
+        c, d = constants('c, d')
         e1 = expr("hello", ("yay", c), [d])
         e2 = expr("hello", (v1, c), v2)
 

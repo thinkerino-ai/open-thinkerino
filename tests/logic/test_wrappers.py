@@ -1,20 +1,19 @@
 import unittest
 
-from aitools.logic import LogicWrapper, Variable, Expression
-from aitools.logic.core import LogicObject
+from aitools.logic import LogicWrapper, Variable, Constant, Expression
 from aitools.logic.utils import expr, wrap
 
 
 class TestLogicWrappers(unittest.TestCase):
 
     def testStringConstantInDSL(self):
-        v1 = Variable()
-        a = LogicObject()
+        v1 = Variable(name='v1')
+        a = Constant(name='a')
 
         e = expr(v1, a, "hello")
 
         self.assertIsInstance(e.children[0], Variable, f"{e.children[0]} should be a Variable")
-        self.assertIsInstance(e.children[1], LogicObject, f"{e.children[1]} should be a LogicObject")
+        self.assertIsInstance(e.children[1], Constant, f"{e.children[1]} should be a Constant")
         self.assertIsInstance(e.children[2], LogicWrapper, f"{e.children[2]} should be a LogicWrapper")
 
     def testArrayConstantInDSL(self):

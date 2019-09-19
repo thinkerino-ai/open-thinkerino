@@ -3,6 +3,7 @@ from collections import deque
 from typing import Optional, Iterable, Set
 
 from aitools.logic import Expression, Substitution
+from aitools.logic.utils import renew_variables
 from aitools.proofs.context import contextual
 from aitools.proofs.listeners import Listener, _MultiListenerWrapper
 from aitools.proofs.proof import Prover, Proof, ProofSet
@@ -25,11 +26,11 @@ class DummyKnowledgeBase:
         # although it's quite a standard proving strategy, I really don't like having MP as a default...
         self.add_provers(RestrictedModusPonens())
 
-    def retrieve(self, formula: Optional[Expression] = None) -> Iterable[Substitution]:
+    def retrieve(self, formula: Optional[Expression] = None, *, previous_substitution: Substitution = None) -> Iterable[Substitution]:
         """Retrieves all formula from the KnowledgeBase which are unifiable with the given one.
         No proofs are searched, so either a formula is **IN** the KB, or nothing will be returned"""
         for expr in self._known_formulas:
-            subst = Substitution.unify(expr, formula) if formula is not None else Substitution()
+            subst = Substitution.unify(expr, formula, previous=previous_substitution) if formula is not None else Substitution()
 
             if subst is not None:
                 yield subst
@@ -39,7 +40,9 @@ class DummyKnowledgeBase:
         for f in formulas:
             if not isinstance(f, Expression):
                 raise TypeError("Only formulas can be added to a Knowledge Base!")
-            self._known_formulas.add(f)
+            # TODO this (renewing) must be done in any knowledge base!
+            renewed = renew_variables(f)
+            self._known_formulas.add(renewed)
 
         for f in formulas:
             self.__on_formula_proven(f)
@@ -65,11 +68,14 @@ class DummyKnowledgeBase:
                 for l in el.listeners:
                     destination.add(l)
 
-    def prove(self, formula: Expression, truth: bool = True) -> ProofSet:
-
+    def prove(self, formula: Expression, truth: bool = True, previous_substitution = None) -> ProofSet:
         """Backward search to prove a given formulas using all known provers"""
+
+        previous_substitution = previous_substitution or Substitution()
+
         proof_sources: typing.Deque[Iterable[Proof]] = deque(
-            prover(formula, _kb=self, _truth=truth) for prover in self._provers
+            prover(formula, _kb=self, _truth=truth, _previous_substitution=previous_substitution)
+            for prover in self._provers
         )
 
         _embedded_prover: Prover = getattr(formula, '_embedded_prover', None)

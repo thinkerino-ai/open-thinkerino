@@ -12,11 +12,14 @@ class EmbeddedProver(Prover):
         self.prover_function = prover_function
         self.proved_formula = proved_formula
 
-    def __call__(self, formula: Expression, _kb=None, _truth: bool = True) -> Iterable[Proof]:
-        if (self.proved_formula.children[0] == formula.children[0] and
-                len(self.proved_formula.children) == len(formula.children)):
-            unwrapped_children = (c if not isinstance(c, LogicWrapper) else c.value for c in formula.children[1:])
-            yield from self.normalize_results(formula=formula,
+    def __call__(self, formula: Expression, _kb=None, _truth: bool = True,
+                 _previous_substitution: Substitution = None) -> Iterable[Proof]:
+        _previous_substitution = _previous_substitution or Substitution()
+        substituted_formula = _previous_substitution.apply_to(formula)
+        if (self.proved_formula.children[0] == substituted_formula.children[0] and
+                len(self.proved_formula.children) == len(substituted_formula.children)):
+            unwrapped_children = (c if not isinstance(c, LogicWrapper) else c.value for c in substituted_formula.children[1:])
+            yield from self.normalize_results(formula=substituted_formula,
                                               requested_truth=_truth,
                                               raw_result=self.prover_function(*unwrapped_children))
 

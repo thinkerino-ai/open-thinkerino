@@ -1,13 +1,14 @@
 import unittest
 
-from aitools.logic.utils import variables, logic_objects, subst, expr
+from aitools.logic import Variable, Constant
+from aitools.logic.utils import variables, constants, subst, expr
 
 
 class TestSubstitution(unittest.TestCase):
 
     def testComplexSubstitution(self):
-        x, y, z = variables(3)
-        a, b, c, d = logic_objects(4)
+        x, y, z = variables('x, y, z')
+        a, b, c, d = constants('a, b, c, d')
 
         e = expr(x, a)
 
@@ -21,8 +22,8 @@ class TestSubstitution(unittest.TestCase):
         self.assertEqual(s.apply_to(e), expected_result)
 
     def testInfiniteSubstitution(self):
-        x, = variables(1)
-        a, = logic_objects(1)
+        x = Variable(name='x')
+        a = Constant(name='a')
 
         e = expr(x, a)
 
@@ -35,9 +36,9 @@ class TestSubstitution(unittest.TestCase):
             self.fail("Infinite substitution happened")
 
     def testGetBoundObject(self):
-        x, y = variables(2)
+        x, y = variables('x, y')
 
-        a, b, c, d = logic_objects(4)
+        a, b, c, d = constants('a, b, c, d')
 
         e = expr(a, (b, c), d)
 
@@ -56,8 +57,8 @@ class TestSubstitution(unittest.TestCase):
         self.assertTrue(s.get_bound_object_for(y) in [x, y])
 
     def test_tricky_substitution(self):
-        x, y, z = variables(3)
-        a, b, c = logic_objects(3)
+        x, y, z = variables('x, y, z')
+        a, b, c = constants('a, b, c ')
 
         s = subst((b, [y]), (a(y), [x]))
 

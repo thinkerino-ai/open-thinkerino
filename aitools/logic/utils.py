@@ -1,16 +1,40 @@
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Iterable, Union, Dict
 
 from aitools.logic.unification import Binding, Substitution
-from aitools.logic import Variable, Expression, LogicWrapper, LogicObject
+from aitools.logic import Variable, Constant, Expression, LogicWrapper, LogicObject
 
 
-def logic_objects(count: int, *, clazz=LogicObject):
-    return (clazz() for _ in range(count))
+def renew_variables(expression: Expression) -> Expression:
+    def _inner(obj, mapping):
+        if isinstance(obj, Variable):
+            result = mapping.get(obj, Variable(name=obj.name))
+            mapping[obj] = result
+        elif isinstance(obj, Expression):
+            result = Expression(*(_inner(c, mapping) for c in obj.children))
+        else:
+            result = obj
+        return result
+
+    return _inner(expression, {})
 
 
-def variables(count: int):
-    return (Variable() for _ in range(count))
+def constants(count_or_names: Union[int, str, Iterable[str]], *, clazz=Constant):
+    if isinstance(count_or_names, int):
+        return (clazz() for _ in range(count_or_names))
+    elif isinstance(count_or_names, str):
+        return (clazz(name=name.strip()) for name in count_or_names.split(','))
+    else:
+        return (clazz(name=name) for name in count_or_names)
+
+
+def variables(count_or_names: Union[int, str, Iterable[str]]):
+    if isinstance(count_or_names, int):
+        return (Variable() for _ in range(count_or_names))
+    elif isinstance(count_or_names, str):
+        return (Variable(name=name.strip()) for name in count_or_names.split(','))
+    else:
+        return (Variable(name=name) for name in count_or_names)
 
 
 def wrap(obj: Any):
@@ -61,19 +85,14 @@ class VariableSource:
         return val
 
 
-class LogicObjectSource:
-    def __init__(self, **initial_objects: LogicObject):
-        self.__objects = {**initial_objects}
+class ConstantSource:
+    def __init__(self, **initial_constants: Constant):
+        self.__constants = {**initial_constants}
 
     def __getattr__(self, item):
-        if item not in self.__objects:
-            self.__objects[item] = val = LogicObject()
+        if item not in self.__constants:
+            self.__constants[item] = val = Constant(name=item)
         else:
-            val = self.__objects[item]
+            val = self.__constants[item]
 
         return val
-
-
-variable_source = VariableSource()
-
-logic_object_source = LogicObjectSource()

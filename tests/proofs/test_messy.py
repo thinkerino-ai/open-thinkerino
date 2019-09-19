@@ -1,7 +1,7 @@
 import pytest
 
-from aitools.logic import Variable, Substitution, LogicObject, Expression
-from aitools.logic.utils import subst, logic_objects, variable_source as v, wrap
+from aitools.logic import Variable, Constant, Substitution, Expression
+from aitools.logic.utils import subst, constants, wrap, VariableSource
 from aitools.proofs.knowledge_bases.dummy import DummyKnowledgeBase
 from aitools.proofs.language import Implies, MagicPredicate, Not
 from aitools.proofs.listeners import listener, Listener
@@ -13,7 +13,7 @@ from aitools.proofs.utils import predicate_function
 def test_retrieve_known_formula():
     kb = DummyKnowledgeBase()
 
-    IsA, dylan, cat = logic_objects(3, clazz=LogicObject)
+    IsA, dylan, cat = constants('IsA, dylan, cat')
 
     kb.add_formulas(IsA(dylan, cat))
 
@@ -25,9 +25,10 @@ def test_retrieve_known_formula():
 
 
 def test_retrieve_known_open_formula():
+    v = VariableSource()
     kb = DummyKnowledgeBase()
 
-    IsA, dylan, cat, hugo = logic_objects(4, clazz=LogicObject)
+    IsA, dylan, cat, hugo = constants('IsA, dylan, cat, hugo')
 
     kb.add_formulas(
         IsA(dylan, cat),
@@ -44,12 +45,31 @@ def test_retrieve_known_open_formula():
 
 
 def test_open_formulas_added_only_once():
+    v = VariableSource()
     kb = DummyKnowledgeBase()
-    Foo, a, b = logic_objects(3)
+    Foo, a, b = constants('Foo, a, b')
 
     kb.add_formulas(Foo(a, b), Foo(v.x, v.y), Foo(v.x, v.x), Foo(v.w, v.z))
 
-    assert(len(kb._known_formulas) == 3)
+    assert len(kb._known_formulas) == 3
+
+
+def test_formulas_must_be_normalized():
+    v = VariableSource()
+    kb = DummyKnowledgeBase()
+    Foo, Bar, Baz, a, b = constants('Foo, Bar, Baz, a, b')
+
+    kb.add_formulas(
+        Foo(a, b),
+        Foo(v.x, v.y) <<Implies>> Bar(v.x),
+        Bar(v.y) <<Implies>> Baz(v.y)
+    )
+
+    #ERROR continuare da qui, non funziona perché la retrieve deve sempre normalizzare le variabili prima
+    #NOTA CHE HO AGGIUNTO GIA' LA RENEW ALLA add_formulas
+    proofs = list(kb.prove(Baz(a)))
+    assert any(proofs)
+    print(repr(proofs))
 
 
 def _is_known_formula_proof_of(proof: Proof, formula: Expression) -> bool:
@@ -62,7 +82,7 @@ def test_proof_known_formula():
 
     kb = DummyKnowledgeBase()
 
-    IsA, dylan, cat = logic_objects(3, clazz=LogicObject)
+    IsA, dylan, cat = constants('IsA, dylan, cat')
 
     kb.add_formulas(IsA(dylan, cat))
 
@@ -75,9 +95,10 @@ def test_proof_known_formula():
 
 
 def test_proof_known_open_formula():
+    v = VariableSource()
     kb = DummyKnowledgeBase()
 
-    IsA, dylan, hugo, cat = logic_objects(4, clazz=LogicObject)
+    IsA, dylan, hugo, cat = constants('IsA, dylan, hugo, cat')
 
     kb.add_formulas(
         IsA(dylan, cat),
@@ -94,14 +115,16 @@ def test_proof_known_open_formula():
 
 
 def test_implication_shortcut():
-    IsA, cat, animal = logic_objects(3, clazz=LogicObject)
+    v = VariableSource()
+    IsA, cat, animal = constants('IsA, cat, animal')
     assert (IsA(v._x, cat) <<Implies>> IsA(v._x, animal)) == (Implies(IsA(v._x, cat), IsA(v._x, animal)))
 
 
 def test_simple_deduction():
+    v = VariableSource()
     kb = DummyKnowledgeBase()
 
-    IsA, cat, animal, dylan = logic_objects(4, clazz=LogicObject)
+    IsA, cat, animal, dylan = constants('IsA, cat, animal, dylan')
 
     kb.add_formulas(
         IsA(v._x, cat) <<Implies>> IsA(v._x, animal)
@@ -115,9 +138,10 @@ def test_simple_deduction():
 
 
 def test_deduction_chain():
+    v = VariableSource()
     kb = DummyKnowledgeBase()
 
-    IsA, cat, mammal, animal, dylan = logic_objects(5)
+    IsA, cat, mammal, animal, dylan = constants('IsA, cat, mammal, animal, dylan')
 
     kb.add_formulas(
         IsA(v._x, cat) <<Implies>> IsA(v._x, mammal),
@@ -183,6 +207,7 @@ def test_custom_prover_chain():
 
 
 def test_custom_prover_in_open_formula():
+    v = VariableSource()
     kb = DummyKnowledgeBase()
 
     IsNice = MagicPredicate()
@@ -197,7 +222,7 @@ def test_custom_prover_in_open_formula():
 
 
 def test_custom_prover_with_explicit_formula():
-
+    v = VariableSource()
     kb = DummyKnowledgeBase()
 
     IsPayload = MagicPredicate()
@@ -235,6 +260,7 @@ def test_custom_prover_incomplete():
 
 
 def test_multiple_custom_provers_for_the_same_formula():
+    v = VariableSource()
     IsPrime = MagicPredicate()
 
     @predicate_function(proves=IsPrime(v._n))
@@ -270,6 +296,7 @@ def test_multiple_custom_provers_for_the_same_formula():
 
 
 def test_prover_returning_substitutions():
+    v = VariableSource()
     @predicate_function
     def Likes(_x: str, _y: str):
         """We prove that lisa likes nelson and milhouse likes lisa.
@@ -318,6 +345,7 @@ def test_prover_returning_substitutions():
 
 
 def test_prover_returning_substitution_false():
+    v = VariableSource()
     @predicate_function
     def Likes(_x, _y):
         if _x == "lisa" and isinstance(_y, Variable):
@@ -335,6 +363,7 @@ def test_prover_returning_substitution_false():
 
 
 def test_prover_returning_multiple_results():
+    v = VariableSource()
     @predicate_function
     def In(_x, _collection):
 
@@ -359,7 +388,8 @@ def test_prover_returning_multiple_results():
 
 @pytest.mark.xfail(reason="I'm not even sure if it should be done :P")
 def test_listener_simple_retroactive():
-    Is, Meows, cat, dylan = LogicObject(4)
+    v = VariableSource()
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
     triggered = False
 
     @listener(Is(v._x, cat))
@@ -382,8 +412,9 @@ def test_listener_simple_retroactive():
 
 
 def test_listener_simple_non_retroactive():
+    v = VariableSource()
     triggered = False
-    Is, Meows, cat, dylan = logic_objects(4)
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
 
     @listener(Is(v._x, cat))
     def deduce_meow(_x):
@@ -409,7 +440,8 @@ def test_listener_simple_non_retroactive():
 
 
 def test_listener_multiple_formulas_returned():
-    Is, Meows, Purrs, cat, dylan = logic_objects(5)
+    v = VariableSource()
+    Is, Meows, Purrs, cat, dylan = constants('Is, Meows, Purrs, cat, dylan')
 
     @listener(Is(v._x, cat))
     def deduce_meow_and_purr(_x):
@@ -425,7 +457,8 @@ def test_listener_multiple_formulas_returned():
 
 
 def test_listener_complex_conjunction():
-    IsParent, IsBrother, IsUncle, alice, bob, carl = logic_objects(6)
+    v = VariableSource()
+    IsParent, IsBrother, IsUncle, alice, bob, carl = constants('IsParent, IsBrother, IsUncle, alice, bob, carl')
 
     @listener(IsParent(v._a, v._b), IsBrother(v._c, v._a))
     def deduce_uncle(_b, _c):
@@ -446,7 +479,8 @@ def test_listener_complex_conjunction():
 
 
 def test_listener_complex_disjunction():
-    IsDog, IsBarkingHuman, Barks, luce, bard = logic_objects(5)
+    v = VariableSource()
+    IsDog, IsBarkingHuman, Barks, luce, bard = constants('IsDog, IsBarkingHuman, Barks, luce, bard')
 
     @listener(IsDog(v._x))
     @listener(IsBarkingHuman(v._x))
@@ -467,7 +501,8 @@ def test_listener_complex_disjunction():
 
 
 def test_listener_manual_generation():
-    IsParent, IsBrother, IsUncle, alice, bob, carl = logic_objects(6)
+    v = VariableSource()
+    IsParent, IsBrother, IsUncle, alice, bob, carl = constants('IsParent, IsBrother, IsUncle, alice, bob, carl')
 
     @listener(v._formula)
     def deduce_uncle_but_in_a_weird_way(_formula):
@@ -503,7 +538,8 @@ def test_listener_manual_generation():
 
 
 def test_listener_chain():
-    A, B, C, D, foo = logic_objects(5)
+    v = VariableSource()
+    A, B, C, D, foo = constants('A, B, C, D, foo')
 
     @listener(A(v._x))
     def deduce_from_a_b(_x):
@@ -533,7 +569,7 @@ def test_listener_chain():
 def test_listener_priority():
     res = []
 
-    Go = LogicObject()
+    Go = Constant(name='Go')
 
     @listener(Go(), priority=1)
     def listener_1():
@@ -563,7 +599,7 @@ def test_listener_consume():
     def consume():
         pass
 
-    Go = LogicObject()
+    Go = Constant(name='Go')
 
     consumer_triggered = False
     other_triggered = False

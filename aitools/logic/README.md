@@ -9,11 +9,11 @@ from aitools.logic.utils import variables, logicObjects, expr
 from aitools.logic import Substitution
 
 # you can create a variable with v = Variable(), or use the utility 'variables()' that returns a generator
-v1, v2 = variables(2)
-# create "anonymous logic objects", equivalent to calling LogicObject() 3 times
-b, c, d = logicObjects(3)
-e1 = ("hello", ("yay", c), [d]) >> expr # alternative syntax: ("hello", (b, c), (d,)) >> expr
-e2 = ("hello", (v1, c), v2) >> expr
+v1, v2 = variables('v1, v2')
+# create "constants", equivalent to calling Constant() 3 times
+b, c, d = constants('b, c, d')
+e1 = expr("hello", ("yay", c), [d]) # alternative syntax: expr("hello", (b, c), (d,))
+e2 = expr("hello", (v1, c), v2)
 # unification
 unifier = Substitution.unify(e1,e2)
 ```
