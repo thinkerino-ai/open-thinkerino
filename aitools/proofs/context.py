@@ -3,7 +3,7 @@ from functools import wraps
 from inspect import isgeneratorfunction
 
 from aitools.logic import Expression
-from aitools.logic.utils import LogicObjectSource, VariableSource
+from aitools.logic.utils import ConstantSource, VariableSource
 from aitools.proofs.proof import ProofSet
 
 
@@ -33,7 +33,7 @@ class Context():
 
 context = Context()
 context.kb = None
-context.predicate_source = LogicObjectSource()
+context.predicate_source = ConstantSource()
 context.variable_source = VariableSource()
 
 

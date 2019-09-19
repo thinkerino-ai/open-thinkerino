@@ -7,7 +7,8 @@ from aitools.logic import Substitution, Expression
 
 
 class Prover:
-    def __call__(self, formula: Expression, _kb=None, _truth: bool = True) -> Iterable[Proof]:
+    def __call__(self, formula: Expression, _kb=None, _truth: bool = True,
+                 _previous_substitution: Substitution = None) -> Iterable[Proof]:
         raise NotImplementedError
 
 
