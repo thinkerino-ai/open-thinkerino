@@ -37,12 +37,12 @@ class DummyKnowledgeBase:
 
     def add_formulas(self, *formulas: Expression):
         """Adds all of the given formulas to the currently known formulas."""
+        formulas = tuple(renew_variables(f) for f in formulas)
         for f in formulas:
             if not isinstance(f, Expression):
                 raise TypeError("Only formulas can be added to a Knowledge Base!")
             # TODO this (renewing) must be done in any knowledge base!
-            renewed = renew_variables(f)
-            self._known_formulas.add(renewed)
+            self._known_formulas.add(f)
 
         for f in formulas:
             self.__on_formula_proven(f)

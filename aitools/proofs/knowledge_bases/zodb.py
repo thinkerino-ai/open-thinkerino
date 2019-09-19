@@ -4,6 +4,7 @@ from typing import Set, Collection, Optional, Iterable, Union, Deque
 import ZODB
 
 from aitools.logic import Expression, Substitution
+from aitools.logic.utils import renew_variables
 from aitools.proofs.context import contextual
 from aitools.proofs.listeners import Listener, _MultiListenerWrapper
 from aitools.proofs.proof import Prover, ProofSet, Proof
@@ -49,7 +50,7 @@ class ZodbPersistentKnowledgeBase:
     def add_formulas(self, *formulas: Expression):
         """Adds all of the given formulas to the currently known formulas."""
         with self.db.transaction() as conn:
-
+            formulas = tuple(renew_variables(f) for f in formulas)
             for f in formulas:
                 if not isinstance(f, Expression):
                     raise TypeError("Only formulas can be added to a Knowledge Base!")
