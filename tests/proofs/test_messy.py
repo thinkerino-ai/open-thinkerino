@@ -1,6 +1,6 @@
 import pytest
 
-from tests.proofs.fixtures import test_kb_class
+from tests.proofs.fixtures import TestKnowledgeBase
 from aitools.logic import Variable, Constant, Substitution, Expression
 from aitools.logic.utils import subst, constants, wrap, VariableSource
 from aitools.proofs.language import Implies, MagicPredicate, Not
@@ -10,8 +10,8 @@ from aitools.proofs.provers import KnowledgeRetriever, NegationProver
 from aitools.proofs.utils import predicate_function
 
 
-def test_retrieve_known_formula(test_kb_class):
-    kb = test_kb_class()
+def test_retrieve_known_formula(TestKnowledgeBase):
+    kb = TestKnowledgeBase()
 
     IsA, dylan, cat = constants('IsA, dylan, cat')
 
@@ -24,9 +24,9 @@ def test_retrieve_known_formula(test_kb_class):
     assert all(isinstance(s, Substitution) for s in substitutions)
 
 
-def test_retrieve_known_open_formula(test_kb_class):
+def test_retrieve_known_open_formula(TestKnowledgeBase):
     v = VariableSource()
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     IsA, dylan, cat, hugo = constants('IsA, dylan, cat, hugo')
 
@@ -44,19 +44,19 @@ def test_retrieve_known_open_formula(test_kb_class):
     assert any(substitution.get_bound_object_for(v._x) == hugo for substitution in substitutions)
 
 
-def test_open_formulas_added_only_once(test_kb_class):
+def test_open_formulas_added_only_once(TestKnowledgeBase):
     v = VariableSource()
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
     Foo, a, b = constants('Foo, a, b')
 
     kb.add_formulas(Foo(a, b), Foo(v.x, v.y), Foo(v.x, v.x), Foo(v.w, v.z))
 
-    assert len(kb._known_formulas) == 3
+    assert len(kb) == 3
 
 
-def test_formulas_must_be_normalized(test_kb_class):
+def test_formulas_must_be_normalized(TestKnowledgeBase):
     v = VariableSource()
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
     Foo, Bar, Baz, a, b = constants('Foo, Bar, Baz, a, b')
 
     kb.add_formulas(
@@ -69,9 +69,9 @@ def test_formulas_must_be_normalized(test_kb_class):
     assert any(proofs)
 
 
-def test_open_formulas_can_be_used_more_than_once(test_kb_class):
+def test_open_formulas_can_be_used_more_than_once(TestKnowledgeBase):
     v = VariableSource()
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     IsNatural, successor = constants('IsNatural, successor')
 
@@ -93,9 +93,9 @@ def _is_known_formula_proof_of(proof: Proof, formula: Expression) -> bool:
             proof.substitution.apply_to(formula) == proof.substitution.apply_to(proof.conclusion))
 
 
-def test_proof_known_formula(test_kb_class):
+def test_proof_known_formula(TestKnowledgeBase):
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     IsA, dylan, cat = constants('IsA, dylan, cat')
 
@@ -109,9 +109,9 @@ def test_proof_known_formula(test_kb_class):
     assert any(proofs)
 
 
-def test_proof_known_open_formula(test_kb_class):
+def test_proof_known_open_formula(TestKnowledgeBase):
     v = VariableSource()
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     IsA, dylan, hugo, cat = constants('IsA, dylan, hugo, cat')
 
@@ -135,9 +135,9 @@ def test_implication_shortcut():
     assert (IsA(v._x, cat) <<Implies>> IsA(v._x, animal)) == (Implies(IsA(v._x, cat), IsA(v._x, animal)))
 
 
-def test_simple_deduction(test_kb_class):
+def test_simple_deduction(TestKnowledgeBase):
     v = VariableSource()
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     IsA, cat, animal, dylan = constants('IsA, cat, animal, dylan')
 
@@ -152,9 +152,9 @@ def test_simple_deduction(test_kb_class):
     assert all(isinstance(p, Proof) for p in proofs)
 
 
-def test_deduction_chain(test_kb_class):
+def test_deduction_chain(TestKnowledgeBase):
     v = VariableSource()
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     IsA, cat, mammal, animal, dylan = constants('IsA, cat, mammal, animal, dylan')
 
@@ -178,8 +178,8 @@ def IsEven(n: int):
         return False
 
 
-def test_simple_custom_prover_passing_python_value(test_kb_class):
-    kb = test_kb_class()
+def test_simple_custom_prover_passing_python_value(TestKnowledgeBase):
+    kb = TestKnowledgeBase()
 
     assert any(kb.prove(IsEven(2)))
 
@@ -187,8 +187,8 @@ def test_simple_custom_prover_passing_python_value(test_kb_class):
     assert not any(kb.prove(IsEven(3)))
 
 
-def test_simple_custom_prover_to_be_false(test_kb_class):
-    kb = test_kb_class()
+def test_simple_custom_prover_to_be_false(TestKnowledgeBase):
+    kb = TestKnowledgeBase()
 
     # now *this* means that we can prove it is false :P
     assert any(kb.prove(IsEven(3), truth=False))
@@ -204,15 +204,15 @@ def IsMultipleOf4(n: int):
 
 
 @pytest.mark.xfail(reason="This needs to be implemented, but it's too complex for my little sleepy brain right now :P")
-def test_custom_prover_chain_adds_premises(test_kb_class):
-    kb = test_kb_class()
+def test_custom_prover_chain_adds_premises(TestKnowledgeBase):
+    kb = TestKnowledgeBase()
 
     proofs = list(kb.prove(IsMultipleOf4(20)))
     assert len(proofs[0].premises) > 0
 
 
-def test_custom_prover_chain(test_kb_class):
-    kb = test_kb_class()
+def test_custom_prover_chain(TestKnowledgeBase):
+    kb = TestKnowledgeBase()
 
     proofs = list(kb.prove(IsMultipleOf4(20)))
     assert any(proofs)
@@ -221,9 +221,9 @@ def test_custom_prover_chain(test_kb_class):
     assert not any(kb.prove(IsMultipleOf4(14)))
 
 
-def test_custom_prover_in_open_formula(test_kb_class):
+def test_custom_prover_in_open_formula(TestKnowledgeBase):
     v = VariableSource()
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     IsNice = MagicPredicate()
 
@@ -236,9 +236,9 @@ def test_custom_prover_in_open_formula(test_kb_class):
     assert any(kb.prove(IsNice(32)))
 
 
-def test_custom_prover_with_explicit_formula(test_kb_class):
+def test_custom_prover_with_explicit_formula(TestKnowledgeBase):
     v = VariableSource()
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     IsPayload = MagicPredicate()
 
@@ -253,7 +253,7 @@ def test_custom_prover_with_explicit_formula(test_kb_class):
     ))
 
 
-def test_custom_prover_incomplete(test_kb_class):
+def test_custom_prover_incomplete(TestKnowledgeBase):
     # this prover can only prove its formula in some cases
     @predicate_function
     def IsPrime(n: int):
@@ -264,7 +264,7 @@ def test_custom_prover_incomplete(test_kb_class):
         # None means "Who knows?"
         return None
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     kb.add_provers(NegationProver())
 
@@ -274,7 +274,7 @@ def test_custom_prover_incomplete(test_kb_class):
     assert not any(kb.prove(Not(IsPrime(10))))
 
 
-def test_multiple_custom_provers_for_the_same_formula(test_kb_class):
+def test_multiple_custom_provers_for_the_same_formula(TestKnowledgeBase):
     v = VariableSource()
     IsPrime = MagicPredicate()
 
@@ -294,7 +294,7 @@ def test_multiple_custom_provers_for_the_same_formula(test_kb_class):
             return False
         return None
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     kb.add_provers(prime_prover_012345, prime_prover_456789, NegationProver())
 
@@ -310,7 +310,7 @@ def test_multiple_custom_provers_for_the_same_formula(test_kb_class):
     assert not any(kb.prove(Not(IsPrime(11))))
 
 
-def test_prover_returning_substitutions(test_kb_class):
+def test_prover_returning_substitutions(TestKnowledgeBase):
     v = VariableSource()
     @predicate_function
     def Likes(_x: str, _y: str):
@@ -343,7 +343,7 @@ def test_prover_returning_substitutions(test_kb_class):
         else:
             return True, subst((wrap(map[val]), [var]))
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     assert (kb.prove(Likes("lisa", "nelson")))
 
@@ -359,7 +359,7 @@ def test_prover_returning_substitutions(test_kb_class):
     assert (not any(kb.prove(Likes(v._y, "milhouse"))))
 
 
-def test_prover_returning_substitution_false(test_kb_class):
+def test_prover_returning_substitution_false(TestKnowledgeBase):
     v = VariableSource()
     @predicate_function
     def Likes(_x, _y):
@@ -368,7 +368,7 @@ def test_prover_returning_substitution_false(test_kb_class):
 
         return None
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     kb.add_provers(NegationProver())
 
@@ -377,7 +377,7 @@ def test_prover_returning_substitution_false(test_kb_class):
     assert any(kb.prove(Not(Likes("lisa", v._y))))
 
 
-def test_prover_returning_multiple_results(test_kb_class):
+def test_prover_returning_multiple_results(TestKnowledgeBase):
     v = VariableSource()
     @predicate_function
     def In(_x, _collection):
@@ -388,7 +388,7 @@ def test_prover_returning_multiple_results(test_kb_class):
         else:
             yield _x in _collection
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     kb.add_provers(NegationProver())
 
@@ -402,7 +402,7 @@ def test_prover_returning_multiple_results(test_kb_class):
 
 
 @pytest.mark.xfail(reason="I'm not even sure if it should be done :P")
-def test_listener_simple_retroactive(test_kb_class):
+def test_listener_simple_retroactive(TestKnowledgeBase):
     v = VariableSource()
     Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
     triggered = False
@@ -413,7 +413,7 @@ def test_listener_simple_retroactive(test_kb_class):
         triggered = True
         return Meows(_x)
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     kb.add_formulas(Is(dylan, cat))
 
@@ -426,7 +426,7 @@ def test_listener_simple_retroactive(test_kb_class):
     assert any(kb.prove(Meows(dylan)))
 
 
-def test_listener_simple_non_retroactive(test_kb_class):
+def test_listener_simple_non_retroactive(TestKnowledgeBase):
     v = VariableSource()
     triggered = False
     Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
@@ -437,7 +437,7 @@ def test_listener_simple_non_retroactive(test_kb_class):
         triggered = True
         return Meows(_x)
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     kb.add_formulas(Is(dylan, cat))
 
@@ -454,7 +454,7 @@ def test_listener_simple_non_retroactive(test_kb_class):
     assert any(kb.prove(Meows(dylan)))
 
 
-def test_listener_multiple_formulas_returned(test_kb_class):
+def test_listener_multiple_formulas_returned(TestKnowledgeBase):
     v = VariableSource()
     Is, Meows, Purrs, cat, dylan = constants('Is, Meows, Purrs, cat, dylan')
 
@@ -462,7 +462,7 @@ def test_listener_multiple_formulas_returned(test_kb_class):
     def deduce_meow_and_purr(_x):
         return Meows(_x), Purrs(_x)
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     kb.add_listeners(deduce_meow_and_purr)
     kb.add_formulas(Is(dylan, cat))
@@ -471,7 +471,7 @@ def test_listener_multiple_formulas_returned(test_kb_class):
     assert any(kb.prove(Purrs(dylan)))
 
 
-def test_listener_complex_conjunction(test_kb_class):
+def test_listener_complex_conjunction(TestKnowledgeBase):
     v = VariableSource()
     IsParent, IsBrother, IsUncle, alice, bob, carl = constants('IsParent, IsBrother, IsUncle, alice, bob, carl')
 
@@ -480,7 +480,7 @@ def test_listener_complex_conjunction(test_kb_class):
         # note that since we don't care for _a we don't ask for it!
         return IsUncle(_c, _b)
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     kb.add_listeners(deduce_uncle)
 
@@ -493,7 +493,7 @@ def test_listener_complex_conjunction(test_kb_class):
     assert any(kb.prove(IsUncle(carl, bob)))
 
 
-def test_listener_complex_disjunction(test_kb_class):
+def test_listener_complex_disjunction(TestKnowledgeBase):
     v = VariableSource()
     IsDog, IsBarkingHuman, Barks, luce, bard = constants('IsDog, IsBarkingHuman, Barks, luce, bard')
 
@@ -504,7 +504,7 @@ def test_listener_complex_disjunction(test_kb_class):
         # UPDATE: I'm on a plane now, not drunk, still stupid, still going with it :P
         return Barks(_x)
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     kb.add_listeners(deduce_barks)
 
@@ -515,7 +515,7 @@ def test_listener_complex_disjunction(test_kb_class):
     assert any(kb.prove(Barks(bard)))
 
 
-def test_listener_manual_generation(test_kb_class):
+def test_listener_manual_generation(TestKnowledgeBase):
     v = VariableSource()
     IsParent, IsBrother, IsUncle, alice, bob, carl = constants('IsParent, IsBrother, IsUncle, alice, bob, carl')
 
@@ -534,7 +534,7 @@ def test_listener_manual_generation(test_kb_class):
             a = subst.get_bound_object_for(v._a)
             return Listener(lambda _b, _c: IsUncle(c, _b), IsParent(a, v._b), previous_substitution=subst)
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     kb.add_listeners(deduce_uncle_but_in_a_weird_way)
     kb.add_formulas(IsParent(alice, bob))
@@ -543,7 +543,7 @@ def test_listener_manual_generation(test_kb_class):
 
     assert any(kb.prove(IsUncle(carl, bob)))
 
-    kb = DummyKnowledgeBase()
+    kb = TestKnowledgeBase()
 
     kb.add_listeners(deduce_uncle_but_in_a_weird_way)
     kb.add_formulas(IsBrother(carl, alice))
@@ -552,7 +552,7 @@ def test_listener_manual_generation(test_kb_class):
     assert any(kb.prove(IsUncle(carl, bob)))
 
 
-def test_listener_chain(test_kb_class):
+def test_listener_chain(TestKnowledgeBase):
     v = VariableSource()
     A, B, C, D, foo = constants('A, B, C, D, foo')
 
@@ -568,7 +568,7 @@ def test_listener_chain(test_kb_class):
     def deduce_from_c_d(_x):
         return D(_x)
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
 
     kb.add_listeners(deduce_from_b_c)
     kb.add_listeners(deduce_from_a_b)
@@ -581,7 +581,7 @@ def test_listener_chain(test_kb_class):
     assert any(kb.prove(D(foo)))
 
 
-def test_listener_priority(test_kb_class):
+def test_listener_priority(TestKnowledgeBase):
     res = []
 
     Go = Constant(name='Go')
@@ -599,7 +599,7 @@ def test_listener_priority(test_kb_class):
     def listener_2():
         res.append(2)
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
     kb.add_listeners(listener_1, listener_0, listener_2)
 
     assert res == []
@@ -610,7 +610,7 @@ def test_listener_priority(test_kb_class):
 
 
 @pytest.mark.xfail(reason="I'm too lazy to implement such a marginal thing")
-def test_listener_consume(test_kb_class):
+def test_listener_consume(TestKnowledgeBase):
     def consume():
         pass
 
@@ -631,7 +631,7 @@ def test_listener_consume(test_kb_class):
         other_triggered = True
         consume()
 
-    kb = test_kb_class()
+    kb = TestKnowledgeBase()
     kb.add_listeners(consumer, other)
     assert not consumer_triggered and not other_triggered
 

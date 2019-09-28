@@ -127,3 +127,6 @@ class DummyKnowledgeBase:
         # TODO use an ordered data structure! this is like the inefficientest of inefficiencies
         for listener in sorted(source, key=lambda l: l.priority, reverse=True):
             yield listener
+
+    def __len__(self):
+        return len(self._known_formulas)

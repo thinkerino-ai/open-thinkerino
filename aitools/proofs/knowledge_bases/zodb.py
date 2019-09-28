@@ -1,3 +1,4 @@
+import typing
 from collections import deque
 from typing import Set, Collection, Optional, Iterable, Union, Deque
 
@@ -38,13 +39,13 @@ class ZodbPersistentKnowledgeBase:
         # although it's quite a standard proving strategy, I really don't like having MP as a default...
         self.add_provers(RestrictedModusPonens())
 
-    def retrieve(self, formula: Optional[Expression] = None) -> Iterable[Substitution]:
+    def retrieve(self, formula: Optional[Expression] = None, *, previous_substitution: Substitution = None) -> Iterable[Substitution]:
         """Retrieves all formula from the KnowledgeBase which are unifiable with the given one.
         No proofs are searched, so either a formula is **IN** the KB, or nothing will be returned"""
         # TODO index! indeeeeeex! INDEEEEEEX! I N D E E E E E E E X ! ! ! ! !
         with self.db.transaction() as conn:
             for expr in conn.root.known_formulas:
-                subst = Substitution.unify(normalize_variables(expr), formula) if formula is not None else Substitution()
+                subst = Substitution.unify(normalize_variables(expr), formula, previous=previous_substitution) if formula is not None else Substitution()
 
                 if subst is not None:
                     yield subst
@@ -69,7 +70,7 @@ class ZodbPersistentKnowledgeBase:
             else:
                 self._provers.add(EmbeddedProver(p.wrapped_function, p.formula))
 
-    def add_listeners(self, *listeners: Union[Listener, _MultiListenerWrapper],
+    def add_listeners(self, *listeners: typing.Union[Listener, _MultiListenerWrapper],
                       retroactive: bool = False, temporary=False):
         if retroactive:
             raise NotImplementedError("Not implemented yet!")
@@ -83,11 +84,14 @@ class ZodbPersistentKnowledgeBase:
                 for l in el.listeners:
                     destination.add(l)
 
-    def prove(self, formula: Expression, truth: bool = True) -> ProofSet:
-
+    def prove(self, formula: Expression, truth: bool = True, previous_substitution = None) -> ProofSet:
         """Backward search to prove a given formulas using all known provers"""
-        proof_sources: Deque[Iterable[Proof]] = deque(
-            prover(formula, _kb=self, _truth=truth) for prover in self._provers
+
+        previous_substitution = previous_substitution or Substitution()
+
+        proof_sources: typing.Deque[Iterable[Proof]] = deque(
+            prover(formula, _kb=self, _truth=truth, _previous_substitution=previous_substitution)
+            for prover in self._provers
         )
 
         _embedded_prover: Prover = getattr(formula, '_embedded_prover', None)
@@ -139,3 +143,7 @@ class ZodbPersistentKnowledgeBase:
         # TODO use an ordered data structure! this is like the inefficientest of inefficiencies
         for listener in sorted(source, key=lambda l: l.priority, reverse=True):
             yield listener
+
+    def __len__(self):
+        with self.db.transaction() as conn:
+            return len(conn.root.known_formulas)
