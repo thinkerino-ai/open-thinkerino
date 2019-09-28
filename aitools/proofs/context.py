@@ -27,14 +27,10 @@ class Context():
         self._local = threading.local()
 
     kb = make_property('kb')
-    predicate_source = make_property('predicate_source')
-    variable_source = make_property('variable_source')
 
 
 context = Context()
 context.kb = None
-context.predicate_source = ConstantSource()
-context.variable_source = VariableSource()
 
 
 def prove(formula: Expression, truth: bool = True) -> ProofSet:
