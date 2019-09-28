@@ -4,7 +4,7 @@ from typing import Set, Collection, Optional, Iterable, Union, Deque
 import ZODB
 
 from aitools.logic import Expression, Substitution
-from aitools.logic.utils import renew_variables
+from aitools.logic.utils import normalize_variables, VariableSource
 from aitools.proofs.context import contextual
 from aitools.proofs.listeners import Listener, _MultiListenerWrapper
 from aitools.proofs.proof import Prover, ProofSet, Proof
@@ -26,6 +26,8 @@ class ZodbPersistentKnowledgeBase:
 
         self._initialize_default_provers()
 
+        self.__variable_source = VariableSource()
+
     def _initialize_db(self):
         with self.db.transaction("initializing db if necessary") as conn:
             if 'known_formulas' not in conn.root():
@@ -42,7 +44,7 @@ class ZodbPersistentKnowledgeBase:
         # TODO index! indeeeeeex! INDEEEEEEX! I N D E E E E E E E X ! ! ! ! !
         with self.db.transaction() as conn:
             for expr in conn.root.known_formulas:
-                subst = Substitution.unify(expr, formula) if formula is not None else Substitution()
+                subst = Substitution.unify(normalize_variables(expr), formula) if formula is not None else Substitution()
 
                 if subst is not None:
                     yield subst
@@ -50,7 +52,7 @@ class ZodbPersistentKnowledgeBase:
     def add_formulas(self, *formulas: Expression):
         """Adds all of the given formulas to the currently known formulas."""
         with self.db.transaction() as conn:
-            formulas = tuple(renew_variables(f) for f in formulas)
+            formulas = tuple(normalize_variables(f, variable_source=self.__variable_source) for f in formulas)
             for f in formulas:
                 if not isinstance(f, Expression):
                     raise TypeError("Only formulas can be added to a Knowledge Base!")

@@ -3,7 +3,7 @@ from collections import deque
 from typing import Optional, Iterable, Set
 
 from aitools.logic import Expression, Substitution
-from aitools.logic.utils import renew_variables
+from aitools.logic.utils import normalize_variables, VariableSource
 from aitools.proofs.context import contextual
 from aitools.proofs.listeners import Listener, _MultiListenerWrapper
 from aitools.proofs.proof import Prover, Proof, ProofSet
@@ -20,6 +20,7 @@ class DummyKnowledgeBase:
         self._temporary_listeners: typing.Collection[Listener] = set()
 
         self._initialize_default_provers()
+        self.__variable_source = VariableSource()
 
     def _initialize_default_provers(self):
         self.add_provers(KnowledgeRetriever())
@@ -30,18 +31,17 @@ class DummyKnowledgeBase:
         """Retrieves all formula from the KnowledgeBase which are unifiable with the given one.
         No proofs are searched, so either a formula is **IN** the KB, or nothing will be returned"""
         for expr in self._known_formulas:
-            subst = Substitution.unify(expr, formula, previous=previous_substitution) if formula is not None else Substitution()
+            subst = Substitution.unify(normalize_variables(expr), formula, previous=previous_substitution) if formula is not None else Substitution()
 
             if subst is not None:
                 yield subst
 
     def add_formulas(self, *formulas: Expression):
         """Adds all of the given formulas to the currently known formulas."""
-        formulas = tuple(renew_variables(f) for f in formulas)
+        formulas = tuple(normalize_variables(f, variable_source=self.__variable_source) for f in formulas)
         for f in formulas:
             if not isinstance(f, Expression):
                 raise TypeError("Only formulas can be added to a Knowledge Base!")
-            # TODO this (renewing) must be done in any knowledge base!
             self._known_formulas.add(f)
 
         for f in formulas:
