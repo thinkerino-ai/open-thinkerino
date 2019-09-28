@@ -67,8 +67,25 @@ def test_formulas_must_be_normalized():
 
     proofs = list(kb.prove(Baz(a)))
     assert any(proofs)
-    print(repr(proofs))
 
+
+def test_open_formulas_can_be_used_more_than_once():
+    v = VariableSource()
+    kb = DummyKnowledgeBase()
+
+    IsNatural, successor = constants('IsNatural, successor')
+
+    kb.add_formulas(
+        IsNatural(wrap(0)),
+        IsNatural(v.x) <<Implies>> IsNatural(successor(v.x))
+    )
+
+    baseline_proofs = list(kb.prove(IsNatural(successor(wrap(0)))))
+    assert any(baseline_proofs)
+
+    # actual test
+    proofs = list(kb.prove(IsNatural(successor(successor(wrap(0))))))
+    assert any(proofs)
 
 def _is_known_formula_proof_of(proof: Proof, formula: Expression) -> bool:
     return (isinstance(proof, Proof) and not any(proof.premises) and
