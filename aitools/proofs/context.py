@@ -38,6 +38,9 @@ def prove(formula: Expression, truth: bool = True) -> ProofSet:
 
 
 def contextual(attribute_name, value):
+    """Makes a function "contextual".
+    The specified context attribute is backed up and replaced with the new value before entering the function,
+    and restored after it returns or yields."""
     def decorator(func):
         is_generator = isgeneratorfunction(func)
         @wraps(func)

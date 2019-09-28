@@ -65,8 +65,6 @@ def test_formulas_must_be_normalized():
         Bar(v.y) <<Implies>> Baz(v.y)
     )
 
-    #ERROR continuare da qui, non funziona perché la retrieve deve sempre normalizzare le variabili prima
-    #NOTA CHE HO AGGIUNTO GIA' LA RENEW ALLA add_formulas
     proofs = list(kb.prove(Baz(a)))
     assert any(proofs)
     print(repr(proofs))
