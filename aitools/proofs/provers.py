@@ -1,3 +1,5 @@
+from typing import Iterable
+
 from aitools.logic import Expression, Substitution
 from aitools.logic.utils import VariableSource
 from aitools.proofs.language import Implies, Not
@@ -11,6 +13,12 @@ class KnowledgeRetriever(Prover):
         for subst in _kb.retrieve(formula, previous_substitution=_previous_substitution):
             if _truth:
                 yield Proof(inference_rule=self, conclusion=formula, substitution=subst)
+
+
+class DeclarativeProver(Prover):
+    def __call__(self, formula: Expression, _kb=None, _truth: bool = True,
+                 _previous_substitution: Substitution = None) -> Iterable[Proof]:
+        raise NotImplementedError()
 
 
 class NegationProver(Prover):
