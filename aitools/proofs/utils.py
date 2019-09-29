@@ -2,7 +2,7 @@ from functools import wraps
 from typing import Union, Optional, Any, Iterable, Tuple
 
 from aitools.logic import Substitution, Expression, LogicWrapper
-from aitools.logic.utils import expr, wrap
+from aitools.logic.utils import expr, wrap, ConstantSource, VariableSource
 from aitools.proofs.context import context
 from aitools.proofs.proof import Proof, Prover
 
@@ -72,12 +72,13 @@ class EmbeddedProver(Prover):
     def __str__(self):
         return "<EmbeddedProver> proving {} with {}".format(self.proved_formula, self.prover_function)
 
+
 def predicate_function(func=None, *args, predicate_source=None, variable_source=None, proves:Expression=None):
     got_args = len(args) > 0 or predicate_source is not None or variable_source is not None or proves is not None
 
     def _decorate(prover_function):
-        _predicate_source = predicate_source or context.predicate_source
-        _variable_source = variable_source or context.variable_source
+        _predicate_source = predicate_source or ConstantSource()
+        _variable_source = variable_source or VariableSource()
 
         predicate = proves.children[0] if proves is not None else getattr(_predicate_source,
                                                                           prover_function.__code__.co_name)

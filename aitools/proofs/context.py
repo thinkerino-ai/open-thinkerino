@@ -27,14 +27,10 @@ class Context():
         self._local = threading.local()
 
     kb = make_property('kb')
-    predicate_source = make_property('predicate_source')
-    variable_source = make_property('variable_source')
 
 
 context = Context()
 context.kb = None
-context.predicate_source = ConstantSource()
-context.variable_source = VariableSource()
 
 
 def prove(formula: Expression, truth: bool = True) -> ProofSet:
@@ -42,6 +38,9 @@ def prove(formula: Expression, truth: bool = True) -> ProofSet:
 
 
 def contextual(attribute_name, value):
+    """Makes a function "contextual".
+    The specified context attribute is backed up and replaced with the new value before entering the function,
+    and restored after it returns or yields."""
     def decorator(func):
         is_generator = isgeneratorfunction(func)
         @wraps(func)

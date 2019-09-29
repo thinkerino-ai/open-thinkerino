@@ -5,20 +5,6 @@ from aitools.logic.unification import Binding, Substitution
 from aitools.logic import Variable, Constant, Expression, LogicWrapper, LogicObject
 
 
-def renew_variables(expression: Expression) -> Expression:
-    def _inner(obj, mapping):
-        if isinstance(obj, Variable):
-            result = mapping.get(obj, Variable(name=obj.name))
-            mapping[obj] = result
-        elif isinstance(obj, Expression):
-            result = Expression(*(_inner(c, mapping) for c in obj.children))
-        else:
-            result = obj
-        return result
-
-    return _inner(expression, {})
-
-
 def constants(count_or_names: Union[int, str, Iterable[str]], *, clazz=Constant):
     if isinstance(count_or_names, int):
         return (clazz() for _ in range(count_or_names))
@@ -76,13 +62,16 @@ class VariableSource:
     def __init__(self, **initial_vars: Variable):
         self.__vars = {**initial_vars}
 
-    def __getattr__(self, item) -> Variable:
+    def __getitem__(self, item) -> Variable:
         if item not in self.__vars:
             self.__vars[item] = val = Variable(name=item)
         else:
             val = self.__vars[item]
 
         return val
+
+    def __getattr__(self, item) -> Variable:
+        return self[item]
 
 
 class ConstantSource:
@@ -96,3 +85,18 @@ class ConstantSource:
             val = self.__constants[item]
 
         return val
+
+
+def normalize_variables(expression: Expression, *, variable_source: VariableSource = None) -> Expression:
+    """Normalizes an expression by either using completely new variables or a standard set"""
+    def _inner(obj, mapping):
+        if isinstance(obj, Variable):
+            result = mapping.get(obj, Variable(name=obj.name) if variable_source is None else variable_source[str(len(mapping))])
+            mapping[obj] = result
+        elif isinstance(obj, Expression):
+            result = Expression(*(_inner(c, mapping) for c in obj.children))
+        else:
+            result = obj
+        return result
+
+    return _inner(expression, {})
