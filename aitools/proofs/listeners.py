@@ -3,8 +3,11 @@ from typing import Union, Iterable, Optional
 
 from aitools.logic import Expression, Substitution, Variable
 
-class Listener():
-    def __init__(self, wrapped_function, *listened_formulas, previous_substitution: Substitution = None, priority=0):
+
+class Listener:
+    def __init__(self, wrapped_function, listened_formulas, previous_substitution: Substitution = None, priority=0,
+                 **kwargs):
+        super().__init__(**kwargs)
         self.wrapped_function = wrapped_function
         self.listened_formulas = listened_formulas
         self.func_arg_names = wrapped_function.__code__.co_varnames[:wrapped_function.__code__.co_argcount]
@@ -45,7 +48,7 @@ class Listener():
             prepared_args = self._prepare_arguments(cumulative_substitution)
             return self.wrapped_function(**prepared_args)
         else:
-            return Listener(self.wrapped_function, *remaining_formulas, previous_substitution=cumulative_substitution)
+            return Listener(self.wrapped_function, remaining_formulas, previous_substitution=cumulative_substitution)
 
     def _prepare_arguments(self, subst):
         bindings_by_variable_name = {}
@@ -77,10 +80,10 @@ def listener(*listened_formulas: Expression, priority=0):
         if isinstance(func_or_listeners, _MultiListenerWrapper):
             return _MultiListenerWrapper(
                 func_or_listeners,
-                Listener(func_or_listeners.wrapped_function, *listened_formulas, priority=priority),
+                Listener(func_or_listeners.wrapped_function, listened_formulas, priority=priority),
                 *func_or_listeners.listeners)
         else:
             return _MultiListenerWrapper(func_or_listeners,
-                                         Listener(func_or_listeners, *listened_formulas, priority=priority))
+                                         Listener(func_or_listeners, listened_formulas, priority=priority))
 
     return decorator

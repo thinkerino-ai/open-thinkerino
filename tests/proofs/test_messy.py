@@ -526,13 +526,13 @@ def test_listener_manual_generation(TestKnowledgeBase):
         if subst is not None:
             a = subst.get_bound_object_for(v._a)
             b = subst.get_bound_object_for(v._b)
-            return Listener(lambda _c: IsUncle(_c, b), IsBrother(v._c, a), previous_substitution=subst)
+            return Listener(lambda _c: IsUncle(_c, b), [IsBrother(v._c, a)], previous_substitution=subst)
 
         subst = Substitution.unify(_formula, IsBrother(v._c, v._a))
         if subst is not None:
             c = subst.get_bound_object_for(v._c)
             a = subst.get_bound_object_for(v._a)
-            return Listener(lambda _b, _c: IsUncle(c, _b), IsParent(a, v._b), previous_substitution=subst)
+            return Listener(lambda _b, _c: IsUncle(c, _b), [IsParent(a, v._b)], previous_substitution=subst)
 
     kb = TestKnowledgeBase()
 
