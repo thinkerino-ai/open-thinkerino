@@ -1,6 +1,5 @@
 import pytest
 
-from tests.proofs.fixtures import TestKnowledgeBase
 from aitools.logic import Variable, Constant, Substitution, Expression
 from aitools.logic.utils import subst, constants, wrap, VariableSource
 from aitools.proofs.language import Implies, MagicPredicate, Not, And, Or
