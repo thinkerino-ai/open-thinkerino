@@ -3,10 +3,10 @@ import pytest
 from tests.proofs.fixtures import TestKnowledgeBase
 from aitools.logic import Variable, Constant, Substitution, Expression
 from aitools.logic.utils import subst, constants, wrap, VariableSource
-from aitools.proofs.language import Implies, MagicPredicate, Not
+from aitools.proofs.language import Implies, MagicPredicate, Not, And, Or
 from aitools.proofs.listeners import listener, Listener
 from aitools.proofs.proof import Proof
-from aitools.proofs.provers import KnowledgeRetriever, NegationProver
+from aitools.proofs.provers import KnowledgeRetriever, NegationProver, DeclarativeProver
 from aitools.proofs.utils import predicate_function
 
 
@@ -637,6 +637,36 @@ def test_listener_consume(TestKnowledgeBase):
 
     kb.add_formulas(Go)
     assert consumer_triggered and not other_triggered
+
+
+def test_declarative_prover(TestKnowledgeBase):
+    v = VariableSource()
+    kb = TestKnowledgeBase()
+
+    IsNumber, IsOdd, seven = constants("IsNumber, IsOdd, seven")
+
+    binary_conjunction = DeclarativeProver(
+        premises=[v.A, v.B],
+        conclusions=[And(v.A, v.B)]
+    )
+
+    binary_disjunction_1 = DeclarativeProver(
+        premises=[v.A],
+        conclusions=[Or(v.A, v.B)]
+    )
+    binary_disjunction_2 = DeclarativeProver(
+        premises=[v.B],
+        conclusions=[Or(v.A, v.B)]
+    )
+
+    kb.add_provers(binary_conjunction, binary_disjunction_1, binary_disjunction_2)
+
+    kb.add_formulas(IsNumber(seven), IsOdd(seven))
+
+    proofs = list(kb.prove(And(IsNumber(seven), Or(IsEven(seven), IsOdd(seven)))))
+
+    assert any(proofs)
+
 
 
 # altri casi:

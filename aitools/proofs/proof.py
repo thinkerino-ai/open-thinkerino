@@ -13,17 +13,11 @@ class Prover:
 
 
 @dataclass(frozen=True)
-class Premise:
-    premise: Expression
-    source: Proof = None
-
-
-@dataclass(frozen=True)
 class Proof:
     inference_rule: Prover
     conclusion: Expression
     substitution: Substitution
-    premises: Iterable[Premise] = ()
+    premises: Iterable[Proof] = ()
 
 
 class ProofSet:

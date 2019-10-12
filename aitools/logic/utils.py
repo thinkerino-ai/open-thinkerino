@@ -87,7 +87,9 @@ class ConstantSource:
         return val
 
 
-def normalize_variables(expression: Expression, *, variable_source: VariableSource = None) -> Expression:
+def normalize_variables(expression: Expression, *, variable_source: VariableSource = None,
+                        variable_mapping=None) -> Expression:
+    variable_mapping = variable_mapping if variable_mapping is not None else {}
     """Normalizes an expression by either using completely new variables or a standard set"""
     def _inner(obj, mapping):
         if isinstance(obj, Variable):
@@ -99,4 +101,4 @@ def normalize_variables(expression: Expression, *, variable_source: VariableSour
             result = obj
         return result
 
-    return _inner(expression, {})
+    return _inner(expression, variable_mapping)
