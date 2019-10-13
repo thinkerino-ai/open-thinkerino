@@ -78,6 +78,7 @@ class KnowledgeBase(metaclass=abc.ABCMeta):
     def _provers(self):
         raise NotImplementedError()
 
+    # TODO 'formula' shouldn't be an Expression, because I could be trying to "prove a variable" (is this true? o.o I'm so sleepy)
     def prove(self, formula: Expression, truth: bool = True, previous_substitution = None) -> ProofSet:
         """Backward search to prove a given formulas using all known provers"""
 

@@ -1,12 +1,11 @@
 import pytest
 
-from tests.proofs.fixtures import TestKnowledgeBase
 from aitools.logic import Variable, Constant, Substitution, Expression
 from aitools.logic.utils import subst, constants, wrap, VariableSource
-from aitools.proofs.language import Implies, MagicPredicate, Not
+from aitools.proofs.language import Implies, MagicPredicate, Not, And, Or
 from aitools.proofs.listeners import listener, Listener
 from aitools.proofs.proof import Proof
-from aitools.proofs.provers import KnowledgeRetriever, NegationProver
+from aitools.proofs.provers import KnowledgeRetriever, NegationProver, DeclarativeProver
 from aitools.proofs.utils import predicate_function
 
 
@@ -526,13 +525,13 @@ def test_listener_manual_generation(TestKnowledgeBase):
         if subst is not None:
             a = subst.get_bound_object_for(v._a)
             b = subst.get_bound_object_for(v._b)
-            return Listener(lambda _c: IsUncle(_c, b), IsBrother(v._c, a), previous_substitution=subst)
+            return Listener(lambda _c: IsUncle(_c, b), [IsBrother(v._c, a)], previous_substitution=subst)
 
         subst = Substitution.unify(_formula, IsBrother(v._c, v._a))
         if subst is not None:
             c = subst.get_bound_object_for(v._c)
             a = subst.get_bound_object_for(v._a)
-            return Listener(lambda _b, _c: IsUncle(c, _b), IsParent(a, v._b), previous_substitution=subst)
+            return Listener(lambda _b, _c: IsUncle(c, _b), [IsParent(a, v._b)], previous_substitution=subst)
 
     kb = TestKnowledgeBase()
 
@@ -638,6 +637,79 @@ def test_listener_consume(TestKnowledgeBase):
     kb.add_formulas(Go)
     assert consumer_triggered and not other_triggered
 
+
+def test_declarative_provers_as_provers(TestKnowledgeBase):
+    v = VariableSource()
+    kb = TestKnowledgeBase()
+
+    IsNumber, IsOdd, seven = constants("IsNumber, IsOdd, seven")
+
+    binary_conjunction = DeclarativeProver(
+        premises=[v.A, v.B],
+        conclusions=[And(v.A, v.B)]
+    )
+
+    # ugly ugly ugly :P
+    binary_disjunction_1 = DeclarativeProver(
+        premises=[v.A],
+        conclusions=[Or(v.A, v.B)]
+    )
+    binary_disjunction_2 = DeclarativeProver(
+        premises=[v.B],
+        conclusions=[Or(v.A, v.B)]
+    )
+
+    kb.add_provers(binary_conjunction, binary_disjunction_1, binary_disjunction_2)
+
+    kb.add_formulas(IsNumber(seven), IsOdd(seven))
+
+    proofs = list(kb.prove(And(IsNumber(seven), Or(IsEven(seven), IsOdd(seven)))))
+
+    assert any(proofs)
+
+
+@pytest.mark.xfail(reason="Sorry, but I'm lazy and I lost interest in this part :P")
+def test_declarative_provers_as_listeners(TestKnowledgeBase):
+    v = VariableSource()
+    kb = TestKnowledgeBase()
+
+    IsNumber, IsOdd, seven = constants("IsNumber, IsOdd, seven")
+
+    binary_conjunction = DeclarativeProver(
+        premises=[v.A, v.B],
+        conclusions=[And(v.A, v.B)]
+    )
+
+    # ugly ugly ugly :P
+    binary_disjunction_1 = DeclarativeProver(
+        premises=[v.A],
+        conclusions=[Or(v.A, v.B)]
+    )
+    binary_disjunction_2 = DeclarativeProver(
+        premises=[v.B],
+        conclusions=[Or(v.A, v.B)]
+    )
+
+    kb.add_listeners(binary_conjunction, binary_disjunction_1, binary_disjunction_2)
+
+    kb.add_formulas(IsNumber(seven), IsOdd(seven))
+
+    proofs_conjunction_1 = kb.prove(And(IsNumber(seven), IsOdd(seven)))
+    proofs_conjunction_2 = kb.prove(And(IsOdd(seven), IsNumber(seven)))
+    # is this even correct to have?
+    proofs_conjunction_3 = kb.prove(And(IsNumber(seven), IsNumber(seven)))
+
+    proofs_disjunction_1 = kb.prove(Or(IsOdd(seven), IsEven(seven)))
+    proofs_disjunction_2 = kb.prove(Or(IsEven(seven), IsOdd(seven)))
+    # again: do I really want this?
+    proofs_disjunction_3 = kb.prove(Or(IsOdd(seven), IsOdd(seven)))
+
+    assert any(proofs_conjunction_1)
+    assert any(proofs_conjunction_2)
+    assert any(proofs_conjunction_3)
+    assert any(proofs_disjunction_1)
+    assert any(proofs_disjunction_2)
+    assert any(proofs_disjunction_3)
 
 # altri casi:
 # - evaluator (come il prover, ma restituisce un valore/oggetto anziché True/False/Substitution, oppure solleva eccezione se l'oggetto non è ancora abbastanza bound)

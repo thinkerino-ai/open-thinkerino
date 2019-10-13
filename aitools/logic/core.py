@@ -167,9 +167,9 @@ class Constant(LogicObject):
 
     def __str__(self):
         if self.name is not None:
-            return "?{}{}".format(self.name,self.id)
+            return "{}{}".format(self.name,self.id)
         else:
-            return "?o{}".format(self.id)
+            return "o{}".format(self.id)
 
 
 class Variable(LogicObject):
