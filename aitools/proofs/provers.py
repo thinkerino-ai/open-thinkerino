@@ -18,21 +18,22 @@ class KnowledgeRetriever(Prover):
 class DeclarativeProver(Prover):
     def __init__(self, *, premises: Iterable[Expression], conclusions: Iterable[Expression], **kwargs):
         super().__init__(**kwargs)
-        variable_mapping = {}
-        # TODO investigate why these normalizations are necessary while the ones in __call__ don't change anything
-        self.premises = tuple(normalize_variables(p, variable_mapping=variable_mapping) for p in premises)
-        self.conclusions = tuple(normalize_variables(c, variable_mapping=variable_mapping) for c in conclusions)
+        self.premises = premises
+        self.conclusions = conclusions
 
     def __call__(self, formula: Expression, _kb=None, _truth: bool = True,
                  _previous_substitution: Substitution = None) -> Iterable[Proof]:
         # can only prove formulas to be true
         if _truth:
             variable_mapping = {}
-            for conclusion in (normalize_variables(c, variable_mapping=variable_mapping) for c in self.conclusions):
+            normalized_conclusions = (normalize_variables(c, variable_mapping=variable_mapping)
+                                      for c in self.conclusions)
+            for conclusion in normalized_conclusions:
                 subst = Substitution.unify(formula, conclusion, previous=_previous_substitution)
                 if subst is not None:
-                    yield from self.__prove(_kb, conclusion, [normalize_variables(p, variable_mapping=variable_mapping)
-                                                              for p in self.premises],
+                    normalized_premises = (normalize_variables(p, variable_mapping=variable_mapping)
+                                           for p in self.premises)
+                    yield from self.__prove(_kb, conclusion, list(normalized_premises),
                                             previous_substitution=subst, premises=[])
 
     def __prove(self, kb, theorem: Expression, formulas: Collection[Expression], previous_substitution: Substitution,
