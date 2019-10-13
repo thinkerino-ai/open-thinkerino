@@ -638,7 +638,7 @@ def test_listener_consume(TestKnowledgeBase):
     assert consumer_triggered and not other_triggered
 
 
-def test_declarative_prover(TestKnowledgeBase):
+def test_declarative_provers_as_provers(TestKnowledgeBase):
     v = VariableSource()
     kb = TestKnowledgeBase()
 
@@ -649,6 +649,7 @@ def test_declarative_prover(TestKnowledgeBase):
         conclusions=[And(v.A, v.B)]
     )
 
+    # ugly ugly ugly :P
     binary_disjunction_1 = DeclarativeProver(
         premises=[v.A],
         conclusions=[Or(v.A, v.B)]
@@ -667,6 +668,48 @@ def test_declarative_prover(TestKnowledgeBase):
     assert any(proofs)
 
 
+@pytest.mark.xfail(reason="Sorry, but I'm lazy and I lost interest in this part :P")
+def test_declarative_provers_as_listeners(TestKnowledgeBase):
+    v = VariableSource()
+    kb = TestKnowledgeBase()
+
+    IsNumber, IsOdd, seven = constants("IsNumber, IsOdd, seven")
+
+    binary_conjunction = DeclarativeProver(
+        premises=[v.A, v.B],
+        conclusions=[And(v.A, v.B)]
+    )
+
+    # ugly ugly ugly :P
+    binary_disjunction_1 = DeclarativeProver(
+        premises=[v.A],
+        conclusions=[Or(v.A, v.B)]
+    )
+    binary_disjunction_2 = DeclarativeProver(
+        premises=[v.B],
+        conclusions=[Or(v.A, v.B)]
+    )
+
+    kb.add_listeners(binary_conjunction, binary_disjunction_1, binary_disjunction_2)
+
+    kb.add_formulas(IsNumber(seven), IsOdd(seven))
+
+    proofs_conjunction_1 = kb.prove(And(IsNumber(seven), IsOdd(seven)))
+    proofs_conjunction_2 = kb.prove(And(IsOdd(seven), IsNumber(seven)))
+    # is this even correct to have?
+    proofs_conjunction_3 = kb.prove(And(IsNumber(seven), IsNumber(seven)))
+
+    proofs_disjunction_1 = kb.prove(Or(IsOdd(seven), IsEven(seven)))
+    proofs_disjunction_2 = kb.prove(Or(IsEven(seven), IsOdd(seven)))
+    # again: do I really want this?
+    proofs_disjunction_3 = kb.prove(Or(IsOdd(seven), IsOdd(seven)))
+
+    assert any(proofs_conjunction_1)
+    assert any(proofs_conjunction_2)
+    assert any(proofs_conjunction_3)
+    assert any(proofs_disjunction_1)
+    assert any(proofs_disjunction_2)
+    assert any(proofs_disjunction_3)
 
 # altri casi:
 # - evaluator (come il prover, ma restituisce un valore/oggetto anziché True/False/Substitution, oppure solleva eccezione se l'oggetto non è ancora abbastanza bound)
