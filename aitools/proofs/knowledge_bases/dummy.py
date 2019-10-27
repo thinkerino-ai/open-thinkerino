@@ -2,9 +2,10 @@ import typing
 from collections import deque
 from typing import Optional, Iterable, Set
 
-from aitools.logic import Expression, Substitution
+from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import normalize_variables, VariableSource
 from aitools.proofs.context import contextual
+from aitools.proofs.index import AbstruseIndex
 from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
 from aitools.proofs.listeners import Listener, _MultiListenerWrapper
 from aitools.proofs.proof import Prover, Proof, ProofSet
@@ -60,3 +61,25 @@ class DummyKnowledgeBase(KnowledgeBase):
 
     def __len__(self):
         return len(self.__known_formulas)
+
+
+class DummyIndexedKnowledgeBase(DummyKnowledgeBase):
+    def __init__(self):
+        super().__init__()
+        self.__known_formulas: AbstruseIndex = AbstruseIndex()
+
+    def retrieve(self, formula: Optional[Expression] = None, *, previous_substitution: Substitution = None) -> Iterable[Substitution]:
+        """Retrieves all formula from the KnowledgeBase which are unifiable with the given one.
+        No proofs are searched, so either a formula is **IN** the KB, or nothing will be returned"""
+        for f in self.__known_formulas.retrieve(formula):
+            f = normalize_variables(f)
+            subst = Substitution.unify(formula, f)
+            if subst is not None:
+                yield subst
+
+    def _add_formulas(self, *formulas: Expression):
+        for f in formulas:
+            self.__known_formulas.add(f)
+
+    def __len__(self):
+        return len(list(self.__known_formulas.retrieve(Variable())))
