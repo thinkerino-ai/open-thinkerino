@@ -7,7 +7,7 @@ from aitools.logic import Expression, LogicObject, Variable, Substitution
 
 class _ListKeyIndex:
     def __init__(self):
-        self.subindex = defaultdict(_ListKeyIndex)
+        self.subindex = {}
         self.objects = set()
 
     def add(self, key, obj):
@@ -23,6 +23,7 @@ class _ListKeyIndex:
         inner(self, 0)
 
     def retrieve(self, key, use_wildcard = True):
+
         def inner(index: _ListKeyIndex, level: int, found_key=None):
             found_key = found_key[:] if found_key is not None else []
             if key is None:
@@ -30,27 +31,32 @@ class _ListKeyIndex:
                     yield obj, found_key
                 for sub in index.subindex.values():
                     res = list(inner(sub, level + 1, found_key))
-                    yield from res
+                    for r in res:
+                        yield r
             else:
                 if level == len(key):
                     for obj in index.objects:
                         yield obj, found_key
                 else:
                     key_element = key[level]
-
                     if key_element is not Variable or not use_wildcard:
-                        res = list(inner(index.subindex[key_element], level + 1, found_key=found_key + [key_element]))
-                        yield from res
-                        if key_element is not Variable and Variable in index.subindex:
+                        if key_element in index.subindex:
+                            res = list(inner(index.subindex[key_element], level + 1, found_key=found_key + [key_element]))
+                            for r in res:
+                                yield r
+                        if key_element is not Variable and Variable in index.subindex and use_wildcard:
                             res = list(
-                                inner(index.subindex[Variable], level + 1, found_key=found_key + [key_element]))
-                            yield from res
+                                inner(index.subindex[Variable], level + 1, found_key=found_key + [Variable]))
+                            for r in res:
+                                yield r
                     elif key_element is Variable and use_wildcard:
                         for subkey_element, subindex in index.subindex.items():
                             res = list(inner(subindex, level + 1, found_key + [subkey_element]))
-                            yield from res
+                            for r in res:
+                                yield r
 
-        yield from inner(self, 0)
+        for r in inner(self, 0):
+            yield r
 
 
 class AbstruseIndex:
@@ -81,18 +87,19 @@ class AbstruseIndex:
     def retrieve(self, formula: Expression, previous_key=None, projection_key=None):
         key = self.make_key(formula, self.level + 1)
 
-        if key is None or len(key) == 0:
-            for obj in self.objects:
-                yield obj
+        for obj in self.objects:
+            yield obj
 
-            # TODO probably can be removed by exploiting the projection :/ but I'm lazy and it's 3 am
-            # do full search
-            if key is None:
-                sources = list(self.subindex.retrieve(None))
-                for source, found_key in sources:
-                    res = list(source.retrieve(formula, previous_key=previous_key, projection_key=found_key))
-                    yield from res
-        else:
+
+        # TODO probably can be removed by exploiting the projection :/ but I'm lazy and it's 3 am
+        # do full search
+        if key is None:
+            sources = list(self.subindex.retrieve(None))
+            for source, found_key in sources:
+                res = list(source.retrieve(formula, previous_key=previous_key, projection_key=found_key))
+                for r in res:
+                    yield r
+        elif len(key) > 0:
             if projection_key is not None:
                 key = self.project_key(previous_key, projection_key, key)
 
@@ -100,7 +107,8 @@ class AbstruseIndex:
 
             for source, found_key in sources:
                 res = list(source.retrieve(formula, previous_key=key, projection_key=found_key))
-                yield from res
+                for r in res:
+                    yield r
 
     @staticmethod
     def project_key(previous_key, projection_key, key):
@@ -113,6 +121,9 @@ class AbstruseIndex:
             elif isinstance(projector, int):
                 for j in range(projector):
                     result.append(key.popleft())
+
+        while len(key) > 0:
+            result.append(key.popleft())
 
         return result
 

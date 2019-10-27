@@ -11,6 +11,7 @@ class LogicObject:
 
     def __init__(self):
         self.id = LogicObject._lastID
+        self.name = None
         LogicObject._lastID = LogicObject._lastID + 1
         super().__init__()
 
