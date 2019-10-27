@@ -41,6 +41,10 @@ class _ListKeyIndex:
                     if key_element is not Variable or not use_wildcard:
                         res = list(inner(index.subindex[key_element], level + 1, found_key=found_key + [key_element]))
                         yield from res
+                        if key_element is not Variable and Variable in index.subindex:
+                            res = list(
+                                inner(index.subindex[Variable], level + 1, found_key=found_key + [key_element]))
+                            yield from res
                     elif key_element is Variable and use_wildcard:
                         for subkey_element, subindex in index.subindex.items():
                             res = list(inner(subindex, level + 1, found_key + [subkey_element]))
