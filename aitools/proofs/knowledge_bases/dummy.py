@@ -73,7 +73,7 @@ class DummyIndexedKnowledgeBase(DummyKnowledgeBase):
         No proofs are searched, so either a formula is **IN** the KB, or nothing will be returned"""
         for f in self._known_formulas.retrieve(formula):
             f = normalize_variables(f)
-            subst = Substitution.unify(formula, f)
+            subst = Substitution.unify(formula, f, previous=previous_substitution)
             if subst is not None:
                 yield subst
 

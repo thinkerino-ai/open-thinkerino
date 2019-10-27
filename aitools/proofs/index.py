@@ -1,9 +1,11 @@
 import itertools
+import logging
 from collections import defaultdict, deque
 from collections.abc import Iterable
 
 from aitools.logic import Expression, LogicObject, Variable, Substitution
 
+logger = logging.getLogger(__name__)
 
 class _ListKeyIndex:
     def __init__(self):
@@ -11,6 +13,7 @@ class _ListKeyIndex:
         self.objects = set()
 
     def add(self, key, obj):
+        logger.info(f"Adding key %s for object %s", key, obj)
         def inner(index: _ListKeyIndex, level: int):
             if level == len(key):
                 index.objects.add(obj)
@@ -23,7 +26,7 @@ class _ListKeyIndex:
         inner(self, 0)
 
     def retrieve(self, key, use_wildcard = True):
-
+        logger.info("Retrieving key %s", key)
         def inner(index: _ListKeyIndex, level: int, found_key=None):
             found_key = found_key[:] if found_key is not None else []
             if key is None:
@@ -35,23 +38,34 @@ class _ListKeyIndex:
                         yield r
             else:
                 if level == len(key):
+                    logger.debug(f"key completely traversed, returning {len(index.objects)} objects")
                     for obj in index.objects:
                         yield obj, found_key
                 else:
                     key_element = key[level]
+                    logger.debug("Considering the following element of the key: %s", key_element)
                     if key_element is not Variable or not use_wildcard:
+                        logger.debug("Searching for key element explicitly")
                         if key_element in index.subindex:
+                            logger.debug("Element is in the subindex, recursion...")
                             res = list(inner(index.subindex[key_element], level + 1, found_key=found_key + [key_element]))
+                            logger.debug("Recursion returned %s elements", len(res))
                             for r in res:
                                 yield r
+                        logger.debug("Searching for variables corresponding to the element")
                         if key_element is not Variable and Variable in index.subindex and use_wildcard:
+                            logger.debug("Variable is in the subindex, recursion...")
                             res = list(
                                 inner(index.subindex[Variable], level + 1, found_key=found_key + [Variable]))
+                            logger.debug("Recursion returned %s elements", len(res))
                             for r in res:
                                 yield r
                     elif key_element is Variable and use_wildcard:
+                        logger.debug("Performing a wildcard search...")
                         for subkey_element, subindex in index.subindex.items():
+                            logger.debug("Matched %s, recursion...", subkey_element)
                             res = list(inner(subindex, level + 1, found_key + [subkey_element]))
+                            logger.debug("Recursion returned %s elements", len(res))
                             for r in res:
                                 yield r
 
@@ -86,10 +100,10 @@ class AbstruseIndex:
 
     def retrieve(self, formula: Expression, previous_key=None, projection_key=None):
         key = self.make_key(formula, self.level + 1)
+        logger.info("Index is retrieving %s and using key %s", formula, key)
 
         for obj in self.objects:
             yield obj
-
 
         # TODO probably can be removed by exploiting the projection :/ but I'm lazy and it's 3 am
         # do full search
@@ -99,16 +113,21 @@ class AbstruseIndex:
                 res = list(source.retrieve(formula, previous_key=previous_key, projection_key=found_key))
                 for r in res:
                     yield r
-        elif len(key) > 0:
+        else:
             if projection_key is not None:
                 key = self.project_key(previous_key, projection_key, key)
+                logger.debug("Projected key to %s", key)
 
-            sources = list(self.subindex.retrieve(key))
+            if len(key) > 0:
+                logger.debug("Index looking for sources...")
+                sources = list(self.subindex.retrieve(key))
+                logger.debug("Index found %s sources", len(sources))
 
-            for source, found_key in sources:
-                res = list(source.retrieve(formula, previous_key=key, projection_key=found_key))
-                for r in res:
-                    yield r
+                for source, found_key in sources:
+                    res = list(source.retrieve(formula, previous_key=key, projection_key=found_key))
+                    for r in res:
+                        logger.debug("Index has found result %s", r)
+                        yield r
 
     @staticmethod
     def project_key(previous_key, projection_key, key):

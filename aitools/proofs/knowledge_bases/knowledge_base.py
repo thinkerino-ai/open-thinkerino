@@ -1,3 +1,4 @@
+import logging
 import typing
 import abc
 from collections import deque
@@ -10,6 +11,8 @@ from aitools.proofs.listeners import Listener, _MultiListenerWrapper
 from aitools.proofs.proof import Prover, ProofSet, Proof
 from aitools.proofs.provers import KnowledgeRetriever, RestrictedModusPonens
 from aitools.proofs.utils import EmbeddedProver
+
+logger = logging.getLogger(__name__)
 
 
 class KnowledgeBase(metaclass=abc.ABCMeta):
@@ -81,6 +84,7 @@ class KnowledgeBase(metaclass=abc.ABCMeta):
     # TODO 'formula' shouldn't be an Expression, because I could be trying to "prove a variable" (is this true? o.o I'm so sleepy)
     def prove(self, formula: Expression, truth: bool = True, previous_substitution = None) -> ProofSet:
         """Backward search to prove a given formulas using all known provers"""
+        logger.info("Trying to prove %s to be %s with previous substitution %s", formula, truth, previous_substitution)
 
         previous_substitution = previous_substitution or Substitution()
 
@@ -97,8 +101,10 @@ class KnowledgeBase(metaclass=abc.ABCMeta):
         def _inner():
             while any(proof_sources):
                 source = proof_sources.popleft().__iter__()
+                logger.debug("Trying to prove %s with %s", formula, source)
                 try:
                     new_proof = next(source)
+                    logger.debug("Found a proof...")
                 except StopIteration:
                     pass
                 else:
