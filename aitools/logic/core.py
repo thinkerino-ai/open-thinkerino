@@ -55,7 +55,11 @@ class LogicWrapper(LogicObject):
                 not isinstance(other, LogicObject) and self.value == other)
 
     def __hash__(self):
-        return hash(self.value)
+        # TODO this is TERRIBLE
+        try:
+            return hash(self.value)
+        except TypeError:
+            return hash(self.id)
 
     @staticmethod
     def __magic_binary(method, other):
