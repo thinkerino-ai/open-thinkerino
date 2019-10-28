@@ -179,7 +179,7 @@ class Constant(LogicObject):
 
 class Variable(LogicObject):
 
-    def __init__(self, name:str = None):
+    def __init__(self, name: str = None):
         if name is not None and not (isinstance(name, str) and name):
             raise ValueError("Variable name must be a non-empty string!")
         super().__init__()

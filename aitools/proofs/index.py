@@ -16,11 +16,12 @@ class _ListKeyIndex:
         logger.info(f"Adding key %s for object %s", key, obj)
         def inner(index: _ListKeyIndex, level: int):
             if level == len(key):
-                index.objects.add(obj)
+                if obj not in index.objects:
+                    index.objects.add(obj)
             else:
                 key_element = key[level]
                 if key_element not in index.subindex:
-                    index.subindex[key_element] = _ListKeyIndex()
+                    index.subindex[key_element] = self.__class__()
                 inner(index.subindex[key_element], level + 1)
 
         inner(self, 0)
@@ -74,15 +75,16 @@ class _ListKeyIndex:
 
 
 class AbstruseIndex:
-    def __init__(self, level=0):
+    def __init__(self, level=0, subindex_class=_ListKeyIndex):
         self.level = level
-        self.subindex = _ListKeyIndex()
+        self.subindex = subindex_class()
         self.objects = set()
 
     def add(self, formula: Expression):
         key = self.make_key(formula, self.level + 1)
         if key is None or len(key) == 0:
-            self.objects.add(formula)
+            if formula not in self.objects:
+                self.objects.add(formula)
             return
 
         further_abstrusion = tuple(self.subindex.retrieve(key, use_wildcard=False))
