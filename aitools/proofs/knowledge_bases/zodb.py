@@ -3,10 +3,14 @@ from collections import deque
 from typing import Set, Collection, Optional, Iterable, Union, Deque
 
 import ZODB
+from persistent import Persistent
+from persistent.list import PersistentList
+from persistent.mapping import PersistentMapping
 
-from aitools.logic import Expression, Substitution
+from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import normalize_variables, VariableSource
 from aitools.proofs.context import contextual
+from aitools.proofs.index import AbstruseIndex, _ListKeyIndex
 from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
 from aitools.proofs.listeners import Listener, _MultiListenerWrapper
 from aitools.proofs.proof import Prover, ProofSet, Proof
@@ -55,7 +59,7 @@ class ZodbPersistentKnowledgeBase(KnowledgeBase):
         with self.db.transaction() as conn:
             for f in formulas:
                 conn.root.known_formulas.add(f)
-            conn.root._p_changed__ = True
+            conn.root._p_changed = True
 
     def _add_prover(self, prover):
         self.__provers.add(prover)
@@ -74,3 +78,43 @@ class ZodbPersistentKnowledgeBase(KnowledgeBase):
     def __len__(self):
         with self.db.transaction() as conn:
             return len(conn.root.known_formulas)
+
+
+# TODO I'm sure I could refactor everything in a "Storage" class so that persistence becomes actually an injected dependency
+class _PersistentAbstruseIndex(Persistent, AbstruseIndex):
+    def __init__(self):
+        super().__init__(subindex_class=_PersistenceListKeyIndex)
+
+
+class _PersistenceListKeyIndex(Persistent, _ListKeyIndex):
+    def __init__(self):
+        self.subindex = PersistentMapping()
+        self.objects = set()
+
+# TODO ok it is evident I don't know how to use ZODB :P
+class IndexedZodbPersistenceKnowledgeBase(ZodbPersistentKnowledgeBase):
+    def _initialize_db(self):
+        with self.db.transaction("initializing db if necessary") as conn:
+            if 'known_formulas' not in conn.root():
+                conn.root.known_formulas = _PersistentAbstruseIndex()
+
+    def retrieve(self, formula: Optional[Expression] = None, *, previous_substitution: Substitution = None) -> Iterable[Substitution]:
+        result = []
+        with self.db.transaction() as conn:
+            for expr in list(conn.root.known_formulas.retrieve(formula)):
+                subst = Substitution.unify(normalize_variables(expr), formula, previous=previous_substitution) \
+                    if formula is not None else Substitution()
+
+                if subst is not None:
+                    result.append(subst)
+        # TODO investigate why I had to do this, I think it has to do with yield within a transaction, but who knows :P
+        return result
+
+    def _add_formulas(self, *formulas: Expression):
+        with self.db.transaction() as conn:
+            for f in formulas:
+                conn.root.known_formulas.add(f)
+
+    def __len__(self):
+        with self.db.transaction() as conn:
+            return len(list(conn.root.known_formulas.retrieve(Variable())))
