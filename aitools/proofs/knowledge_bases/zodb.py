@@ -1,6 +1,4 @@
-import typing
-from collections import deque
-from typing import Set, Collection, Optional, Iterable, Union, Deque
+from typing import Set, Collection, Optional, Iterable
 
 import ZODB
 from persistent import Persistent
@@ -9,13 +7,10 @@ from persistent.mapping import PersistentMapping
 
 from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import normalize_variables, VariableSource
-from aitools.proofs.context import contextual
 from aitools.proofs.index import AbstruseIndex, _ListKeyIndex
 from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
-from aitools.proofs.listeners import Listener, _MultiListenerWrapper
-from aitools.proofs.proof import Prover, ProofSet, Proof
-from aitools.proofs.provers import KnowledgeRetriever, RestrictedModusPonens
-from aitools.proofs.utils import EmbeddedProver
+from aitools.proofs.listeners import Listener
+from aitools.proofs.proof import Prover
 
 
 class ZodbPersistentKnowledgeBase(KnowledgeBase):

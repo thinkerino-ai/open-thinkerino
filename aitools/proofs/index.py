@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 T = TypeVar('T')
 
 class _ListKeyIndex(Generic[T]):
-    def __init__(self):
-        self.subindices = {}
-        self.objects = set()
+    def __init__(self, subindex_container_class=dict, object_container_class=set):
+        self.subindices = subindex_container_class()
+        self.objects = object_container_class()
 
     def add(self, key, obj: T):
         logger.info(f"Adding key %s for object %s", key, obj)
@@ -99,9 +99,9 @@ class _ListKeyIndex(Generic[T]):
 
 
 class AbstruseIndex:
-    def __init__(self, level=0, subindex_class: Type[_ListKeyIndex] = _ListKeyIndex):
+    def __init__(self, level=0, subindex_class: Type[_ListKeyIndex] = _ListKeyIndex, object_container_class=set):
         self.level = level
-        self.objects = set()
+        self.objects = object_container_class()
         self.subindex_tree: _ListKeyIndex[AbstruseIndex] = subindex_class()
         self.subindex_class = subindex_class
 
