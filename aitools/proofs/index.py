@@ -17,7 +17,7 @@ class _ListKeyIndex:
         def inner(index: _ListKeyIndex, level: int):
             if level == len(key):
                 if obj not in index.objects:
-                    index.objects.add(obj)
+                    index.add_object(obj)
             else:
                 key_element = key[level]
                 if key_element not in index.subindex:
@@ -73,12 +73,16 @@ class _ListKeyIndex:
         for r in inner(self, 0):
             yield r
 
+    def add_object(self, obj):
+        self.objects.add(obj)
+
 
 class AbstruseIndex:
     def __init__(self, level=0, subindex_class=_ListKeyIndex):
         self.level = level
-        self.subindex = subindex_class()
         self.objects = set()
+        self.subindex = subindex_class()
+        self.subindex_class = subindex_class
 
     def add(self, formula: Expression):
         key = self.make_key(formula, self.level + 1)
@@ -93,7 +97,7 @@ class AbstruseIndex:
             raise Exception("Do I even know what I'm doing?")
 
         if len(further_abstrusion) == 0:
-            dest: AbstruseIndex = AbstruseIndex(self.level + 1)
+            dest: AbstruseIndex = AbstruseIndex(self.level + 1, subindex_class=self.subindex_class)
             self.subindex.add(key, dest)
         else:
             dest, _ = further_abstrusion[0]

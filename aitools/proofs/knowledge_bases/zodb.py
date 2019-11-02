@@ -83,13 +83,17 @@ class ZodbPersistentKnowledgeBase(KnowledgeBase):
 # TODO I'm sure I could refactor everything in a "Storage" class so that persistence becomes actually an injected dependency
 class _PersistentAbstruseIndex(Persistent, AbstruseIndex):
     def __init__(self):
-        super().__init__(subindex_class=_PersistenceListKeyIndex)
+        super().__init__(subindex_class=_PersistentListKeyIndex)
 
 
-class _PersistenceListKeyIndex(Persistent, _ListKeyIndex):
+class _PersistentListKeyIndex(Persistent, _ListKeyIndex):
     def __init__(self):
         self.subindex = PersistentMapping()
-        self.objects = set()
+        self.objects = PersistentList()
+
+    def add_object(self, obj):
+        self.objects.append(obj)
+
 
 # TODO ok it is evident I don't know how to use ZODB :P
 class IndexedZodbPersistenceKnowledgeBase(ZodbPersistentKnowledgeBase):
