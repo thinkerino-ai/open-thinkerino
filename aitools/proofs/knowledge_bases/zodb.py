@@ -83,8 +83,7 @@ class _PersistentAbstruseIndex(Persistent, AbstruseIndex):
 
 class _PersistentListKeyIndex(Persistent, _ListKeyIndex):
     def __init__(self):
-        self.subindices = PersistentMapping()
-        self.objects = PersistentList()
+        super().__init__(PersistentMapping, PersistentList)
 
     def add_object(self, obj):
         self.objects.append(obj)
