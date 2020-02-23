@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
 
+
 class _ListKeyIndex(Generic[T]):
     def __init__(self, subindex_container_class=dict, object_container_class=set):
         self.subindices = subindex_container_class()
@@ -102,8 +103,12 @@ class AbstruseIndex:
     def __init__(self, level=0, subindex_class: Type[_ListKeyIndex] = _ListKeyIndex, object_container_class=set):
         self.level = level
         self.objects = object_container_class()
-        self.subindex_tree: _ListKeyIndex[AbstruseIndex] = subindex_class()
+        self._subindex_tree: _ListKeyIndex[AbstruseIndex] = subindex_class()
         self.subindex_class = subindex_class
+
+    @property
+    def subindex_tree(self):
+        return self._subindex_tree
 
     def add(self, formula: Expression):
         key = self.make_key(formula, self.level + 1)
@@ -118,7 +123,7 @@ class AbstruseIndex:
             raise Exception("Do I even know what I'm doing?")
 
         if len(further_abstrusion) == 0:
-            dest: AbstruseIndex = AbstruseIndex(self.level + 1, subindex_class=self.subindex_class)
+            dest: AbstruseIndex = self.__class__(level=self.level + 1, subindex_class=self.subindex_class)
             self.subindex_tree.add(key, dest)
         else:
             dest, _ = further_abstrusion[0]

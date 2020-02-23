@@ -220,4 +220,5 @@ class Expression(LogicObject):
         return True
 
     def __hash__(self):
+        # TODO store this so that it is calculated only once
         return hash(self.children)

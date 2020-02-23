@@ -3,6 +3,7 @@ import logging
 import pytest
 
 from aitools.proofs.knowledge_bases.dummy import DummyKnowledgeBase, DummyIndexedKnowledgeBase
+from aitools.proofs.knowledge_bases.redis import IndexedRedisPersistenceKnowledgeBase
 from aitools.proofs.knowledge_bases.zodb import ZodbPersistentKnowledgeBase, IndexedZodbPersistenceKnowledgeBase
 
 logging.basicConfig(format="[%(levelname)s] %(name)s - %(message)s")
@@ -11,6 +12,6 @@ logging.getLogger('txn').setLevel(logging.WARN)
 
 
 @pytest.fixture(params=[DummyKnowledgeBase, ZodbPersistentKnowledgeBase, DummyIndexedKnowledgeBase,
-                        IndexedZodbPersistenceKnowledgeBase])
+                        IndexedZodbPersistenceKnowledgeBase, IndexedRedisPersistenceKnowledgeBase])
 def TestKnowledgeBase(request):
     return request.param
