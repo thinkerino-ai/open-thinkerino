@@ -57,6 +57,7 @@ I had a plan involving fleas and lots of boxes, but in order to save on postage 
   - [ ] benchmark the AbstruseIndex in both languages
   - [ ] draw some conclusions while nodding wisely
 - [ ] either do the translation or declare that python stays
+- [ ] remember that I created this branch from the wrong one, even though I don't think it'll have any consequences
 - [ ] ???
 - [ ] profit
 
