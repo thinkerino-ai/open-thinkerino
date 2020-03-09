@@ -1,4 +1,4 @@
-module parallelism
+module multithread
 using Base.Threads: @spawn
 
 #= 
