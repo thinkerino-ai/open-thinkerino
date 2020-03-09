@@ -1,4 +1,5 @@
 module parallelism
+using Base.Threads: @spawn
 
 #= 
 TODO I don't like this "need-to-pass-a-channel-for-results" thing, but still... 
@@ -19,6 +20,7 @@ TODO I don't like this "need-to-pass-a-channel-for-results" thing, but still...
     but the idea still needs a lot of work :P
 =#
 function actually_6(proof_channel, x)
+    sleep(0.3)
     if x == 6
         put!(proof_channel, :actually_6)
     end
@@ -30,11 +32,13 @@ function multiple_of_6(proof_channel, x)
     end
 end
 function multiple_of_2_a(proof_channel, x)
+    sleep(0.11)
     if (x + 2) % 2 == 0
         put!(proof_channel, :multiple_of_2_a)
     end
 end
 function multiple_of_2_b(proof_channel, x)
+    sleep(0.1)
     if (x - 2) % 2 == 0
         put!(proof_channel, :multiple_of_2_b)
     end
@@ -63,12 +67,14 @@ function prove(predicate, argument)
     # ahahahahahahahhaha this is amazing!!!!!!
     @async begin 
         @sync for prover in get(provers, predicate, ())
-            @async prover(results, argument)
+            @spawn prover(results, argument)
         end
         close(results)
     end
     
     return results
 end
+
+
 
 end # module

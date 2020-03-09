@@ -50,10 +50,10 @@ I had a plan involving fleas and lots of boxes, but in order to save on postage 
 - [ ]. benchmarks + feasibility
   - [x] benchmark unification in both languages
   - [x] implement id auto-generation (because of what is said [here](https://docs.julialang.org/en/v1/manual/modules/#Module-initialization-and-precompilation-1), which worries me since I'm too lazy/stoopid to actually understand the implications just by reading)
-  - [ ]. implement parallelism in Julia
+  - [x] implement parallelism in Julia
     - [x] single-threaded (what I would have done in Python with greenlet)
-    - [ ] multi-threaded (I mean, since we are already here)
-  - [ ] implement a context mechanism (so that provers can use it to call the current knowledge base)
+    - [x] multi-threaded (I mean, since we are already here)
+  - [ ]. implement a context mechanism (so that provers can use it to call the current knowledge base)
   - [ ] benchmark the AbstruseIndex in both languages
   - [ ] draw some conclusions while nodding wisely
 - [ ] either do the translation or declare that python stays
