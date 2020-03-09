@@ -20,6 +20,12 @@ git-tree-sha1 = "cb7a62895da739fe5bb43f1a26d4292baf4b3dc0"
 uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
 version = "4.0.1"
 
+[[DataStructures]]
+deps = ["InteractiveUtils", "OrderedCollections"]
+git-tree-sha1 = "5a431d46abf2ef2a4d5d00bd0ae61f651cf854c8"
+uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+version = "0.17.10"
+
 [[Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -75,12 +81,24 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
+[[MacroTools]]
+deps = ["DataStructures", "Markdown", "Random"]
+git-tree-sha1 = "07ee65e03e28ca88bc9a338a3726ae0c3efaa94b"
+uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
+version = "0.5.4"
+
 [[Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
+
+[[OrderedCollections]]
+deps = ["Random", "Serialization", "Test"]
+git-tree-sha1 = "c4c13474d23c60d20a67b217f1d7f22a40edf8f1"
+uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
+version = "1.1.0"
 
 [[Parsers]]
 deps = ["Dates", "Test"]
@@ -103,6 +121,12 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 [[Random]]
 deps = ["Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[[ResumableFunctions]]
+deps = ["MacroTools"]
+git-tree-sha1 = "db34af1019eee0086445b1a0452bf1b33776dbc8"
+uuid = "c5292f4c-5179-55e1-98c5-05642aab7184"
+version = "0.5.1"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"

@@ -50,8 +50,8 @@ I had a plan involving fleas and lots of boxes, but in order to save on postage 
 - [ ]. benchmarks + feasibility
   - [x] benchmark unification in both languages
   - [x] implement id auto-generation (because of what is said [here](https://docs.julialang.org/en/v1/manual/modules/#Module-initialization-and-precompilation-1), which worries me since I'm too lazy/stoopid to actually understand the implications just by reading)
-  - [ ] implement parallelism in Julia
-    - [ ] single-threaded (what I would have done in Python with greenlet)
+  - [ ]. implement parallelism in Julia
+    - [x] single-threaded (what I would have done in Python with greenlet)
     - [ ] multi-threaded (I mean, since we are already here)
   - [ ] implement a context mechanism (so that provers can use it to call the current knowledge base)
   - [ ] benchmark the AbstruseIndex in both languages
@@ -70,3 +70,5 @@ Ready? Go! I mean... Julia! :D (sorry)
   - a debugger is absent, but I'm managing with Debugger.jl, and [there is something on its way](https://github.com/julia-vscode/julia-vscode/issues/125)
   - static type-checking is absent, I've heard people say that "Julia is a dynamic language", and that is true, but even if one can't infer "all truths" about types at parse-time, it's still worth it to find those cases where an error IS detectable (just see python with mypy)
   - intellisense is somewhat unreliable, and the linter will sometimes tell you "this does not exist" when it does
+- lack of coroutines is TERRIBLE! I need them! I abuse them! however, channels are really cool, and I might like the structure of my `parallelism.jl` experiment better than the @prover_function I was using in python (explicit proof_channel is nice, although it reduces the magic... huh)
+  - I really enjoyed the `@async ... @sync ... @async` shenanigans I could do in the single-threaded version
