@@ -1,7 +1,9 @@
 import unittest
 from typing import Optional
 
-from aitools.logic import Substitution, Variable, LogicObject
+import pytest
+
+from aitools.logic import Substitution, Variable, LogicObject, Binding, UnificationError
 from aitools.logic.utils import constants, expr, variables, subst, binding, wrap
 
 
@@ -14,6 +16,21 @@ class TestUnification(unittest.TestCase):
             self.assertIsNotNone(result)
         self.assertEqual(result, expected_result,
                          f"Unification between {e1} and {e2} should give {expected_result}, got {result} instead")
+
+    def testBindingJoin(self):
+        x, y, z = variables('x, y, z')
+        a, b = constants('a, b')
+
+        h1 = expr(z)
+        h2 = expr(b)
+
+        b1 = Binding(frozenset([x]), h1)
+        b2 = Binding(frozenset([y]), h2)
+
+        try:
+            assert Binding.join(b1, b2).head == h2
+        except UnificationError as e:
+            pytest.fail(str(e))
 
     def testUnificationBetweenLogicObjectsFailure(self):
         a, b = constants('a, b')
