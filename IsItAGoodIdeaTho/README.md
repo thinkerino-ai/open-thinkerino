@@ -47,8 +47,8 @@ The outcome of this totally sound formulation is clear: I'll give Julia a shot.
 
 I had a plan involving fleas and lots of boxes, but in order to save on postage I switched to the following instead:
 
-- [ ] benchmarks + feasibility
-  - [ ] benchmark unification in both languages
+- [ ]. benchmarks + feasibility
+  - [ ]. benchmark unification in both languages
   - [ ] implement id auto-generation (because of what is said [here](https://docs.julialang.org/en/v1/manual/modules/#Module-initialization-and-precompilation-1), which worries me since I'm too lazy/stoopid to actually understand the implications just by reading)
   - [ ] implement parallelism in Julia
     - [ ] single-threaded (what I would have done in Python with greenlet)
@@ -58,7 +58,15 @@ I had a plan involving fleas and lots of boxes, but in order to save on postage 
   - [ ] draw some conclusions while nodding wisely
 - [ ] either do the translation or declare that python stays
 - [ ] remember that I created this branch from the wrong one, even though I don't think it'll have any consequences
+  - [ ] but there are fixes to the python part now :/ sigh, I'll have to merge or something like that
 - [ ] ???
 - [ ] profit
 
 Ready? Go! I mean... Julia! :D (sorry)
+
+## Some notes
+
+- the tools are currently very immature, I'm using vs-code since Juno marks errors on things that it shouldn't
+  - a debugger is absent, but I'm managing with Debugger.jl, and [there is something on its way](https://github.com/julia-vscode/julia-vscode/issues/125)
+  - static type-checking is absent, I've heard people say that "Julia is a dynamic language", and that is true, but even if one can't infer "all truths" about types at parse-time, it's still worth it to find those cases where an error IS detectable (just see python with mypy)
+  - intellisense is somewhat unreliable, and the linter will sometimes tell you "this does not exist" when it does

@@ -1,5 +1,5 @@
 module IsItAGoodIdeaTho
 
-greet() = print("Hello World!")
+include("logic/logic.jl")
 
 end # module
