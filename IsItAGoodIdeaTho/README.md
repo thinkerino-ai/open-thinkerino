@@ -48,8 +48,8 @@ The outcome of this totally sound formulation is clear: I'll give Julia a shot.
 I had a plan involving fleas and lots of boxes, but in order to save on postage I switched to the following instead:
 
 - [ ]. benchmarks + feasibility
-  - [ ]. benchmark unification in both languages
-  - [ ] implement id auto-generation (because of what is said [here](https://docs.julialang.org/en/v1/manual/modules/#Module-initialization-and-precompilation-1), which worries me since I'm too lazy/stoopid to actually understand the implications just by reading)
+  - [x] benchmark unification in both languages
+  - [x] implement id auto-generation (because of what is said [here](https://docs.julialang.org/en/v1/manual/modules/#Module-initialization-and-precompilation-1), which worries me since I'm too lazy/stoopid to actually understand the implications just by reading)
   - [ ] implement parallelism in Julia
     - [ ] single-threaded (what I would have done in Python with greenlet)
     - [ ] multi-threaded (I mean, since we are already here)
