@@ -1,5 +1,4 @@
 module singlethread
-using Base.Threads: @spawn
 
 #= 
 TODO I don't like this "need-to-pass-a-channel-for-results" thing, but still... 
