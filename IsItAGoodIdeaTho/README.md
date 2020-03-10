@@ -53,7 +53,7 @@ I had a plan involving fleas and lots of boxes, but in order to save on postage 
   - [x] implement parallelism in Julia
     - [x] single-threaded (what I would have done in Python with greenlet)
     - [x] multi-threaded (I mean, since we are already here)
-  - [ ]. implement a context mechanism (so that provers can use it to call the current knowledge base)
+  - [x] implement a context mechanism (so that provers can use it to call the current knowledge base)
   - [ ] benchmark the AbstruseIndex in both languages
   - [ ] draw some conclusions while nodding wisely
 - [ ] either do the translation or declare that python stays
