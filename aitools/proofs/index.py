@@ -170,8 +170,10 @@ class AbstruseIndex:
 
         for i, projector in enumerate(projection_key):
             if previous_key[i] is Variable and isinstance(projector, int):
+                # if previous_key[i] is a Variable, the current key wouldn't have a corresponding item, so we "insert" Variables
                 result.extend(itertools.repeat(Variable, projector))
             elif isinstance(projector, int):
+                # we take the "n" elements from the current key
                 for j in range(projector):
                     result.append(key.popleft())
 
