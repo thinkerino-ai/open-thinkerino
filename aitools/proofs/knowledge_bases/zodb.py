@@ -77,8 +77,9 @@ class ZodbPersistentKnowledgeBase(KnowledgeBase):
 
 # TODO I'm sure I could refactor everything in a "Storage" class so that persistence becomes actually an injected dependency
 class _PersistentAbstruseIndex(Persistent, AbstruseIndex):
-    def __init__(self):
-        super().__init__(subindex_class=_PersistentListKeyIndex)
+    def __init__(self, *args, **kwargs):
+        kwargs.update(subindex_class=_PersistentListKeyIndex)
+        super().__init__(*args, **kwargs)
 
 
 class _PersistentListKeyIndex(Persistent, _ListKeyIndex):

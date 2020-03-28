@@ -23,6 +23,7 @@ class Binding(LogicObject):
 
         super().__init__()
 
+    # TODO: how did this function end up with this name? O_O
     def get_bound_object_for(self):
         # TODO: that 'max' is super inefficient! (but necessary to guarantee order)
         return self.head if self.head is not None else max(self.variables, key=lambda v: v.id)
@@ -44,7 +45,7 @@ class Binding(LogicObject):
         elif a_head is None and b_head is not None:
             new_head = b_head
         else:
-            unifier = Substitution.unify(a, b, previous=binding_context)
+            unifier = Substitution.unify(a.head, b.head, previous=binding_context)
             if unifier is None:
                 raise UnificationError("Unable to unify the heads of the two bindings!")
             else:
