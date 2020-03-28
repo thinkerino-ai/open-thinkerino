@@ -64,4 +64,27 @@ function project_key(projector_key, optics_key, current_key)
     return result
 end
 
+struct AbstruseIndex{TObjectContainer <: AbstractSet, TSubIndex <: KeyTrie}
+    level::Int
+    objects::TObjectContainer
+    subindex::TSubIndex
+end
+
+function push!(index::AbstruseIndex{TObj, TSub}, formula::core.Expression) where TObj where TSub
+    key = make_key(formula, index.level + 1)
+    if isnothing(key) || isempty(key)
+        push!(index.objects, formula)
+        return
+    end
+
+    further_abstrusion = Tuple(retrieve(index.subindex, key, use_wildcard=false))
+
+    if length(further_abstrusion) > 1 error("Do I even know what I'm doing?") end
+
+    if isempty(further_abstrusion)
+        dest = AbstruseIndex{TObj,TSub}(index.level + 1, TObj(), TSub())
+            
+
+end
+
 end ##module
