@@ -7,7 +7,7 @@ from persistent.mapping import PersistentMapping
 
 from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import normalize_variables, VariableSource
-from aitools.proofs.index import AbstruseIndex, _ListKeyIndex
+from aitools.proofs.index import AbstruseIndex, _ListKeyIndex, make_key
 from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
 from aitools.proofs.listeners import Listener
 from aitools.proofs.proof import Prover
@@ -95,7 +95,7 @@ class IndexedZodbPersistenceKnowledgeBase(ZodbPersistentKnowledgeBase):
     def _initialize_db(self):
         with self.db.transaction("initializing db if necessary") as conn:
             if 'known_formulas' not in conn.root():
-                conn.root.known_formulas = _PersistentAbstruseIndex()
+                conn.root.known_formulas = _PersistentAbstruseIndex(key_function=make_key)
 
     def retrieve(self, formula: Optional[Expression] = None, *, previous_substitution: Substitution = None) -> Iterable[Substitution]:
         result = []

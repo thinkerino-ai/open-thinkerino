@@ -5,7 +5,7 @@ from typing import Optional, Iterable, Set
 from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import normalize_variables, VariableSource
 from aitools.proofs.context import contextual
-from aitools.proofs.index import AbstruseIndex
+from aitools.proofs.index import AbstruseIndex, make_key
 from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
 from aitools.proofs.listeners import Listener, _MultiListenerWrapper
 from aitools.proofs.proof import Prover, Proof, ProofSet
@@ -66,7 +66,7 @@ class DummyKnowledgeBase(KnowledgeBase):
 class DummyIndexedKnowledgeBase(DummyKnowledgeBase):
     def __init__(self):
         super().__init__()
-        self._known_formulas: AbstruseIndex = AbstruseIndex()
+        self._known_formulas: AbstruseIndex = AbstruseIndex(key_function=make_key)
 
     def retrieve(self, formula: Optional[Expression] = None, *, previous_substitution: Substitution = None) -> Iterable[Substitution]:
         """Retrieves all formula from the KnowledgeBase which are unifiable with the given one.
