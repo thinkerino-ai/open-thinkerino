@@ -14,4 +14,7 @@ logging.getLogger('txn').setLevel(logging.WARN)
 @pytest.fixture(params=[DummyKnowledgeBase, ZodbPersistentKnowledgeBase, DummyIndexedKnowledgeBase,
                         IndexedZodbPersistenceKnowledgeBase, IndexedRedisPersistenceKnowledgeBase])
 def TestKnowledgeBase(request):
+    # TODO actually remove this :P
+    if request.param == IndexedRedisPersistenceKnowledgeBase:
+        pytest.xfail("This will be removed shortly")
     return request.param
