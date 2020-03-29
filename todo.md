@@ -3,8 +3,8 @@
     - [ ]. refactor AbstruseIndex
         - [ ]. refactor key_function
             - [x] refactor key_function as an injected dependency
-            - [ ] refactor key_function so that it is called once and returns the whole key
-            - [ ] refactor key_function so that the key is passed from outside
+            - [x] refactor key_function so that it is called once and returns the whole key
+            - [ ]. refactor key_function so that the key is passed from outside
         - [ ] refactor AbstruseIndex so that it is generic (no dependency on logic package)
             - [ ] make _ListKeyIndex a Trie
         - [ ] ...

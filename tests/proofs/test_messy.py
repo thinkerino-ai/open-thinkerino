@@ -19,7 +19,7 @@ def test_retrieve_known_formula(TestKnowledgeBase):
     # we can retrieve it because we already know it
     substitutions = list(kb.retrieve(IsA(dylan, cat)))
 
-    assert any(substitutions)
+    assert len(substitutions) == 1
     assert all(isinstance(s, Substitution) for s in substitutions)
 
 

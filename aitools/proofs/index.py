@@ -113,13 +113,17 @@ class AbstruseIndex(Generic[T]):
         return self._subindex_tree
 
     def add(self, formula: Expression):
-        key = self.make_key(formula, self.level + 1)
-        if key is None or len(key) == 0:
+        key = self.make_key(formula)
+        self._add(formula, key)
+
+    def _add(self, formula: Expression, key):
+        _key = key[self.level] if self.level < len(key) else None
+        if _key is None or len(_key) == 0:
             if formula not in self.objects:
                 self.objects.add(formula)
             return
 
-        further_abstrusion: Sequence[AbstruseIndex] = tuple(self.subindex_tree.retrieve(key, use_wildcard=False))
+        further_abstrusion: Sequence[AbstruseIndex] = tuple(self.subindex_tree.retrieve(_key, use_wildcard=False))
 
         if len(further_abstrusion) > 1:
             raise Exception("Do I even know what I'm doing?")
@@ -127,42 +131,48 @@ class AbstruseIndex(Generic[T]):
         if len(further_abstrusion) == 0:
             dest: AbstruseIndex = self.__class__(level=self.level + 1, subindex_class=self.subindex_class,
                                                  key_function=self.make_key)
-            self.subindex_tree.add(key, dest)
+            self.subindex_tree.add(_key, dest)
         else:
             dest, _ = further_abstrusion[0]
 
-        dest.add(formula)
+        dest._add(formula, key)
 
-    def retrieve(self, formula: Expression, previous_key=None, projection_key=None):
-        key = self.make_key(formula, self.level + 1)
-        logger.info("Index is retrieving %s and using key %s", formula, key)
+    def retrieve(self, formula: Expression):
+        key = self.make_key(formula)
+        return self._retrieve(formula, full_key=key)
+
+    def _retrieve(self, formula: Expression, *, full_key, previous_key=None, projection_key=None):
+        _key = full_key[self.level] if full_key and self.level < len(full_key) else None
+
+        logger.info("Index is retrieving %s and using key %s", formula, _key)
 
         for obj in self.objects:
             yield obj
 
         # TODO probably can be removed by exploiting the projection :/ but I'm lazy and it's 3 am
-        if key is None:
-            yield from self._full_search(formula, previous_key)
+        if _key is None:
+            yield from self._full_search(formula, full_key=full_key, previous_key=previous_key)
         else:
             if projection_key is not None:
-                key = self._project_key(previous_key, projection_key, key)
-                logger.debug("Projected key to %s", key)
+                _key = self._project_key(previous_key, projection_key, _key)
+                logger.debug("Projected key to %s", _key)
 
-            if len(key) > 0:
+            if len(_key) > 0:
                 logger.debug("Index looking for sources...")
-                subindices = list(self.subindex_tree.retrieve(key))
+                subindices = list(self.subindex_tree.retrieve(_key))
                 logger.debug("Index found %s sources", len(subindices))
 
                 for subindex, found_key in subindices:
-                    res = list(subindex.retrieve(formula, previous_key=key, projection_key=found_key))
+                    res = list(subindex._retrieve(formula, full_key=full_key, previous_key=_key,
+                                                  projection_key=found_key))
                     for r in res:
                         logger.debug("Index has found result %s", r)
                         yield r
 
-    def _full_search(self, formula, previous_key):
+    def _full_search(self, formula, *, full_key, previous_key):
         subindices: Iterable[AbstruseIndex] = list(self.subindex_tree.retrieve(None))
-        for subindex, found_key in subindices:
-            res = list(subindex.retrieve(formula, previous_key=previous_key, projection_key=found_key))
+        for subindex, found_key in subindices: # TODO full_key must be not None
+            res = list(subindex._retrieve(formula, full_key=None, previous_key=previous_key, projection_key=found_key))
             for r in res:
                 yield r
 
@@ -185,8 +195,8 @@ class AbstruseIndex(Generic[T]):
 
         return result
 
-
-def make_key(formula: LogicObject, depth: int):
+# TODO remove
+def make_key_old(formula: LogicObject, depth: int):
     if depth == 0:
         if isinstance(formula, Expression):
             return len(formula.children)
@@ -207,3 +217,23 @@ def make_key(formula: LogicObject, depth: int):
             return res
         else:
             return None
+
+
+def make_key(formula: LogicObject):
+    res = []
+
+    def inner(formula, level):
+        if len(res) == level:
+            res.append([])
+
+        if isinstance(formula, Expression):
+            res[level].append(len(formula.children))
+            for child in formula.children:
+                inner(child, level + 1)
+        elif isinstance(formula, Variable):
+            res[level].append(Variable)
+        else:
+            res[level].append(formula)
+
+    inner(formula, 0)
+    return res
