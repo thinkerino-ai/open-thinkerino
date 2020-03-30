@@ -7,8 +7,8 @@ from aitools.proofs.knowledge_bases.redis import IndexedRedisPersistenceKnowledg
 from aitools.proofs.knowledge_bases.zodb import ZodbPersistentKnowledgeBase, IndexedZodbPersistenceKnowledgeBase
 
 logging.basicConfig(format="[%(levelname)s] %(name)s - %(message)s")
-logging.getLogger().setLevel(logging.NOTSET)
-logging.getLogger('txn').setLevel(logging.WARN)
+logging.getLogger().setLevel(logging.WARNING)
+logging.getLogger('txn').setLevel(logging.WARNING)
 
 
 @pytest.fixture(params=[DummyKnowledgeBase, ZodbPersistentKnowledgeBase, DummyIndexedKnowledgeBase,

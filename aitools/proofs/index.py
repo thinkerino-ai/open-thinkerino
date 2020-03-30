@@ -111,14 +111,14 @@ class AbstruseIndex(Generic[T]):
     def subindex_tree(self):
         return self._subindex_tree
 
-    def add(self, key, formula: Expression):
-        self._add(key, formula)
+    def add(self, key, obj):
+        self._add(key, obj)
 
-    def _add(self, key, formula: Expression):
+    def _add(self, key, obj):
         _key = key[self.level] if self.level < len(key) else None
         if _key is None or len(_key) == 0:
-            if formula not in self.objects:
-                self.objects.add(formula)
+            if obj not in self.objects:
+                self.objects.add(obj)
             return
 
         further_abstrusion: Sequence[AbstruseIndex] = tuple(self.subindex_tree.retrieve(_key, use_wildcard=False))
@@ -132,7 +132,7 @@ class AbstruseIndex(Generic[T]):
         else:
             dest, _ = further_abstrusion[0]
 
-        dest._add(key, formula)
+        dest._add(key, obj)
 
     def retrieve(self, key):
         return self._retrieve(full_key=key)
@@ -168,7 +168,7 @@ class AbstruseIndex(Generic[T]):
     def _full_search(self, *, full_key, previous_key):
         subindices: Iterable[AbstruseIndex] = list(self.subindex_tree.retrieve(None))
         for subindex, found_key in subindices: # TODO full_key must be not None
-            res = list(subindex._retrieve(full_key=None, previous_key=previous_key, projection_key=found_key))
+            res = list(subindex._retrieve(full_key=full_key, previous_key=previous_key, projection_key=found_key))
             for r in res:
                 yield r
 
