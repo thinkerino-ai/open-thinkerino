@@ -5,7 +5,8 @@
             - [x] refactor key_function as an injected dependency
             - [x] refactor key_function so that it is called once and returns the whole key
             - [x] refactor key_function so that the key is passed from outside
-        - [ ] refactor AbstruseIndex so that it is generic (no dependency on logic package)
+        - [ ]. refactor AbstruseIndex so that it is generic (no dependency on logic package)
+            - [x] remove Variable as a wildcard in keys
             - [ ] make _ListKeyIndex a Trie
         - [ ] ...
     - [ ] implement persistence

@@ -3,7 +3,7 @@ import itertools
 import logging
 from collections import deque
 from collections.abc import Iterable
-from typing import TypeVar, Generic, Type, Sequence, List, Callable
+from typing import TypeVar, Generic, Type, Sequence
 
 from aitools.logic import Expression, LogicObject, Variable
 
@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
 
+WILDCARD = None
 
 class _ListKeyIndex(Generic[T]):
     def __init__(self, subindex_container_class=dict, object_container_class=set):
@@ -56,13 +57,13 @@ class _ListKeyIndex(Generic[T]):
     def _traverse_next_key_element(self, key, level, found_key, use_wildcard):
         key_element = key[level]
         logger.debug("Considering the following element of the key: %s", key_element)
-        if key_element is not Variable or not use_wildcard:
+        if key_element is not WILDCARD or not use_wildcard:
             logger.debug("Searching for key element explicitly")
             yield from self._search_for_key_element_explicitly(key, key_element, level, found_key, use_wildcard)
-            if key_element is not Variable:
+            if key_element is not WILDCARD:
                 logger.debug("Searching for variables in the index")
                 yield from self._search_for_variable(key, level, found_key, use_wildcard)
-        elif key_element is Variable and use_wildcard:
+        elif key_element is WILDCARD and use_wildcard:
             logger.debug("Element is a variable, performing wildcard search")
             yield from self._search_wildcard(key, level, found_key, use_wildcard)
 
@@ -76,10 +77,10 @@ class _ListKeyIndex(Generic[T]):
                 yield r
 
     def _search_for_variable(self, key, level, found_key, use_wildcard):
-        if Variable in self.subindices and use_wildcard:
+        if WILDCARD in self.subindices and use_wildcard:
             logger.debug("Subindex contains variable, recursion...")
-            subindex = self.subindices[Variable]
-            res = list(subindex._retrieve(key, level=level + 1, found_key=found_key + [Variable],
+            subindex = self.subindices[WILDCARD]
+            res = list(subindex._retrieve(key, level=level + 1, found_key=found_key + [WILDCARD],
                                           use_wildcard=use_wildcard))
             logger.debug("Recursion returned %s elements", len(res))
             for r in res:
@@ -177,9 +178,9 @@ class AbstruseIndex(Generic[T]):
         result = []
 
         for i, projector in enumerate(projection_key):
-            if previous_key[i] is Variable and isinstance(projector, int):
-                # if previous_key[i] is a Variable, the current key wouldn't have a corresponding item, so we "insert" Variables
-                result.extend(itertools.repeat(Variable, projector))
+            if previous_key[i] is WILDCARD and isinstance(projector, int):
+                # if previous_key[i] is a wildcard, the current key wouldn't have a corresponding item, so we "insert" wildcards
+                result.extend(itertools.repeat(WILDCARD, projector))
             elif isinstance(projector, int):
                 # we take the "n" elements from the current key
                 for j in range(projector):
@@ -206,7 +207,7 @@ def make_key(formula: LogicObject):
             for child in formula.children:
                 inner(child, level + 1)
         elif isinstance(formula, Variable):
-            res[level].append(Variable)
+            res[level].append(WILDCARD)
         else:
             res[level].append(formula)
 
