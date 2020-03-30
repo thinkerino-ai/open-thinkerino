@@ -7,7 +7,7 @@ from persistent.mapping import PersistentMapping
 
 from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import normalize_variables, VariableSource
-from aitools.proofs.index import AbstruseIndex, _ListKeyIndex, make_key
+from aitools.proofs.index import AbstruseIndex, TrieIndex, make_key
 from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
 from aitools.proofs.listeners import Listener
 from aitools.proofs.proof import Prover
@@ -78,13 +78,14 @@ class ZodbPersistentKnowledgeBase(KnowledgeBase):
 # TODO I'm sure I could refactor everything in a "Storage" class so that persistence becomes actually an injected dependency
 class _PersistentAbstruseIndex(Persistent, AbstruseIndex):
     def __init__(self, *args, **kwargs):
-        kwargs.update(subindex_class=_PersistentListKeyIndex)
+        kwargs.update(subindex_class=_PersistentTrieIndex)
         super().__init__(*args, **kwargs)
 
 
-class _PersistentListKeyIndex(Persistent, _ListKeyIndex):
-    def __init__(self):
-        super().__init__(PersistentMapping, PersistentList)
+class _PersistentTrieIndex(Persistent, TrieIndex):
+    def __init__(self, *, subindex_container_class=PersistentMapping, object_container_class=PersistentList):
+        super().__init__(subindex_container_class=subindex_container_class,
+                         object_container_class=object_container_class)
 
     def add_object(self, obj):
         self.objects.append(obj)

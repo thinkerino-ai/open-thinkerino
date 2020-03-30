@@ -9,7 +9,8 @@
             - [x] remove Variable as a wildcard in keys
             - [x] set logging level to WARNING in tests
             - [x] remove references to "formula" from the index
-            - [ ] make _ListKeyIndex a Trie
+            - [x] make _ListKeyIndex a Trie
+            - [ ] make AbstruseIndex generic
         - [ ] ...
     - [ ] implement persistence
         - [ ] inmem

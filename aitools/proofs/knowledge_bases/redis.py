@@ -6,7 +6,7 @@ import redis
 
 from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import VariableSource, normalize_variables
-from aitools.proofs.index import _ListKeyIndex, AbstruseIndex, make_key
+from aitools.proofs.index import TrieIndex, AbstruseIndex, make_key
 from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
 from aitools.proofs.listeners import Listener
 from aitools.proofs.proof import Prover
@@ -136,7 +136,7 @@ class IndexedRedisPersistenceKnowledgeBase(KnowledgeBase):
 
                 return res
 
-        class pSquare(_ListKeyIndex):
+        class pSquare(TrieIndex):
             __last_id = 0
 
             def __init__(self, id_=None, **__):

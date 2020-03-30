@@ -13,8 +13,11 @@ T = TypeVar('T')
 
 WILDCARD = None
 
-class _ListKeyIndex(Generic[T]):
-    def __init__(self, subindex_container_class=dict, object_container_class=set):
+
+class TrieIndex(Generic[T]):
+    def __init__(self, *, subindex_container_class=dict, object_container_class=set):
+        self.subindex_container_class = subindex_container_class
+        self.object_container_class = object_container_class
         self.subindices = subindex_container_class()
         self.objects = object_container_class()
 
@@ -29,8 +32,9 @@ class _ListKeyIndex(Generic[T]):
         else:
             key_element = key[level]
             if key_element not in self.subindices:
-                self.subindices[key_element] = self.__class__()
-            subindex: _ListKeyIndex = self.subindices[key_element]
+                self.subindices[key_element] = self.__class__(subindex_container_class=self.subindex_container_class,
+                                                              object_container_class=self.object_container_class)
+            subindex: TrieIndex = self.subindices[key_element]
             subindex._add(key, obj, level + 1)
 
     def retrieve(self, key, *, use_wildcard = True) -> Iterable[T]:
@@ -100,11 +104,11 @@ class _ListKeyIndex(Generic[T]):
         self.objects.add(obj)
 
 
-class AbstruseIndex(Generic[T]):
-    def __init__(self, *, level=0, subindex_class: Type[_ListKeyIndex] = _ListKeyIndex, object_container_class=set):
+class AbstruseIndex:
+    def __init__(self, *, level=0, subindex_class: Type[TrieIndex] = TrieIndex, object_container_class=set):
         self.level = level
         self.objects = object_container_class()
-        self._subindex_tree: _ListKeyIndex[AbstruseIndex] = subindex_class()
+        self._subindex_tree: TrieIndex[AbstruseIndex] = subindex_class()
         self.subindex_class = subindex_class
 
     @property
