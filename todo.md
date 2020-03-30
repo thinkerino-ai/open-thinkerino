@@ -10,7 +10,8 @@
             - [x] set logging level to WARNING in tests
             - [x] remove references to "formula" from the index
             - [x] make _ListKeyIndex a Trie
-            - [ ] make AbstruseIndex generic
+            - [x] make AbstruseIndex generic (apparently it was already)
+            - [ ] restructure modules
         - [ ] ...
     - [ ] implement persistence
         - [ ] inmem

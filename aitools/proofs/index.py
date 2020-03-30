@@ -110,6 +110,7 @@ class AbstruseIndex:
         self.objects = object_container_class()
         self._subindex_tree: TrieIndex[AbstruseIndex] = subindex_class()
         self.subindex_class = subindex_class
+        self.object_container_class = object_container_class
 
     @property
     def subindex_tree(self):
@@ -131,7 +132,8 @@ class AbstruseIndex:
             raise Exception("Do I even know what I'm doing?")
 
         if len(further_abstrusion) == 0:
-            dest: AbstruseIndex = self.__class__(level=self.level + 1, subindex_class=self.subindex_class)
+            dest: AbstruseIndex = self.__class__(level=self.level + 1, subindex_class=self.subindex_class,
+                                                 object_container_class=self.object_container_class)
             self.subindex_tree.add(_key, dest)
         else:
             dest, _ = further_abstrusion[0]
@@ -154,7 +156,7 @@ class AbstruseIndex:
             yield from self._full_search(full_key=full_key, previous_key=previous_key)
         else:
             if projection_key is not None:
-                _key = self._project_key(previous_key, projection_key, _key)
+                _key = self._project_key(previous_key=previous_key, projection_key=projection_key, current_key=_key)
                 logger.debug("Projected key to %s", _key)
 
             if len(_key) > 0:
@@ -163,22 +165,21 @@ class AbstruseIndex:
                 logger.debug("Index found %s sources", len(subindices))
 
                 for subindex, found_key in subindices:
-                    res = list(subindex._retrieve(full_key=full_key, previous_key=_key,
-                                                  projection_key=found_key))
+                    res = list(subindex._retrieve(full_key=full_key, previous_key=_key, projection_key=found_key))
                     for r in res:
                         logger.debug("Index has found result %s", r)
                         yield r
 
     def _full_search(self, *, full_key, previous_key):
         subindices: Iterable[AbstruseIndex] = list(self.subindex_tree.retrieve(None))
-        for subindex, found_key in subindices: # TODO full_key must be not None
+        for subindex, found_key in subindices:
             res = list(subindex._retrieve(full_key=full_key, previous_key=previous_key, projection_key=found_key))
             for r in res:
                 yield r
 
     @staticmethod
-    def _project_key(previous_key, projection_key, key):
-        key = deque(key)
+    def _project_key(*, previous_key, projection_key, current_key):
+        current_key = deque(current_key)
         result = []
 
         for i, projector in enumerate(projection_key):
@@ -188,10 +189,10 @@ class AbstruseIndex:
             elif isinstance(projector, int):
                 # we take the "n" elements from the current key
                 for j in range(projector):
-                    result.append(key.popleft())
+                    result.append(current_key.popleft())
 
-        while len(key) > 0:
-            result.append(key.popleft())
+        while len(current_key) > 0:
+            result.append(current_key.popleft())
 
         return result
 
