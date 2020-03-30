@@ -11,8 +11,7 @@
             - [x] remove references to "formula" from the index
             - [x] make _ListKeyIndex a Trie
             - [x] make AbstruseIndex generic (apparently it was already)
-            - [ ] restructure modules
-        - [ ] ...
+            - [x] restructure modules
     - [ ] implement persistence
         - [ ] inmem
         - [ ] actual

@@ -6,7 +6,8 @@ import redis
 
 from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import VariableSource, normalize_variables
-from aitools.proofs.index import TrieIndex, AbstruseIndex, make_key
+from aitools.proofs.index import make_key
+from aitools.utils.abstruse_index import TrieIndex, AbstruseIndex
 from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
 from aitools.proofs.listeners import Listener
 from aitools.proofs.proof import Prover

@@ -5,7 +5,8 @@ from typing import Optional, Iterable, Set
 from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import normalize_variables, VariableSource
 from aitools.proofs.context import contextual
-from aitools.proofs.index import AbstruseIndex, make_key
+from aitools.proofs.index import make_key
+from aitools.utils.abstruse_index import AbstruseIndex
 from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
 from aitools.proofs.listeners import Listener, _MultiListenerWrapper
 from aitools.proofs.proof import Prover, Proof, ProofSet
