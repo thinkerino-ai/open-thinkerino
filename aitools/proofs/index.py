@@ -100,23 +100,20 @@ class _ListKeyIndex(Generic[T]):
 
 
 class AbstruseIndex(Generic[T]):
-    def __init__(self, *, level=0, subindex_class: Type[_ListKeyIndex] = _ListKeyIndex, object_container_class=set,
-                 key_function): # TODO typing for key_function
+    def __init__(self, *, level=0, subindex_class: Type[_ListKeyIndex] = _ListKeyIndex, object_container_class=set):
         self.level = level
         self.objects = object_container_class()
         self._subindex_tree: _ListKeyIndex[AbstruseIndex] = subindex_class()
         self.subindex_class = subindex_class
-        self.make_key = key_function
 
     @property
     def subindex_tree(self):
         return self._subindex_tree
 
-    def add(self, formula: Expression):
-        key = self.make_key(formula)
-        self._add(formula, key)
+    def add(self, key, formula: Expression):
+        self._add(key, formula)
 
-    def _add(self, formula: Expression, key):
+    def _add(self, key, formula: Expression):
         _key = key[self.level] if self.level < len(key) else None
         if _key is None or len(_key) == 0:
             if formula not in self.objects:
@@ -129,29 +126,27 @@ class AbstruseIndex(Generic[T]):
             raise Exception("Do I even know what I'm doing?")
 
         if len(further_abstrusion) == 0:
-            dest: AbstruseIndex = self.__class__(level=self.level + 1, subindex_class=self.subindex_class,
-                                                 key_function=self.make_key)
+            dest: AbstruseIndex = self.__class__(level=self.level + 1, subindex_class=self.subindex_class)
             self.subindex_tree.add(_key, dest)
         else:
             dest, _ = further_abstrusion[0]
 
-        dest._add(formula, key)
+        dest._add(key, formula)
 
-    def retrieve(self, formula: Expression):
-        key = self.make_key(formula)
-        return self._retrieve(formula, full_key=key)
+    def retrieve(self, key):
+        return self._retrieve(full_key=key)
 
-    def _retrieve(self, formula: Expression, *, full_key, previous_key=None, projection_key=None):
+    def _retrieve(self, *, full_key, previous_key=None, projection_key=None):
         _key = full_key[self.level] if full_key and self.level < len(full_key) else None
 
-        logger.info("Index is retrieving %s and using key %s", formula, _key)
+        logger.info("Index is retrieving full key %s", _key)
 
         for obj in self.objects:
             yield obj
 
         # TODO probably can be removed by exploiting the projection :/ but I'm lazy and it's 3 am
         if _key is None:
-            yield from self._full_search(formula, full_key=full_key, previous_key=previous_key)
+            yield from self._full_search(full_key=full_key, previous_key=previous_key)
         else:
             if projection_key is not None:
                 _key = self._project_key(previous_key, projection_key, _key)
@@ -163,16 +158,16 @@ class AbstruseIndex(Generic[T]):
                 logger.debug("Index found %s sources", len(subindices))
 
                 for subindex, found_key in subindices:
-                    res = list(subindex._retrieve(formula, full_key=full_key, previous_key=_key,
+                    res = list(subindex._retrieve(full_key=full_key, previous_key=_key,
                                                   projection_key=found_key))
                     for r in res:
                         logger.debug("Index has found result %s", r)
                         yield r
 
-    def _full_search(self, formula, *, full_key, previous_key):
+    def _full_search(self, *, full_key, previous_key):
         subindices: Iterable[AbstruseIndex] = list(self.subindex_tree.retrieve(None))
         for subindex, found_key in subindices: # TODO full_key must be not None
-            res = list(subindex._retrieve(formula, full_key=None, previous_key=previous_key, projection_key=found_key))
+            res = list(subindex._retrieve(full_key=None, previous_key=previous_key, projection_key=found_key))
             for r in res:
                 yield r
 
@@ -195,30 +190,10 @@ class AbstruseIndex(Generic[T]):
 
         return result
 
-# TODO remove
-def make_key_old(formula: LogicObject, depth: int):
-    if depth == 0:
-        if isinstance(formula, Expression):
-            return len(formula.children)
-        elif isinstance(formula, Variable):
-            return Variable
-        else:
-            return formula
-    else:
-        if isinstance(formula, Expression):
-            res = []
-            for child in formula.children:
-                key = make_key(child, depth - 1)
-                if isinstance(key, Iterable):
-                    for k in key:
-                        res.append(k)
-                elif key is not None:
-                    res.append(key)
-            return res
-        else:
-            return None
 
-
+# TODO: typing
+# TODO: make this lazy so that it is calculated when it is traversed (otherwise searching for very deep formulas in the
+#  AbstruseIndex could be inefficient)
 def make_key(formula: LogicObject):
     res = []
 

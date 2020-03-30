@@ -6,7 +6,7 @@ import redis
 
 from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import VariableSource, normalize_variables
-from aitools.proofs.index import _ListKeyIndex, AbstruseIndex
+from aitools.proofs.index import _ListKeyIndex, AbstruseIndex, make_key
 from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
 from aitools.proofs.listeners import Listener
 from aitools.proofs.proof import Prover
@@ -176,7 +176,8 @@ class IndexedRedisPersistenceKnowledgeBase(KnowledgeBase):
         return self.__provers
 
     def retrieve(self, formula: Optional[Expression] = None, *, previous_substitution: Substitution = None) -> Iterable[Substitution]:
-        for f in self._known_formulas.retrieve(formula):
+        key = make_key(formula)
+        for f in self._known_formulas.retrieve(key):
             f = normalize_variables(f)
             subst = Substitution.unify(formula, f, previous=previous_substitution)
             if subst is not None:
@@ -184,7 +185,8 @@ class IndexedRedisPersistenceKnowledgeBase(KnowledgeBase):
 
     def _add_formulas(self, *formulas: Expression):
         for f in formulas:
-            self._known_formulas.add(f)
+            key = make_key(f)
+            self._known_formulas.add(key)
 
     def _add_prover(self, prover):
         self.__provers.add(prover)
@@ -201,5 +203,6 @@ class IndexedRedisPersistenceKnowledgeBase(KnowledgeBase):
             yield listener
 
     def __len__(self):
-        return len(list(self._known_formulas.retrieve(Variable())))
+        key = make_key(Variable())
+        return len(list(self._known_formulas.retrieve(key)))
 

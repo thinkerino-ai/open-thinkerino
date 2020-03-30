@@ -95,12 +95,13 @@ class IndexedZodbPersistenceKnowledgeBase(ZodbPersistentKnowledgeBase):
     def _initialize_db(self):
         with self.db.transaction("initializing db if necessary") as conn:
             if 'known_formulas' not in conn.root():
-                conn.root.known_formulas = _PersistentAbstruseIndex(key_function=make_key)
+                conn.root.known_formulas = _PersistentAbstruseIndex()
 
     def retrieve(self, formula: Optional[Expression] = None, *, previous_substitution: Substitution = None) -> Iterable[Substitution]:
         result = []
         with self.db.transaction() as conn:
-            for expr in list(conn.root.known_formulas.retrieve(formula)):
+            key = make_key(formula)
+            for expr in list(conn.root.known_formulas.retrieve(key)):
                 subst = Substitution.unify(normalize_variables(expr), formula, previous=previous_substitution) \
                     if formula is not None else Substitution()
 
@@ -112,8 +113,10 @@ class IndexedZodbPersistenceKnowledgeBase(ZodbPersistentKnowledgeBase):
     def _add_formulas(self, *formulas: Expression):
         with self.db.transaction() as conn:
             for f in formulas:
-                conn.root.known_formulas.add(f)
+                key = make_key(f)
+                conn.root.known_formulas.add(key, f)
 
     def __len__(self):
         with self.db.transaction() as conn:
-            return len(list(conn.root.known_formulas.retrieve(Variable())))
+            key = make_key(Variable())
+            return len(list(conn.root.known_formulas.retrieve(key)))

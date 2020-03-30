@@ -66,12 +66,13 @@ class DummyKnowledgeBase(KnowledgeBase):
 class DummyIndexedKnowledgeBase(DummyKnowledgeBase):
     def __init__(self):
         super().__init__()
-        self._known_formulas: AbstruseIndex = AbstruseIndex(key_function=make_key)
+        self._known_formulas: AbstruseIndex = AbstruseIndex()
 
     def retrieve(self, formula: Optional[Expression] = None, *, previous_substitution: Substitution = None) -> Iterable[Substitution]:
         """Retrieves all formula from the KnowledgeBase which are unifiable with the given one.
         No proofs are searched, so either a formula is **IN** the KB, or nothing will be returned"""
-        for f in self._known_formulas.retrieve(formula):
+        key = make_key(formula)
+        for f in self._known_formulas.retrieve(key):
             f = normalize_variables(f)
             subst = Substitution.unify(formula, f, previous=previous_substitution)
             if subst is not None:
@@ -79,7 +80,9 @@ class DummyIndexedKnowledgeBase(DummyKnowledgeBase):
 
     def _add_formulas(self, *formulas: Expression):
         for f in formulas:
-            self._known_formulas.add(f)
+            key = make_key(f)
+            self._known_formulas.add(key, f)
 
     def __len__(self):
-        return len(list(self._known_formulas.retrieve(Variable())))
+        key = make_key(Variable())
+        return len(list(self._known_formulas.retrieve(key)))
