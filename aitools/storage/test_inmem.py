@@ -1,7 +1,8 @@
 import pytest
 
 from aitools.logic import Constant, Variable, Expression, LogicWrapper, LogicObject
-from aitools.proofs.persistence.inmem import InMemLogicObjectStorage
+from aitools.storage.inmem import InMemLogicObjectStorage
+
 
 @pytest.fixture(params=[
     Constant(),
@@ -13,7 +14,7 @@ def single_logic_object(request) -> LogicObject:
     return request.param
 
 
-def test_store_and_retrieve(single_logic_object: LogicObject):
+def test_logic_object_storage_store_and_retrieve(single_logic_object: LogicObject):
     storage = InMemLogicObjectStorage()
 
     storage.add(single_logic_object)

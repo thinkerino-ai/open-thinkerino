@@ -5,13 +5,14 @@
             - [x] refactor key_function as an injected dependency
             - [x] refactor key_function so that it is called once and returns the whole key
             - [x] refactor key_function so that the key is passed from outside
-        - [ ]. refactor AbstruseIndex so that it is generic (no dependency on logic package)
+        - [x] refactor AbstruseIndex so that it is generic (no dependency on logic package)
             - [x] remove Variable as a wildcard in keys
             - [x] set logging level to WARNING in tests
             - [x] remove references to "formula" from the index
             - [x] make _ListKeyIndex a Trie
             - [x] make AbstruseIndex generic (apparently it was already)
             - [x] restructure modules
+        - [ ]. refactor AbstruseIndex to make it more abstract
     - [ ] implement persistence
         - [ ] inmem
         - [ ] actual

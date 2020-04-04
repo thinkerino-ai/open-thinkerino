@@ -2,10 +2,10 @@ import logging
 import typing
 import abc
 from collections import deque
-from typing import Set, Collection, Optional, Iterable
+from typing import Optional, Iterable
 
 from aitools.logic import Expression, Substitution
-from aitools.logic.utils import normalize_variables, VariableSource
+from aitools.logic.utils import normalize_variables
 from aitools.proofs.context import contextual
 from aitools.proofs.listeners import Listener, _MultiListenerWrapper
 from aitools.proofs.proof import Prover, ProofSet, Proof
