@@ -1,4 +1,5 @@
-from typing import Set, Collection, Optional, Iterable
+import collections
+from typing import Set, Collection, Optional, Iterable, Iterator
 
 import ZODB
 from persistent import Persistent
@@ -76,20 +77,67 @@ class ZodbPersistentKnowledgeBase(KnowledgeBase):
             return len(conn.root.known_formulas)
 
 
+class _Set(collections.abc.MutableSet):
+    def __init__(self, iterable=()):
+        self.container = set(iterable)
+        self.closure = None
+
+    def add(self, x) -> None:
+        self.container.add(x)
+        self.closure._p_changed = True
+
+    def discard(self, x) -> None:
+        self.container.discard(x)
+        self.closure._p_changed = True
+
+    def __contains__(self, x: object) -> bool:
+        return self.container.__contains__(x)
+
+    def __len__(self) -> int:
+        return len(self.container)
+
+    def __iter__(self) -> Iterator:
+        return self.container.__iter__()
+
+
 # TODO I'm sure I could refactor everything in a "Storage" class so that persistence becomes actually an injected dependency
 class _PersistentAbstruseIndex(Persistent, AbstruseIndex):
     def __init__(self, *args, **kwargs):
-        kwargs.update(subindex_class=_PersistentTrieIndex)
+        objects = _Set()
+        objects.closure = self
+        kwargs.update(subindex=_PersistentTrieIndex(), object_container=objects)
         super().__init__(*args, **kwargs)
+
+    def make_node(self, *, new_level):
+        return _PersistentAbstruseIndex(level=new_level)
+
+
+class _ListObjectContainer(collections.abc.MutableSet):
+    def __init__(self, iterable=()):
+        self.container = PersistentList(iterable)
+
+    def add(self, x) -> None:
+        self.container.append(x)
+
+    def discard(self, x) -> None:
+        self.container.remove(x)
+
+    def __contains__(self, x: object) -> bool:
+        return self.container.__contains__(x)
+
+    def __len__(self) -> int:
+        return len(self.container)
+
+    def __iter__(self) -> Iterator:
+        return self.container.__iter__()
 
 
 class _PersistentTrieIndex(Persistent, TrieIndex):
-    def __init__(self, *, subindex_container_class=PersistentMapping, object_container_class=PersistentList):
-        super().__init__(subindex_container_class=subindex_container_class,
-                         object_container_class=object_container_class)
+    def __init__(self):
+        super().__init__(subindex_container=PersistentMapping(), object_container=_ListObjectContainer())
 
-    def add_object(self, obj):
-        self.objects.append(obj)
+    def make_node(self):
+        return _PersistentTrieIndex()
 
 
 # TODO ok it is evident I don't know how to use ZODB :P

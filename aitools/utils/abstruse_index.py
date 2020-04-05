@@ -1,19 +1,18 @@
 import itertools
 import logging
+from abc import ABC, abstractmethod
 from collections import deque
-from typing import TypeVar, Generic, Iterable, Type, Sequence
+from typing import TypeVar, Generic, Iterable, Sequence, Dict, MutableSet
 
 logger = logging.getLogger(__name__)
 T = TypeVar('T')
 WILDCARD = None
 
 
-class TrieIndex(Generic[T]):
-    def __init__(self, *, subindex_container_class=dict, object_container_class=set):
-        self.subindex_container_class = subindex_container_class
-        self.object_container_class = object_container_class
-        self.subindices = subindex_container_class()
-        self.objects = object_container_class()
+class TrieIndex(Generic[T], ABC):
+    def __init__(self, *, subindex_container: Dict, object_container: MutableSet):
+        self.subindices = subindex_container
+        self.objects = object_container
 
     def add(self, key, obj: T):
         logger.info(f"Adding key %s for object %s", key, obj)
@@ -22,14 +21,17 @@ class TrieIndex(Generic[T]):
     def _add(self, key, obj, level: int):
         if level == len(key):
             if obj not in self.objects:
-                self.add_object(obj)
+                self.objects.add(obj)
         else:
             key_element = key[level]
             if key_element not in self.subindices:
-                self.subindices[key_element] = self.__class__(subindex_container_class=self.subindex_container_class,
-                                                              object_container_class=self.object_container_class)
+                self.subindices[key_element] = self.make_node()
             subindex: TrieIndex = self.subindices[key_element]
             subindex._add(key, obj, level + 1)
+
+    @abstractmethod
+    def make_node(self):
+        raise NotImplementedError()
 
     def retrieve(self, key, *, use_wildcard = True) -> Iterable[T]:
         logger.info("Retrieving key %s", key)
@@ -94,17 +96,12 @@ class TrieIndex(Generic[T]):
             for r in res:
                 yield r
 
-    def add_object(self, obj):
-        self.objects.add(obj)
 
-
-class AbstruseIndex:
-    def __init__(self, *, level=0, subindex_class: Type[TrieIndex] = TrieIndex, object_container_class=set):
+class AbstruseIndex(ABC):
+    def __init__(self, *, level=0, subindex: TrieIndex, object_container: MutableSet):
         self.level = level
-        self.objects = object_container_class()
-        self._subindex_tree: TrieIndex[AbstruseIndex] = subindex_class()
-        self.subindex_class = subindex_class
-        self.object_container_class = object_container_class
+        self.objects = object_container
+        self._subindex_tree: TrieIndex[AbstruseIndex] = subindex
 
     @property
     def subindex_tree(self):
@@ -126,13 +123,16 @@ class AbstruseIndex:
             raise Exception("Do I even know what I'm doing?")
 
         if len(further_abstrusion) == 0:
-            dest: AbstruseIndex = self.__class__(level=self.level + 1, subindex_class=self.subindex_class,
-                                                 object_container_class=self.object_container_class)
+            dest: AbstruseIndex = self.make_node(new_level=self.level + 1)
             self.subindex_tree.add(_key, dest)
         else:
             dest, _ = further_abstrusion[0]
 
         dest._add(key, obj)
+
+    @abstractmethod
+    def make_node(self, *, new_level):
+        raise NotImplementedError()
 
     def retrieve(self, key):
         return self._retrieve(full_key=key)
@@ -189,3 +189,4 @@ class AbstruseIndex:
             result.append(current_key.popleft())
 
         return result
+

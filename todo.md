@@ -12,9 +12,22 @@
             - [x] make _ListKeyIndex a Trie
             - [x] make AbstruseIndex generic (apparently it was already)
             - [x] restructure modules
-        - [ ]. refactor AbstruseIndex to make it more abstract
+        - [x] refactor AbstruseIndex to make it more abstract
+            - [x] make a DummyAbstruseIndex subclass and use that wherever needed
+            - [x] make other subclasses for all other "implementations"
+            - [x] remove container classes from the AbstruseIndex and pass them from the superclass constructors
+            - [x] add an "add_object" method to AbstruseIndex
+            - [x] repeat the same for TrieIndex
+                - [x] make subclasses
+                - [x] remove container class inputs
+            - [x] make AbstruseIndex and TrieIndex abstract
+            - [x] add a "make_node" abstract method to AbstruseIndex
+            - [x] add a "make_node" abstract method to TrieIndex
+            - [x] remove level field from AbstruseIndex
+            - [x] remove "add_object" methods (because I can't make my mind up :P)
+                - [x] from AbstruseIndex
+                - [x] from TrieIndex
     - [ ] implement persistence
         - [ ] inmem
-        - [ ] actual
     - [ ] cleanup
         - [ ] remove xfailing case from `tests.proofs.conftest.TestKnowledgeBase`
