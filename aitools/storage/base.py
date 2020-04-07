@@ -5,13 +5,13 @@ from aitools.logic import LogicObject
 
 class LogicObjectStorage(ABC):
     @abstractmethod
-    def add(self, obj: LogicObject):
+    def add(self, *objects: LogicObject):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_by_id(self, obj_id):
+    def search_unifiable(self, other: LogicObject):
         raise NotImplementedError()
 
     @abstractmethod
-    def remove_by_id(self, obj_id):
+    def __len__(self):
         raise NotImplementedError()

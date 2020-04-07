@@ -27,7 +27,15 @@
             - [x] remove "add_object" methods (because I can't make my mind up :P)
                 - [x] from AbstruseIndex
                 - [x] from TrieIndex
+        - [ ] refactor KnowledgeBases to use a storage
+            - [x] define the Storage interface
+            - [ ]. add dummy implementations
+                - [ ]. set-based
+                - [ ] DummyAbstruseIndex-based
+                - [ ] zodb (with and without abstruse-index)
+                - [ ] inmem serializing (this one is new)
+            - [ ] add tests
+            - [ ] refactor knowledge base to receive a storage (so only one knowledge base class will exist)
     - [ ] implement persistence
-        - [ ] inmem
     - [ ] cleanup
         - [ ] remove xfailing case from `tests.proofs.conftest.TestKnowledgeBase`

@@ -10,6 +10,7 @@ from aitools.proofs.utils import predicate_function
 
 
 def test_retrieve_known_formula(TestKnowledgeBase):
+    # TODO this now is more or less duplicated in test_storage, I need to decide what to do with it
     kb = TestKnowledgeBase()
 
     IsA, dylan, cat = constants('IsA, dylan, cat')
@@ -24,6 +25,7 @@ def test_retrieve_known_formula(TestKnowledgeBase):
 
 
 def test_retrieve_known_open_formula(TestKnowledgeBase):
+    # TODO this now is more or less duplicated in test_storage, I need to decide what to do with it
     v = VariableSource()
     kb = TestKnowledgeBase()
 
@@ -44,6 +46,7 @@ def test_retrieve_known_open_formula(TestKnowledgeBase):
 
 
 def test_open_formulas_added_only_once(TestKnowledgeBase):
+    # TODO this now is more or less duplicated in test_storage, I need to decide what to do with it
     v = VariableSource()
     kb = TestKnowledgeBase()
     Foo, a, b = constants('Foo, a, b')
@@ -53,7 +56,7 @@ def test_open_formulas_added_only_once(TestKnowledgeBase):
     assert len(kb) == 3
 
 
-def test_formulas_must_be_normalized(TestKnowledgeBase):
+def test_formulas_are_be_normalized(TestKnowledgeBase):
     v = VariableSource()
     kb = TestKnowledgeBase()
     Foo, Bar, Baz, a, b = constants('Foo, Bar, Baz, a, b')

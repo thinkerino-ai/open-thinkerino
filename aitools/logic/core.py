@@ -164,7 +164,7 @@ class LogicWrapper(LogicObject):
 
 
 class Constant(LogicObject):
-    def __init__(self, name:str = None):
+    def __init__(self, name: str = None):
         if name is not None and not (isinstance(name, str) and name):
             raise ValueError("Constant name must be a non-empty string!")
         super().__init__()
@@ -222,3 +222,12 @@ class Expression(LogicObject):
     def __hash__(self):
         # TODO store this so that it is calculated only once
         return hash(self.children)
+
+    # TODO remove __getstate__ and __setstate__ as soon as IDs are removed (there's a GitHub issue about that and
+    #  a canary test I just wrote to make sure I remember about this)
+    def __getstate__(self):
+        return self.children
+
+    def __setstate__(self, state):
+        self.id = -1
+        self.children = state

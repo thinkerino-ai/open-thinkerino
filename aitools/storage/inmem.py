@@ -1,23 +1,28 @@
 import pickle
-from typing import Dict
+from typing import Dict, Set
 
-from aitools.logic import LogicObject, Expression, Variable
+from aitools.logic import LogicObject, Expression, Variable, Substitution
 from aitools.storage.base import LogicObjectStorage
 from aitools.utils.abstruse_index import WILDCARD
 
 
-class InMemLogicObjectStorage(LogicObjectStorage):
+class InMemSerializingLogicObjectStorage(LogicObjectStorage):
     def __init__(self):
-        self._objects: Dict[int, LogicObject] = {}
+        self._objects: Set[bytes] = set()
 
-    def add(self, obj: LogicObject):
-        self._objects[obj.id] = pickle.dumps(obj)
+    def add(self, *objects: LogicObject):
+        for obj in objects:
+            self._objects.add(pickle.dumps(obj))
 
-    def get_by_id(self, obj_id):
-        return pickle.loads(self._objects[obj_id])
+    def search_unifiable(self, other: LogicObject):
+        for s_obj in self._objects:
+            obj = pickle.loads(s_obj)
+            unifier = Substitution.unify(obj, other)
+            if unifier is not None:
+                yield obj
 
-    def remove_by_id(self, obj_id):
-        del self._objects[obj_id]
+    def __len__(self):
+        return len(self._objects)
 
 
 def make_plain_key(formula: LogicObject):
@@ -38,16 +43,3 @@ def make_plain_key(formula: LogicObject):
 
     inner(formula, 0)
     return res
-
-
-class InMemAbstruseIndexedStorage:
-    def __init__(self):
-        self.storage = InMemLogicObjectStorage
-
-    def add(self, obj: LogicObject):
-        """Adds obj to the storage and to the index"""
-        pass
-
-    def retrieve_unification_candidates(self, obj: LogicObject):
-        """Retrieves all objects that could unify with obj"""
-        pass

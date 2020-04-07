@@ -44,7 +44,6 @@ class ZodbPersistentKnowledgeBase(KnowledgeBase):
                 conn.root.known_formulas = set()
 
     def retrieve(self, formula: Optional[Expression] = None, *, previous_substitution: Substitution = None) -> Iterable[Substitution]:
-        # TODO index! indeeeeeex! INDEEEEEEX! I N D E E E E E E E X ! ! ! ! !
         with self.db.transaction() as conn:
             for expr in conn.root.known_formulas:
                 subst = Substitution.unify(normalize_variables(expr), formula, previous=previous_substitution) if formula is not None else Substitution()
