@@ -30,9 +30,9 @@
         - [ ] refactor KnowledgeBases to use a storage
             - [x] define the Storage interface
             - [ ]. add dummy implementations
-                - [ ]. set-based
+                - [x] set-based
                 - [x] inmem serializing (new)
-                - [ ] DummyAbstruseIndex-based
+                - [ ]. DummyAbstruseIndex-based
                 - [ ] zodb
                 - [ ] indexed zodb
                 - [ ] inmem indexed serializing (also new)

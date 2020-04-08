@@ -4,21 +4,17 @@ import pytest
 
 from aitools.logic.utils import constants, VariableSource, normalize_variables
 from aitools.storage.base import LogicObjectStorage
+from aitools.storage.dummy import DummyLogicObjectStorage
 from aitools.storage.inmem_serializing import InMemSerializingLogicObjectStorage
 
-StorageFactory = namedtuple("StorageFactory", ["factory", "preserves_identity"])
 
-
-@pytest.fixture(params=[
-    StorageFactory(factory=InMemSerializingLogicObjectStorage, preserves_identity=False)
-])
+@pytest.fixture(params=[DummyLogicObjectStorage, InMemSerializingLogicObjectStorage])
 def storage_factory(request):
     return request.param
 
 
 def test_retrieve_known_formula(storage_factory):
-    factory, preserves_identity = storage_factory
-    storage: LogicObjectStorage = factory()
+    storage: LogicObjectStorage = storage_factory()
 
     IsA, dylan, cat = constants('IsA, dylan, cat')
 
@@ -31,8 +27,7 @@ def test_retrieve_known_formula(storage_factory):
 
 
 def test_retrieve_known_open_formula(storage_factory):
-    factory, preserves_identity = storage_factory
-    storage: LogicObjectStorage = factory()
+    storage: LogicObjectStorage = storage_factory()
 
     v = VariableSource()
 
@@ -48,8 +43,7 @@ def test_retrieve_known_open_formula(storage_factory):
 
 
 def test_normalized_formulas_added_only_once(storage_factory):
-    factory, preserves_identity = storage_factory
-    storage: LogicObjectStorage = factory()
+    storage: LogicObjectStorage = storage_factory()
 
     v = VariableSource()
     Foo, a, b = constants('Foo, a, b')
