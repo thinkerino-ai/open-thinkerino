@@ -4,7 +4,7 @@ import pytest
 
 from aitools.logic.utils import constants, VariableSource, normalize_variables
 from aitools.storage.base import LogicObjectStorage
-from aitools.storage.inmem import InMemSerializingLogicObjectStorage
+from aitools.storage.inmem_serializing import InMemSerializingLogicObjectStorage
 
 StorageFactory = namedtuple("StorageFactory", ["factory", "preserves_identity"])
 

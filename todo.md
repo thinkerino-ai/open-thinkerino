@@ -31,9 +31,11 @@
             - [x] define the Storage interface
             - [ ]. add dummy implementations
                 - [ ]. set-based
+                - [x] inmem serializing (new)
                 - [ ] DummyAbstruseIndex-based
-                - [ ] zodb (with and without abstruse-index)
-                - [ ] inmem serializing (this one is new)
+                - [ ] zodb
+                - [ ] indexed zodb
+                - [ ] inmem indexed serializing (also new)
             - [ ] add tests
             - [ ] refactor knowledge base to receive a storage (so only one knowledge base class will exist)
     - [ ] implement persistence
