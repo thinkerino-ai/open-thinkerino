@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from typing import Callable
+
 import pytest
 
 from aitools.logic.utils import constants, VariableSource, normalize_variables
@@ -7,27 +10,46 @@ from aitools.storage.inmem_serializing import InMemSerializingLogicObjectStorage
     DummyIndexedSerializingLogicObjectStorage
 
 
-@pytest.fixture(params=[DummyLogicObjectStorage, InMemSerializingLogicObjectStorage, DummyIndexedLogicObjectStorage,
-                        DummyIndexedSerializingLogicObjectStorage])
-def storage_factory(request):
+@dataclass
+class StorageImplementation:
+    storage_factory: Callable[[], LogicObjectStorage]
+    preserves_identity: bool
+
+@pytest.fixture(
+    params=[
+        StorageImplementation(DummyLogicObjectStorage, True),
+        StorageImplementation(InMemSerializingLogicObjectStorage, False),
+        StorageImplementation(DummyIndexedLogicObjectStorage, True),
+        StorageImplementation(DummyIndexedSerializingLogicObjectStorage, False)
+    ])
+def storage_implementation(request):
+    """Each param is a pair of a storage factory and a boolean which says if it preserves identity"""
     return request.param
 
 
-def test_retrieve_known_formula(storage_factory):
-    storage: LogicObjectStorage = storage_factory()
+def test_retrieve_known_formula(storage_implementation: StorageImplementation):
+    storage: LogicObjectStorage = storage_implementation.storage_factory()
 
     IsA, dylan, cat = constants('IsA, dylan, cat')
 
-    storage.add(IsA(dylan, cat))
+    formula = IsA(dylan, cat)
+    storage.add(formula)
 
     # we can retrieve it because we already know it
-    retrieved = set(storage.search_unifiable(IsA(dylan, cat)))
+    all_retrieved = set(storage.search_unifiable(IsA(dylan, cat)))
 
-    assert retrieved == {IsA(dylan, cat)}
+    assert len(all_retrieved) == 1
+    retrieved = all_retrieved.pop()
+    assert retrieved == IsA(dylan, cat)
+
+    if storage_implementation.preserves_identity:
+        assert retrieved is formula
+    else:
+        assert retrieved is not formula
 
 
-def test_retrieve_known_open_formula(storage_factory):
-    storage: LogicObjectStorage = storage_factory()
+def test_retrieve_known_open_formula(storage_implementation: StorageImplementation):
+    storage: LogicObjectStorage = storage_implementation.storage_factory()
 
     v = VariableSource()
 
@@ -42,8 +64,8 @@ def test_retrieve_known_open_formula(storage_factory):
     assert retrieved == {IsA(dylan, cat), IsA(hugo, cat)}
 
 
-def test_normalized_formulas_added_only_once(storage_factory):
-    storage: LogicObjectStorage = storage_factory()
+def test_normalized_formulas_added_only_once(storage_implementation: StorageImplementation):
+    storage: LogicObjectStorage = storage_implementation.storage_factory()
 
     v = VariableSource()
     Foo, a, b = constants('Foo, a, b')

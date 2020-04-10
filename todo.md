@@ -27,7 +27,7 @@
             - [x] remove "add_object" methods (because I can't make my mind up :P)
                 - [x] from AbstruseIndex
                 - [x] from TrieIndex
-        - [ ] refactor KnowledgeBases to use a storage
+        - [ ]. refactor KnowledgeBases to use a storage
             - [x] define the Storage interface
             - [x] add dummy implementations
                 - [x] set-based
@@ -36,9 +36,9 @@
                 - [no] zodb
                 - [no] indexed zodb
                 - [x] inmem indexed serializing (also new)
-            - [ ]. add tests
-                - [ ]. reintroduce the "preserves-identity" thingie
-            - [ ] remove zodb
+            - [x] add tests
+                - [x] reintroduce the "preserves-identity" thingie
+            - [ ]. remove zodb
             - [ ] refactor storage to yield both the object and the substitution
             - [ ] refactor knowledge base to receive a storage (so only one knowledge base class will exist)
     - [ ] implement persistence
