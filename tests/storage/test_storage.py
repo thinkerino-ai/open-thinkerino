@@ -4,11 +4,11 @@ import pytest
 
 from aitools.logic.utils import constants, VariableSource, normalize_variables
 from aitools.storage.base import LogicObjectStorage
-from aitools.storage.dummy import DummyLogicObjectStorage
+from aitools.storage.dummy import DummyLogicObjectStorage, DummyIndexedLogicObjectStorage
 from aitools.storage.inmem_serializing import InMemSerializingLogicObjectStorage
 
 
-@pytest.fixture(params=[DummyLogicObjectStorage, InMemSerializingLogicObjectStorage])
+@pytest.fixture(params=[DummyLogicObjectStorage, InMemSerializingLogicObjectStorage, DummyIndexedLogicObjectStorage])
 def storage_factory(request):
     return request.param
 

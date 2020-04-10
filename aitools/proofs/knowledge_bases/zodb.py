@@ -8,7 +8,7 @@ from persistent.mapping import PersistentMapping
 
 from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import normalize_variables, VariableSource
-from aitools.proofs.index import make_key
+from aitools.storage.index import make_key
 from aitools.utils.abstruse_index import TrieIndex, AbstruseIndex
 from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
 from aitools.proofs.listeners import Listener

@@ -1,11 +1,10 @@
 import typing
-from collections import deque
 from typing import Optional, Iterable, Set
 
 from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import normalize_variables, VariableSource
-from aitools.proofs.index import make_key
-from aitools.utils.abstruse_index import AbstruseIndex, TrieIndex
+from aitools.storage.index import make_key
+from aitools.storage.dummy import DummyAbstruseIndex
 from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
 from aitools.proofs.listeners import Listener
 from aitools.proofs.proof import Prover
@@ -59,22 +58,6 @@ class DummyKnowledgeBase(KnowledgeBase):
 
     def __len__(self):
         return len(self._known_formulas)
-
-
-class DummyTrieIndex(TrieIndex):
-    def __init__(self):
-        super().__init__(subindex_container=dict(), object_container=set())
-
-    def make_node(self):
-        return DummyTrieIndex()
-
-
-class DummyAbstruseIndex(AbstruseIndex):
-    def __init__(self, *, level=0):
-        super().__init__(level=level, object_container=set(), subindex=DummyTrieIndex())
-
-    def make_node(self, *, new_level):
-        return DummyAbstruseIndex(level=new_level)
 
 
 class DummyIndexedKnowledgeBase(DummyKnowledgeBase):

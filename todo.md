@@ -32,11 +32,12 @@
             - [ ]. add dummy implementations
                 - [x] set-based
                 - [x] inmem serializing (new)
-                - [ ]. DummyAbstruseIndex-based
-                - [ ] zodb
-                - [ ] indexed zodb
+                - [x] DummyAbstruseIndex-based
+                - [no] zodb
+                - [no] indexed zodb
                 - [ ] inmem indexed serializing (also new)
             - [ ] add tests
+            - [ ] remove zodb
             - [ ] refactor knowledge base to receive a storage (so only one knowledge base class will exist)
     - [ ] implement persistence
     - [ ] cleanup
