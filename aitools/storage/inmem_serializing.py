@@ -3,6 +3,7 @@ from typing import Dict, Set
 
 from aitools.logic import LogicObject, Expression, Variable, Substitution
 from aitools.storage.base import LogicObjectStorage
+from aitools.storage.dummy import DummyAbstruseIndex
 from aitools.utils.abstruse_index import WILDCARD
 
 
@@ -43,3 +44,25 @@ def make_plain_key(formula: LogicObject):
 
     inner(formula, 0)
     return res
+
+
+class DummyIndexedSerializingLogicObjectStorage(LogicObjectStorage):
+
+    def __init__(self):
+        self._objects: DummyAbstruseIndex = DummyAbstruseIndex()
+
+    def add(self, *objects: LogicObject):
+        for obj in objects:
+            key = make_plain_key(obj)
+            self._objects.add(key=key, obj=pickle.dumps(obj))
+
+    def search_unifiable(self, other: LogicObject):
+        key = make_plain_key(other)
+        for obj_raw in self._objects.retrieve(key):
+            obj = pickle.loads(obj_raw)
+            unifier = Substitution.unify(obj, other)
+            if unifier is not None:
+                yield obj
+
+    def __len__(self):
+        return sum(1 for _ in self._objects.retrieve([[None]]))

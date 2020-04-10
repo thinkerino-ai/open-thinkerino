@@ -29,15 +29,17 @@
                 - [x] from TrieIndex
         - [ ] refactor KnowledgeBases to use a storage
             - [x] define the Storage interface
-            - [ ]. add dummy implementations
+            - [x] add dummy implementations
                 - [x] set-based
                 - [x] inmem serializing (new)
                 - [x] DummyAbstruseIndex-based
                 - [no] zodb
                 - [no] indexed zodb
-                - [ ] inmem indexed serializing (also new)
-            - [ ] add tests
+                - [x] inmem indexed serializing (also new)
+            - [ ]. add tests
+                - [ ]. reintroduce the "preserves-identity" thingie
             - [ ] remove zodb
+            - [ ] refactor storage to yield both the object and the substitution
             - [ ] refactor knowledge base to receive a storage (so only one knowledge base class will exist)
     - [ ] implement persistence
     - [ ] cleanup
