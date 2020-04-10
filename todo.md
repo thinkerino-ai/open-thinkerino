@@ -39,8 +39,8 @@
             - [x] add tests
                 - [x] reintroduce the "preserves-identity" thingie
             - [x] remove zodb
-            - [ ]. refactor storage to yield both the object and the substitution
-            - [ ] refactor knowledge base to receive a storage (so only one knowledge base class will exist)
+            - [x] refactor storage to yield both the object and the substitution
+            - [ ]. refactor knowledge base to receive a storage (so only one knowledge base class will exist)
     - [ ] implement persistence
     - [ ] cleanup
         - [ ] remove xfailing case from `tests.proofs.conftest.TestKnowledgeBase`

@@ -3,6 +3,7 @@ from typing import Callable
 
 import pytest
 
+from aitools.logic import Substitution
 from aitools.logic.utils import constants, VariableSource, normalize_variables
 from aitools.storage.base import LogicObjectStorage
 from aitools.storage.dummy import DummyLogicObjectStorage, DummyIndexedLogicObjectStorage
@@ -36,10 +37,12 @@ def test_retrieve_known_formula(storage_implementation: StorageImplementation):
     storage.add(formula)
 
     # we can retrieve it because we already know it
-    all_retrieved = set(storage.search_unifiable(IsA(dylan, cat)))
+    all_retrieved = list(storage.search_unifiable(IsA(dylan, cat)))
 
     assert len(all_retrieved) == 1
-    retrieved = all_retrieved.pop()
+    retrieved, unifier = all_retrieved.pop()
+
+    assert isinstance(unifier, Substitution)
     assert retrieved == IsA(dylan, cat)
 
     if storage_implementation.preserves_identity:
@@ -60,7 +63,7 @@ def test_retrieve_known_open_formula(storage_implementation: StorageImplementati
         IsA(hugo, cat)
     )
 
-    retrieved = set(storage.search_unifiable(IsA(v._x, cat)))
+    retrieved = set(formula for formula, unifier in storage.search_unifiable(IsA(v._x, cat)))
     assert retrieved == {IsA(dylan, cat), IsA(hugo, cat)}
 
 

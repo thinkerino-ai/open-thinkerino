@@ -1,5 +1,5 @@
 import pickle
-from typing import Dict, Set
+from typing import Dict, Set, Iterable, Tuple
 
 from aitools.logic import LogicObject, Expression, Variable, Substitution
 from aitools.storage.base import LogicObjectStorage
@@ -15,12 +15,12 @@ class InMemSerializingLogicObjectStorage(LogicObjectStorage):
         for obj in objects:
             self._objects.add(pickle.dumps(obj))
 
-    def search_unifiable(self, other: LogicObject):
+    def search_unifiable(self, other: LogicObject) -> Iterable[Tuple[LogicObject, Substitution]]:
         for s_obj in self._objects:
             obj = pickle.loads(s_obj)
             unifier = Substitution.unify(obj, other)
             if unifier is not None:
-                yield obj
+                yield obj, unifier
 
     def __len__(self):
         return len(self._objects)
@@ -56,13 +56,13 @@ class DummyIndexedSerializingLogicObjectStorage(LogicObjectStorage):
             key = make_plain_key(obj)
             self._objects.add(key=key, obj=pickle.dumps(obj))
 
-    def search_unifiable(self, other: LogicObject):
+    def search_unifiable(self, other: LogicObject) -> Iterable[Tuple[LogicObject, Substitution]]:
         key = make_plain_key(other)
         for obj_raw in self._objects.retrieve(key):
             obj = pickle.loads(obj_raw)
             unifier = Substitution.unify(obj, other)
             if unifier is not None:
-                yield obj
+                yield obj, unifier
 
     def __len__(self):
         return sum(1 for _ in self._objects.retrieve([[None]]))

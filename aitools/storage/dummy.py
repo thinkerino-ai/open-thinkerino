@@ -1,4 +1,4 @@
-from typing import Set
+from typing import Set, Iterable, Tuple
 
 from aitools.logic import LogicObject, Substitution
 from aitools.storage.base import LogicObjectStorage
@@ -14,11 +14,11 @@ class DummyLogicObjectStorage(LogicObjectStorage):
         for obj in objects:
             self._objects.add(obj)
 
-    def search_unifiable(self, other: LogicObject):
+    def search_unifiable(self, other: LogicObject) -> Iterable[Tuple[LogicObject, Substitution]]:
         for obj in self._objects:
             unifier = Substitution.unify(obj, other)
             if unifier is not None:
-                yield obj
+                yield obj, unifier
 
     def __len__(self):
         return len(self._objects)
@@ -50,12 +50,12 @@ class DummyIndexedLogicObjectStorage(LogicObjectStorage):
             key = make_key(obj)
             self._objects.add(key=key, obj=obj)
 
-    def search_unifiable(self, other: LogicObject):
+    def search_unifiable(self, other: LogicObject) -> Iterable[Tuple[LogicObject, Substitution]]:
         key = make_key(other)
         for obj in self._objects.retrieve(key):
             unifier = Substitution.unify(obj, other)
             if unifier is not None:
-                yield obj
+                yield obj, unifier
 
     def __len__(self):
         return sum(1 for _ in self._objects.retrieve([[None]]))

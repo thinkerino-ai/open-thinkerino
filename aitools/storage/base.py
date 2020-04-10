@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from typing import Iterable, Tuple
 
-from aitools.logic import LogicObject
+from aitools.logic import LogicObject, Substitution
 
 
 class LogicObjectStorage(ABC):
@@ -9,7 +10,7 @@ class LogicObjectStorage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def search_unifiable(self, other: LogicObject):
+    def search_unifiable(self, other: LogicObject) -> Iterable[Tuple[LogicObject, Substitution]]:
         raise NotImplementedError()
 
     @abstractmethod
