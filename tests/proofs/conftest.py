@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
+from aitools.proofs.knowledge_base import KnowledgeBase
 from aitools.storage.dummy import DummyLogicObjectStorage, DummyIndexedLogicObjectStorage
 from aitools.storage.inmem_serializing import InMemSerializingLogicObjectStorage, \
     DummyIndexedSerializingLogicObjectStorage

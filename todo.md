@@ -40,10 +40,10 @@
                 - [x] reintroduce the "preserves-identity" thingie
             - [x] remove zodb
             - [x] refactor storage to yield both the object and the substitution
-            - [ ]. refactor knowledge base to receive a storage (so only one knowledge base class will exist)
+            - [x] refactor knowledge base to receive a storage (so only one knowledge base class will exist)
                 - [x] create a common flexible KnowledgeBase class
                 - [x] change test fixtures so that they use the new class
-                - [ ]. remove all other KnowledgeBase classes
+                - [x] remove all other KnowledgeBase classes
             - [ ] add a storage also for provers and listeners
                 - [ ] provers
                 - [ ] listeners
