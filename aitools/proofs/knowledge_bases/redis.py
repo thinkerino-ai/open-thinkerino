@@ -7,7 +7,7 @@ from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import VariableSource, normalize_variables
 from aitools.storage.index import make_key
 from aitools.utils.abstruse_index import TrieIndex, AbstruseIndex
-from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
+from aitools.proofs.knowledge_bases.knowledge_base import AbstractKnowledgeBase
 from aitools.proofs.listeners import Listener
 from aitools.proofs.proof import Prover
 
@@ -88,7 +88,7 @@ def make_unpickle_constructor(key_format):
     return unpickle_constructor
 
 
-class IndexedRedisPersistenceKnowledgeBase(KnowledgeBase):
+class IndexedRedisPersistenceKnowledgeBase(AbstractKnowledgeBase):
 
     def __init__(self, **kwargs):
         kb = self

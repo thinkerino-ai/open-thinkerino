@@ -5,12 +5,12 @@ from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import normalize_variables, VariableSource
 from aitools.storage.index import make_key
 from aitools.storage.dummy import DummyAbstruseIndex
-from aitools.proofs.knowledge_bases.knowledge_base import KnowledgeBase
+from aitools.proofs.knowledge_bases.knowledge_base import AbstractKnowledgeBase
 from aitools.proofs.listeners import Listener
 from aitools.proofs.proof import Prover
 
 
-class DummyKnowledgeBase(KnowledgeBase):
+class DummyKnowledgeBase(AbstractKnowledgeBase):
     def __init__(self):
         self._known_formulas: Set[Expression] = set()
         self.__provers: Set[Prover] = set()
