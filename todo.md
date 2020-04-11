@@ -48,6 +48,10 @@
                 - [no] provers 
                 - [no] listeners
             - [no] refactor KnowledgeBase to use also those storages
+        - [x] wait, what? why is the AbstruseIndex in utils? it should be in storage o.o
+        - [ ]. refactor DummyIndexedSerializingLogicObjectStorage not to use DummyAbstruseIndex, but a custom, serializing class
+            - [ ] TrieIndex and AbstruseIndex should take in input custom classes
+            - [ ] actually refactor the storage 
     - [ ] implement persistence
     - [ ] cleanup
         - [x] remove xfailing case from `tests.proofs.conftest.TestKnowledgeBase`

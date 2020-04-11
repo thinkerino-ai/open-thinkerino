@@ -2,8 +2,7 @@ from typing import Set, Iterable, Tuple
 
 from aitools.logic import LogicObject, Substitution
 from aitools.storage.base import LogicObjectStorage
-from aitools.storage.index import make_key
-from aitools.utils.abstruse_index import AbstruseIndex, TrieIndex
+from aitools.storage.index import make_key, TrieIndex, AbstruseIndex
 
 
 class DummyLogicObjectStorage(LogicObjectStorage):

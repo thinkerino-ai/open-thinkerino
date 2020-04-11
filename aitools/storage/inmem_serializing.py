@@ -4,7 +4,7 @@ from typing import Dict, Set, Iterable, Tuple
 from aitools.logic import LogicObject, Expression, Variable, Substitution
 from aitools.storage.base import LogicObjectStorage
 from aitools.storage.dummy import DummyAbstruseIndex
-from aitools.utils.abstruse_index import WILDCARD
+from aitools.storage.index import WILDCARD
 
 
 class InMemSerializingLogicObjectStorage(LogicObjectStorage):
