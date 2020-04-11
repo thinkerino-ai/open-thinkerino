@@ -1,6 +1,6 @@
 
 - [ ]. persistence
-    - [ ]. refactor AbstruseIndex
+    - [x] refactor AbstruseIndex
         - [x] refactor key_function
             - [x] refactor key_function as an injected dependency
             - [x] refactor key_function so that it is called once and returns the whole key
@@ -27,7 +27,7 @@
             - [x] remove "add_object" methods (because I can't make my mind up :P)
                 - [x] from AbstruseIndex
                 - [x] from TrieIndex
-        - [ ]. refactor KnowledgeBases to use a storage
+        - [x] refactor KnowledgeBases to use a storage
             - [x] define the Storage interface
             - [x] add dummy implementations
                 - [x] set-based
@@ -44,10 +44,19 @@
                 - [x] create a common flexible KnowledgeBase class
                 - [x] change test fixtures so that they use the new class
                 - [x] remove all other KnowledgeBase classes
-            - [ ] add a storage also for provers and listeners
-                - [ ] provers
-                - [ ] listeners
-            - [ ] refactor KnowledgeBase to use also those storages
+            - [no] add a storage also for provers and listeners (no: see below)
+                - [no] provers 
+                - [no] listeners
+            - [no] refactor KnowledgeBase to use also those storages
     - [ ] implement persistence
     - [ ] cleanup
-        - [ ] remove xfailing case from `tests.proofs.conftest.TestKnowledgeBase`
+        - [x] remove xfailing case from `tests.proofs.conftest.TestKnowledgeBase`
+        - [x] write somewhere how provers and listeners "storage" should work:
+            - provers and listeners are just configuration, so they are passed as input while building the knowledge base
+            - changing provers and listeners will be possible only by reloading
+                - eventually I count on providing a "hot reload" option, but who knows :P
+            - it is still possible to proceed as follows:
+                - create a general "listener", which listens for any new formula
+                - when the listener triggers, it queries the KB for a formula such as "ListenFor(formula, ?func)"
+                - ?func will be bound to a LogicWrapper which wraps a handler function
+                - I still need to work out the details, which will be here https://github.com/OneManEquipe/aitools/issues/13
