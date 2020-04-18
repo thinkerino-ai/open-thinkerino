@@ -66,7 +66,7 @@
                 - [x] further
                     - [x] container Protocols can probably be removed
                     - [nah] the two indices have a few common methods, they could be moved to a common superclass
-            - [ ]. actually refactor the storage 
+            - [x] actually refactor the storage 
     - [ ] implement persistence
     - [ ] cleanup
         - [x] remove xfailing case from `tests.proofs.conftest.TestKnowledgeBase`

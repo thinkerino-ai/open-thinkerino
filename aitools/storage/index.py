@@ -62,10 +62,6 @@ class TrieIndex(Generic[T], ABC):
     def _get_or_create_subindex(self, key_element) -> TrieIndex:
         raise NotImplementedError()
 
-    @abstractmethod
-    def make_node(self):
-        raise NotImplementedError()
-
     def retrieve(self, key, *, use_wildcard = True) -> Iterable[T]:
         logger.info("Retrieving key %s", key)
         for r in self._retrieve(key, level=0, use_wildcard=use_wildcard):
@@ -145,8 +141,6 @@ class TrieIndex(Generic[T], ABC):
 
 
 class AbstruseIndex(Generic[T], ABC):
-    def __init__(self, *, level=0):
-        self.level = level
 
     @property
     @abstractmethod
@@ -154,10 +148,10 @@ class AbstruseIndex(Generic[T], ABC):
         raise NotImplementedError()
 
     def add(self, key, obj):
-        self._add(key, obj)
+        self._add(key, obj, level=0)
 
-    def _add(self, key, obj):
-        _key = key[self.level] if self.level < len(key) else None
+    def _add(self, key, obj, *, level):
+        _key = key[level] if level < len(key) else None
         if _key is None or len(_key) == 0:
             self._maybe_store_object(obj)
             return
@@ -168,22 +162,22 @@ class AbstruseIndex(Generic[T], ABC):
             raise Exception("Do I even know what I'm doing?")
 
         if len(further_abstrusion) == 0:
-            dest: AbstruseIndex = self.make_node(new_level=self.level + 1)
+            dest: AbstruseIndex = self.make_node()
             self.subindex_tree.add(_key, dest)
         else:
             dest, _ = further_abstrusion[0]
 
-        dest._add(key, obj)
+        dest._add(key, obj, level=level+1)
 
     @abstractmethod
-    def make_node(self, *, new_level):
+    def make_node(self):
         raise NotImplementedError()
 
     def retrieve(self, key):
-        return self._retrieve(full_key=key)
+        return self._retrieve(full_key=key, level=0)
 
-    def _retrieve(self, *, full_key, previous_key=None, projection_key=None):
-        _key = full_key[self.level] if full_key and self.level < len(full_key) else None
+    def _retrieve(self, *, full_key, previous_key=None, projection_key=None, level):
+        _key = full_key[level] if full_key and level < len(full_key) else None
 
         logger.info("Index is retrieving full key %s", _key)
 
@@ -192,7 +186,7 @@ class AbstruseIndex(Generic[T], ABC):
 
         # TODO probably can be removed by exploiting the projection :/ but I'm lazy and it's 3 am
         if _key is None:
-            yield from self._full_search(full_key=full_key, previous_key=previous_key)
+            yield from self._full_search(full_key=full_key, previous_key=previous_key, level=level+1)
         else:
             if projection_key is not None:
                 _key = self._project_key(previous_key=previous_key, projection_key=projection_key, current_key=_key)
@@ -204,23 +198,27 @@ class AbstruseIndex(Generic[T], ABC):
                 logger.debug("Index found %s sources", len(subindices))
 
                 for subindex, found_key in subindices:
-                    res = list(subindex._retrieve(full_key=full_key, previous_key=_key, projection_key=found_key))
+                    res = list(subindex._retrieve(
+                        full_key=full_key, previous_key=_key, projection_key=found_key, level=level+1
+                    ))
                     for r in res:
                         logger.debug("Index has found result %s", r)
                         yield r
 
     @abstractmethod
-    def _get_all_objects(self):
+    def _get_all_objects(self) -> Iterable[T]:
         raise NotImplementedError()
 
     @abstractmethod
     def _maybe_store_object(self, obj):
         raise NotImplementedError()
 
-    def _full_search(self, *, full_key, previous_key):
+    def _full_search(self, *, full_key, previous_key, level):
         subindices: Iterable[AbstruseIndex] = list(self.subindex_tree.retrieve(None))
         for subindex, found_key in subindices:
-            res = list(subindex._retrieve(full_key=full_key, previous_key=previous_key, projection_key=found_key))
+            res = list(subindex._retrieve(
+                full_key=full_key, previous_key=previous_key, projection_key=found_key,level=level+1
+            ))
             for r in res:
                 yield r
 

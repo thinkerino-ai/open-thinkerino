@@ -28,12 +28,9 @@ class DummyTrieIndex(TrieIndex):
         self.subindices: Dict[AbstruseKeyElement, DummyTrieIndex] = dict()
         self.objects: Set[DummyAbstruseIndex] = set()
 
-    def make_node(self):
-        return DummyTrieIndex()
-
     def _get_or_create_subindex(self, key_element) -> TrieIndex:
         if key_element not in self.subindices:
-            self.subindices[key_element] = self.make_node()
+            self.subindices[key_element] = DummyTrieIndex()
         subindex: TrieIndex = self.subindices[key_element]
         return subindex
 
@@ -56,13 +53,12 @@ class DummyTrieIndex(TrieIndex):
 
 class DummyAbstruseIndex(AbstruseIndex):
 
-    def __init__(self, *, level=0):
-        super().__init__(level=level)
+    def __init__(self):
         self.objects = set()
         self._subindex_tree = DummyTrieIndex()
 
-    def make_node(self, *, new_level):
-        return DummyAbstruseIndex(level=new_level)
+    def make_node(self):
+        return DummyAbstruseIndex()
 
     def _get_all_objects(self):
         return self.objects
@@ -74,6 +70,7 @@ class DummyAbstruseIndex(AbstruseIndex):
     @property
     def subindex_tree(self):
         return self._subindex_tree
+
 
 class DummyIndexedLogicObjectStorage(LogicObjectStorage):
 
