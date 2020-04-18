@@ -67,7 +67,11 @@
                     - [x] container Protocols can probably be removed
                     - [nah] the two indices have a few common methods, they could be moved to a common superclass
             - [x] actually refactor the storage 
-    - [ ] implement persistence
+    - [ ]. implement persistence
+        - [ ]. refactor the NodeStorage to be... better :P
+            - [x] move it somewhere else
+            - [ ] classes instead of dicts?
+        - [ ] implement another NodeStorage based on a database
     - [ ] cleanup
         - [x] remove xfailing case from `tests.proofs.conftest.TestKnowledgeBase`
         - [x] write somewhere how provers and listeners "storage" should work:
