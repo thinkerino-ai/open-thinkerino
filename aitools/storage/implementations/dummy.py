@@ -1,5 +1,5 @@
 import pickle
-from typing import Set, Iterable, Tuple, cast, Dict
+from typing import Set, Iterable, Tuple, Dict, Optional
 
 from aitools.logic import LogicObject, Substitution
 from aitools.storage.base import LogicObjectStorage, NodeStorage
@@ -41,7 +41,7 @@ class DummyTrieIndex(TrieIndex):
     def _get_all_keys_and_subindices(self):
         return self.subindices.items()
 
-    def _get_subindex_by_key_element(self, key_element: AbstruseKeyElement) -> TrieIndex:
+    def _get_subindex_by_key_element(self, key_element: AbstruseKeyElement) -> Optional[TrieIndex]:
         return self.subindices.get(key_element)
 
     def _maybe_store_object(self, obj):
@@ -92,6 +92,25 @@ class DummyIndexedLogicObjectStorage(LogicObjectStorage):
 
     def __len__(self):
         return sum(1 for _ in self._objects.retrieve([[None]]))
+
+
+class DummyPickleSerializingLogicObjectStorage(LogicObjectStorage):
+    def __init__(self):
+        self._objects: Set[bytes] = set()
+
+    def add(self, *objects: LogicObject):
+        for obj in objects:
+            self._objects.add(pickle.dumps(obj))
+
+    def search_unifiable(self, other: LogicObject) -> Iterable[Tuple[LogicObject, Substitution]]:
+        for s_obj in self._objects:
+            obj = pickle.loads(s_obj)
+            unifier = Substitution.unify(obj, other)
+            if unifier is not None:
+                yield obj, unifier
+
+    def __len__(self):
+        return len(self._objects)
 
 
 class DummyNodeStorage(NodeStorage):
@@ -166,22 +185,3 @@ class DummyNodeStorage(NodeStorage):
             self.objects_by_value[obj] = obj_id
 
         return obj_id
-
-
-class DummyPickleSerializingLogicObjectStorage(LogicObjectStorage):
-    def __init__(self):
-        self._objects: Set[bytes] = set()
-
-    def add(self, *objects: LogicObject):
-        for obj in objects:
-            self._objects.add(pickle.dumps(obj))
-
-    def search_unifiable(self, other: LogicObject) -> Iterable[Tuple[LogicObject, Substitution]]:
-        for s_obj in self._objects:
-            obj = pickle.loads(s_obj)
-            unifier = Substitution.unify(obj, other)
-            if unifier is not None:
-                yield obj, unifier
-
-    def __len__(self):
-        return len(self._objects)

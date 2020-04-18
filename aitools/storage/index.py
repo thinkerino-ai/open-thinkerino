@@ -118,7 +118,7 @@ class TrieIndex(Generic[T], ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_subindex_by_key_element(self, key_element: AbstruseKeyElement) -> TrieIndex[T]:
+    def _get_subindex_by_key_element(self, key_element: AbstruseKeyElement) -> Optional[TrieIndex[T]]:
         raise NotImplementedError()
 
     def _search_for_variable(self, key, level, found_key, use_wildcard):

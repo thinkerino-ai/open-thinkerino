@@ -70,8 +70,9 @@
     - [ ]. implement persistence
         - [ ]. refactor the NodeStorage to be... better :P
             - [x] move it somewhere else
-            - [ ] classes instead of dicts?
-        - [ ] implement another NodeStorage based on a database
+            - [ ]. classes instead of dicts?
+        - [ ] implement another NodeStorage based on relational db
+        - [ ] add it to tests
     - [ ] cleanup
         - [x] remove xfailing case from `tests.proofs.conftest.TestKnowledgeBase`
         - [x] write somewhere how provers and listeners "storage" should work:

@@ -3,8 +3,7 @@ from typing import Iterable, Tuple
 
 from aitools.logic import LogicObject, Substitution, Expression, Variable
 from aitools.storage.base import LogicObjectStorage
-from aitools.storage.implementations.node_index import InMemSerializingAbstruseIndex
-from aitools.storage.implementations.dummy import DummyNodeStorage
+from aitools.storage.implementations.node_index import NodeStoringAbstruseIndex
 from aitools.storage.index import AbstruseIndex, AbstruseKey, WILDCARD
 
 
@@ -34,9 +33,9 @@ class PickleSerializingLogicObjectStorage(LogicObjectStorage):
 
     def __init__(self, storage):
 
-        self._objects: AbstruseIndex = InMemSerializingAbstruseIndex(
+        self._objects: AbstruseIndex = NodeStoringAbstruseIndex(
             storage_id="root",
-            storage=storage
+            node_storage=storage
         )
 
     def add(self, *objects: LogicObject):
