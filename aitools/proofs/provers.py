@@ -1,7 +1,7 @@
 import logging
-from typing import Iterable, List, Collection
+from typing import Iterable, List, Collection, Dict
 
-from aitools.logic import Expression, Substitution
+from aitools.logic import Expression, Substitution, Variable
 from aitools.logic.utils import VariableSource, normalize_variables
 from aitools.proofs.language import Implies, Not
 from aitools.proofs.proof import Prover, Proof
@@ -21,8 +21,7 @@ class KnowledgeRetriever(Prover):
 
 
 class DeclarativeProver(Prover):
-    def __init__(self, *, premises: Iterable[Expression], conclusions: Iterable[Expression], **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *, premises: Iterable[Expression], conclusions: Iterable[Expression], **_kwargs):
         self.premises = premises
         self.conclusions = conclusions
 
@@ -30,7 +29,7 @@ class DeclarativeProver(Prover):
                  _previous_substitution: Substitution = None) -> Iterable[Proof]:
         # can only prove formulas to be true
         if _truth:
-            variable_mapping = {}
+            variable_mapping: Dict[Variable, Variable] = {}
             normalized_conclusions = (normalize_variables(c, variable_mapping=variable_mapping)
                                       for c in self.conclusions)
             for conclusion in normalized_conclusions:

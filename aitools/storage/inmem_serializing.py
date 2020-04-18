@@ -4,7 +4,7 @@ from typing import Dict, Set, Iterable, Tuple
 from aitools.logic import LogicObject, Expression, Variable, Substitution
 from aitools.storage.base import LogicObjectStorage
 from aitools.storage.dummy import DummyAbstruseIndex
-from aitools.storage.index import WILDCARD
+from aitools.storage.index import WILDCARD, AbstruseKey
 
 
 class InMemSerializingLogicObjectStorage(LogicObjectStorage):
@@ -26,21 +26,21 @@ class InMemSerializingLogicObjectStorage(LogicObjectStorage):
         return len(self._objects)
 
 
-def make_plain_key(formula: LogicObject):
-    res = []
+def make_plain_key(formula: LogicObject) -> AbstruseKey[str]:
+    res: AbstruseKey[str] = []
 
-    def inner(formula, level):
+    def inner(_formula: LogicObject, level: int):
         if len(res) == level:
             res.append([])
 
-        if isinstance(formula, Expression):
-            res[level].append(len(formula.children))
-            for child in formula.children:
+        if isinstance(_formula, Expression):
+            res[level].append(len(_formula.children))
+            for child in _formula.children:
                 inner(child, level + 1)
-        elif isinstance(formula, Variable):
+        elif isinstance(_formula, Variable):
             res[level].append(WILDCARD)
         else:
-            res[level].append(str(hash(formula)))
+            res[level].append(str(hash(_formula)))
 
     inner(formula, 0)
     return res

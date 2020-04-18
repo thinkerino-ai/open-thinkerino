@@ -87,7 +87,7 @@ class ConstantSource:
         return val
 
 
-def normalize_variables(expression: Expression, *, variable_source: VariableSource = None,
+def normalize_variables(expression: LogicObject, *, variable_source: VariableSource = None,
                         variable_mapping=None) -> Expression:
     variable_mapping = variable_mapping if variable_mapping is not None else {}
     """Normalizes an expression by either using completely new variables or a standard set"""

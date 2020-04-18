@@ -1,7 +1,7 @@
 import logging
 import typing
 from collections import deque
-from typing import Optional, Iterable
+from typing import Iterable
 
 from aitools.logic import Expression, Substitution
 from aitools.logic.utils import normalize_variables, VariableSource
@@ -22,7 +22,7 @@ class KnowledgeBase:
         self._provers: typing.Set[Prover] = set()
         self._listeners: typing.Set[Listener] = set()
         # TODO switch to a custom collection with limited capacity, to avoid infinite growth
-        self._temporary_listeners: typing.Collection[Listener] = set()
+        self._temporary_listeners: typing.Set[Listener] = set()
         self._initialize_default_provers()
 
     def _initialize_default_provers(self):
@@ -30,7 +30,7 @@ class KnowledgeBase:
         # although it's quite a standard proving strategy, I really don't like having MP as a default...
         self.add_provers(RestrictedModusPonens())
 
-    def retrieve(self, formula: Optional[Expression] = None, *,
+    def retrieve(self, formula: Expression, *,
                  previous_substitution: Substitution = None) -> Iterable[Substitution]:
         """Retrieves all formula from the KnowledgeBase which are unifiable with the given one.
         No proofs are searched, so either a formula is **IN** the KB, or nothing will be returned."""
@@ -39,7 +39,7 @@ class KnowledgeBase:
             subst = Substitution.unify(
                 normalize_variables(expr), formula,
                 previous=previous_substitution
-            ) if formula is not None else Substitution()
+            )
 
             if subst is not None:
                 yield subst

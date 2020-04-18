@@ -6,8 +6,7 @@ from aitools.logic import Expression, Substitution, Variable
 
 class Listener:
     def __init__(self, wrapped_function, listened_formulas, previous_substitution: Substitution = None, priority=0,
-                 **kwargs):
-        super().__init__(**kwargs)
+                 **_kwargs):
         self.wrapped_function = wrapped_function
         self.listened_formulas = listened_formulas
         self.func_arg_names = wrapped_function.__code__.co_varnames[:wrapped_function.__code__.co_argcount]

@@ -4,37 +4,39 @@ import itertools
 import logging
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import TypeVar, Generic, Dict, MutableSet, Iterable, Sequence, Protocol, Any, Tuple, Sized
+from typing import TypeVar, Generic, Dict, MutableSet, Iterable, Sequence, Protocol, Any, Tuple, Sized, Type, Union, \
+    List, Optional
 
 from aitools.logic import Expression, LogicObject, Variable
+
+logger = logging.getLogger(__name__)
+T = TypeVar('T')
+WILDCARD = None
+
+AbstruseKey = List[List[Optional[Union[int, T]]]]
 
 
 # TODO: typing
 # TODO: make this lazy so that it is calculated when it is traversed (otherwise searching for very deep formulas in the
 #  AbstruseIndex could be inefficient)
-def make_key(formula: LogicObject):
-    res = []
+def make_key(formula: LogicObject) -> AbstruseKey[LogicObject]:
+    res: AbstruseKey[LogicObject] = []
 
-    def inner(formula, level):
+    def inner(_formula: LogicObject, level: int):
         if len(res) == level:
             res.append([])
 
-        if isinstance(formula, Expression):
-            res[level].append(len(formula.children))
-            for child in formula.children:
+        if isinstance(_formula, Expression):
+            res[level].append(len(_formula.children))
+            for child in _formula.children:
                 inner(child, level + 1)
-        elif isinstance(formula, Variable):
+        elif isinstance(_formula, Variable):
             res[level].append(WILDCARD)
         else:
-            res[level].append(formula)
+            res[level].append(_formula)
 
     inner(formula, 0)
     return res
-
-
-logger = logging.getLogger(__name__)
-T = TypeVar('T')
-WILDCARD = None
 
 
 class TrieSubindexContainer(Protocol[T]):

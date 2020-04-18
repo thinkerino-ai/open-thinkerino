@@ -1,6 +1,6 @@
 from __future__ import annotations
 from copy import copy
-from typing import FrozenSet, Dict
+from typing import FrozenSet, Dict, Optional
 
 from aitools.logic.core import LogicObject, Variable, Expression
 
@@ -101,7 +101,7 @@ class Substitution(LogicObject):
 
     def apply_to(self, obj: LogicObject):
         if isinstance(obj, Variable):
-            binding: Binding = self._bindings_by_variable.get(obj, None)
+            binding: Optional[Binding] = self._bindings_by_variable.get(obj, None)
             if binding is not None:
                 if binding.head is not None:
                     return self.apply_to(binding.head)
@@ -160,7 +160,9 @@ class Substitution(LogicObject):
     def __str__(self):
         return f"[{', '.join(map(str, set(self._bindings_by_variable.values())))}]"
 
-    def __eq__(self, other: Substitution):
+    def __eq__(self, other):
+        if not isinstance(other, Substitution):
+            return NotImplemented
         return all(self.get_bound_object_for(v) == other.get_bound_object_for(v) for v in self._bindings_by_variable)
 
     def __hash__(self):
