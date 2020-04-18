@@ -4,7 +4,7 @@ from typing import Dict, Set, Iterable, Tuple
 from aitools.logic import LogicObject, Expression, Variable, Substitution
 from aitools.storage.base import LogicObjectStorage
 from aitools.storage.dummy import DummyAbstruseIndex
-from aitools.storage.index import WILDCARD, AbstruseKey
+from aitools.storage.index import WILDCARD, AbstruseKey, AbstruseKeySlice, TrieIndex
 
 
 class InMemSerializingLogicObjectStorage(LogicObjectStorage):
@@ -33,17 +33,24 @@ def make_plain_key(formula: LogicObject) -> AbstruseKey[str]:
         if len(res) == level:
             res.append([])
 
+        res_slice = res[level]
+
         if isinstance(_formula, Expression):
-            res[level].append(len(_formula.children))
+            res_slice.append(len(_formula.children))
             for child in _formula.children:
                 inner(child, level + 1)
         elif isinstance(_formula, Variable):
-            res[level].append(WILDCARD)
+            res_slice.append(WILDCARD)
         else:
-            res[level].append(str(hash(_formula)))
+            res_slice.append(str(hash(_formula)))
 
     inner(formula, 0)
     return res
+
+
+class InMemSerializingTrieIndex(TrieIndex):
+    def make_node(self):
+        raise NotImplementedError()
 
 
 class DummyIndexedSerializingLogicObjectStorage(LogicObjectStorage):

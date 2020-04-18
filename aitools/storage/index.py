@@ -13,10 +13,12 @@ logger = logging.getLogger(__name__)
 T = TypeVar('T')
 WILDCARD = None
 
-AbstruseKey = List[List[Optional[Union[int, T]]]]
+AbstruseKeyElement = Optional[Union[int, T]]
+AbstruseKeySlice = List[AbstruseKeyElement[T]]
+AbstruseKey = List[AbstruseKeySlice[T]]
 
 
-# TODO: typing
+# TODO: typing gives issues with PyCharm :/
 # TODO: make this lazy so that it is calculated when it is traversed (otherwise searching for very deep formulas in the
 #  AbstruseIndex could be inefficient)
 def make_key(formula: LogicObject) -> AbstruseKey[LogicObject]:
@@ -39,53 +41,26 @@ def make_key(formula: LogicObject) -> AbstruseKey[LogicObject]:
     return res
 
 
-class TrieSubindexContainer(Protocol[T]):
-    def __contains__(self, key_element):
-        pass
-
-    def __getitem__(self, key_element) -> TrieIndex[T]:
-        pass
-
-    def __setitem__(self, key_element, value: TrieIndex[T]):
-        pass
-
-    def values(self) -> Iterable[TrieIndex[T]]:
-        pass
-
-    def items(self) -> Iterable[Tuple[Any, TrieIndex[T]]]:
-        pass
-
-
-class ObjectContainer(Protocol[T], Sized):
-    def add(self, obj: T):
-        pass
-
-    def __iter__(self) -> T:
-        pass
-
-    def __contains__(self, item: T):
-        pass
-
-
 class TrieIndex(Generic[T], ABC):
-    def __init__(self, *, subindex_container: TrieSubindexContainer[T], object_container: ObjectContainer):
-        self.subindices = subindex_container
-        self.objects = object_container
-
     def add(self, key, obj: T):
-        logger.info(f"Adding key %s for object %s", key, obj)
+        logger.info("Adding key %s for object %s", key, obj)
         self._add(key, obj, level=0)
 
     def _add(self, key, obj, level: int):
         if level == len(key):
-            if obj not in self.objects:
-                self.objects.add(obj)
+            self._maybe_store_object(obj)
         else:
             key_element = key[level]
-            if key_element not in self.subindices:
-                self.subindices[key_element] = self.make_node()
-            subindex: TrieIndex = self.subindices[key_element]
+            subindex = self._get_or_create_subindex(key_element)
             subindex._add(key, obj, level + 1)
+
+    @abstractmethod
+    def _maybe_store_object(self, obj: T):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _get_or_create_subindex(self, key_element) -> TrieIndex:
+        raise NotImplementedError()
 
     @abstractmethod
     def make_node(self):
@@ -99,18 +74,26 @@ class TrieIndex(Generic[T], ABC):
     def _retrieve(self, key, *, level: int, use_wildcard: bool, found_key=None):
         found_key = found_key if found_key is not None else []
         if key is None:
-            for obj in self.objects:
+            for obj in self._get_all_objects():
                 yield obj, found_key
-            for subindex in self.subindices.values():
-                res = list(subindex._retrieve(key, level=level + 1, found_key=found_key, use_wildcard=use_wildcard))
+            for subindex in self._get_all_subindices():
+                res = subindex._retrieve(key, level=level + 1, found_key=found_key, use_wildcard=use_wildcard)
                 yield from res
         else:
             if level == len(key):
-                logger.debug(f"key completely traversed, returning {len(self.objects)} objects")
-                for obj in self.objects:
+                logger.debug("key completely traversed, returning all objects")
+                for obj in self._get_all_objects():
                     yield obj, found_key
             else:
                 yield from self._traverse_next_key_element(key, level, found_key, use_wildcard)
+
+    @abstractmethod
+    def _get_all_objects(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _get_all_subindices(self):
+        raise NotImplementedError()
 
     def _traverse_next_key_element(self, key, level, found_key, use_wildcard):
         key_element = key[level]
@@ -126,7 +109,7 @@ class TrieIndex(Generic[T], ABC):
             yield from self._search_wildcard(key, level, found_key, use_wildcard)
 
     def _search_wildcard(self, key, level, found_key, use_wildcard):
-        for subkey_element, subindex in self.subindices.items():
+        for subkey_element, subindex in self._get_all_keys_and_subindices():
             logger.debug("Matched %s, recursion...", subkey_element)
             res = list(subindex._retrieve(key, level=level + 1, found_key=found_key + [subkey_element],
                                           use_wildcard=use_wildcard))
@@ -134,20 +117,26 @@ class TrieIndex(Generic[T], ABC):
             for r in res:
                 yield r
 
+    @abstractmethod
+    def _get_all_keys_and_subindices(self) -> Iterable[Tuple[AbstruseKeyElement, TrieIndex[T]]]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _get_subindex_by_key_element(self, key_element: AbstruseKeyElement) -> TrieIndex[T]:
+        raise NotImplementedError()
+
     def _search_for_variable(self, key, level, found_key, use_wildcard):
-        if WILDCARD in self.subindices and use_wildcard:
-            logger.debug("Subindex contains variable, recursion...")
-            subindex = self.subindices[WILDCARD]
-            res = list(subindex._retrieve(key, level=level + 1, found_key=found_key + [WILDCARD],
-                                          use_wildcard=use_wildcard))
-            logger.debug("Recursion returned %s elements", len(res))
-            for r in res:
-                yield r
+        if use_wildcard and (subindex := self._get_subindex_by_key_element(WILDCARD)) is not None:
+                logger.debug("Subindex contains variable, recursion...")
+                res = list(subindex._retrieve(key, level=level + 1, found_key=found_key + [WILDCARD],
+                                              use_wildcard=use_wildcard))
+                logger.debug("Recursion returned %s elements", len(res))
+                for r in res:
+                    yield r
 
     def _search_for_key_element_explicitly(self, key, key_element, level, found_key, use_wildcard):
-        if key_element in self.subindices:
+        if (subindex := self._get_subindex_by_key_element(key_element)) is not None:
             logger.debug("Element is in the subindex, recursion...")
-            subindex = self.subindices[key_element]
             res = list(subindex._retrieve(key, level=level + 1, found_key=found_key + [key_element],
                                           use_wildcard=use_wildcard))
             logger.debug("Recursion returned %s elements", len(res))
@@ -155,15 +144,14 @@ class TrieIndex(Generic[T], ABC):
                 yield r
 
 
-class AbstruseIndex(ABC):
-    def __init__(self, *, level=0, subindex: TrieIndex[AbstruseIndex], object_container: ObjectContainer):
+class AbstruseIndex(Generic[T], ABC):
+    def __init__(self, *, level=0):
         self.level = level
-        self.objects = object_container
-        self._subindex_tree = subindex
 
     @property
+    @abstractmethod
     def subindex_tree(self):
-        return self._subindex_tree
+        raise NotImplementedError()
 
     def add(self, key, obj):
         self._add(key, obj)
@@ -171,8 +159,7 @@ class AbstruseIndex(ABC):
     def _add(self, key, obj):
         _key = key[self.level] if self.level < len(key) else None
         if _key is None or len(_key) == 0:
-            if obj not in self.objects:
-                self.objects.add(obj)
+            self._maybe_store_object(obj)
             return
 
         further_abstrusion: Sequence[AbstruseIndex] = tuple(self.subindex_tree.retrieve(_key, use_wildcard=False))
@@ -200,7 +187,7 @@ class AbstruseIndex(ABC):
 
         logger.info("Index is retrieving full key %s", _key)
 
-        for obj in self.objects:
+        for obj in self._get_all_objects():
             yield obj
 
         # TODO probably can be removed by exploiting the projection :/ but I'm lazy and it's 3 am
@@ -221,6 +208,14 @@ class AbstruseIndex(ABC):
                     for r in res:
                         logger.debug("Index has found result %s", r)
                         yield r
+
+    @abstractmethod
+    def _get_all_objects(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _maybe_store_object(self, obj):
+        raise NotImplementedError()
 
     def _full_search(self, *, full_key, previous_key):
         subindices: Iterable[AbstruseIndex] = list(self.subindex_tree.retrieve(None))

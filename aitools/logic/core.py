@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional
 
 
 def fail(exception):
@@ -164,7 +165,7 @@ class LogicWrapper(LogicObject):
 
 
 class Constant(LogicObject):
-    def __init__(self, name: str = None):
+    def __init__(self, name: Optional[str] = None):
         if name is not None and not (isinstance(name, str) and name):
             raise ValueError("Constant name must be a non-empty string!")
         super().__init__()

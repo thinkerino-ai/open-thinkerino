@@ -52,7 +52,21 @@
         - [x] switch to Python 3.8
         - [x] refactor DummyIndexedSerializingLogicObjectStorage not to use DummyAbstruseIndex, but a custom, serializing class
             - [x] TrieIndex and AbstruseIndex should take in input custom classes
-            - [ ] actually refactor the storage 
+            - [x] further refactoring of AbstruseIndex and TrieIndex
+                - [x] TrieIndex
+                    - [x] all access to self.subindices should be abstracted away
+                    - [x] self.subindices should then be moved to subclasses
+                    - [x] access to self.objects should be abstracted away
+                    - [x] self.objects should then be moved to subclasses
+                - [x] AbstruseIndex 
+                    - [x] access to self.objects should be abstracted away
+                    - [x] self.objects should then be moved to subclasses
+                    - [x] access to _subindex_tree should be abstracted away
+                    - [x] self._subindex_tree should then be moved to subclasses
+                - [x] further
+                    - [x] container Protocols can probably be removed
+                    - [nah] the two indices have a few common methods, they could be moved to a common superclass
+            - [ ]. actually refactor the storage 
     - [ ] implement persistence
     - [ ] cleanup
         - [x] remove xfailing case from `tests.proofs.conftest.TestKnowledgeBase`
