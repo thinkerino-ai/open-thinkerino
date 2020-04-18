@@ -50,8 +50,8 @@
             - [no] refactor KnowledgeBase to use also those storages
         - [x] wait, what? why is the AbstruseIndex in utils? it should be in storage o.o
         - [x] switch to Python 3.8
-        - [ ]. refactor DummyIndexedSerializingLogicObjectStorage not to use DummyAbstruseIndex, but a custom, serializing class
-            - [ ]. TrieIndex and AbstruseIndex should take in input custom classes
+        - [x] refactor DummyIndexedSerializingLogicObjectStorage not to use DummyAbstruseIndex, but a custom, serializing class
+            - [x] TrieIndex and AbstruseIndex should take in input custom classes
             - [ ] actually refactor the storage 
     - [ ] implement persistence
     - [ ] cleanup

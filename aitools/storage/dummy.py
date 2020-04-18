@@ -1,8 +1,8 @@
-from typing import Set, Iterable, Tuple
+from typing import Set, Iterable, Tuple, cast
 
 from aitools.logic import LogicObject, Substitution
 from aitools.storage.base import LogicObjectStorage
-from aitools.storage.index import make_key, TrieIndex, AbstruseIndex
+from aitools.storage.index import make_key, TrieIndex, AbstruseIndex, ObjectContainer
 
 
 class DummyLogicObjectStorage(LogicObjectStorage):
@@ -25,7 +25,7 @@ class DummyLogicObjectStorage(LogicObjectStorage):
 
 class DummyTrieIndex(TrieIndex):
     def __init__(self):
-        super().__init__(subindex_container=dict(), object_container=set())
+        super().__init__(subindex_container=dict(), object_container=cast(ObjectContainer, set()))
 
     def make_node(self):
         return DummyTrieIndex()
@@ -33,7 +33,7 @@ class DummyTrieIndex(TrieIndex):
 
 class DummyAbstruseIndex(AbstruseIndex):
     def __init__(self, *, level=0):
-        super().__init__(level=level, object_container=set(), subindex=DummyTrieIndex())
+        super().__init__(level=level, object_container=cast(ObjectContainer, set()), subindex=DummyTrieIndex())
 
     def make_node(self, *, new_level):
         return DummyAbstruseIndex(level=new_level)

@@ -4,7 +4,7 @@ import itertools
 import logging
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import TypeVar, Generic, Dict, MutableSet, Iterable, Sequence
+from typing import TypeVar, Generic, Dict, MutableSet, Iterable, Sequence, Protocol, Any, Tuple, Sized
 
 from aitools.logic import Expression, LogicObject, Variable
 
@@ -37,8 +37,36 @@ T = TypeVar('T')
 WILDCARD = None
 
 
+class TrieSubindexContainer(Protocol[T]):
+    def __contains__(self, key_element):
+        pass
+
+    def __getitem__(self, key_element) -> TrieIndex[T]:
+        pass
+
+    def __setitem__(self, key_element, value: TrieIndex[T]):
+        pass
+
+    def values(self) -> Iterable[TrieIndex[T]]:
+        pass
+
+    def items(self) -> Iterable[Tuple[Any, TrieIndex[T]]]:
+        pass
+
+
+class ObjectContainer(Protocol[T], Sized):
+    def add(self, obj: T):
+        pass
+
+    def __iter__(self) -> T:
+        pass
+
+    def __contains__(self, item: T):
+        pass
+
+
 class TrieIndex(Generic[T], ABC):
-    def __init__(self, *, subindex_container: Dict, object_container: MutableSet):
+    def __init__(self, *, subindex_container: TrieSubindexContainer[T], object_container: ObjectContainer):
         self.subindices = subindex_container
         self.objects = object_container
 
@@ -126,10 +154,10 @@ class TrieIndex(Generic[T], ABC):
 
 
 class AbstruseIndex(ABC):
-    def __init__(self, *, level=0, subindex: TrieIndex, object_container: MutableSet):
+    def __init__(self, *, level=0, subindex: TrieIndex[AbstruseIndex], object_container: ObjectContainer):
         self.level = level
         self.objects = object_container
-        self._subindex_tree: TrieIndex[AbstruseIndex] = subindex
+        self._subindex_tree = subindex
 
     @property
     def subindex_tree(self):
