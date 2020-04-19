@@ -3,7 +3,7 @@ from typing import Set, Iterable, Tuple, Dict, Optional
 
 from aitools.logic import LogicObject, Substitution
 from aitools.storage.base import LogicObjectStorage, NodeStorage
-from aitools.storage.index import make_key, TrieIndex, AbstruseIndex, AbstruseKey, AbstruseKeyElement
+from aitools.storage.index import make_key, TrieIndex, AbstruseIndex, AbstruseKey, AbstruseKeyElement, WILDCARD
 
 
 class DummyLogicObjectStorage(LogicObjectStorage):
@@ -91,7 +91,7 @@ class DummyIndexedLogicObjectStorage(LogicObjectStorage):
                 yield obj, unifier
 
     def __len__(self):
-        return sum(1 for _ in self._objects.retrieve([[None]]))
+        return sum(1 for _ in self._objects.retrieve([[WILDCARD]]))
 
 
 class DummyPickleSerializingLogicObjectStorage(LogicObjectStorage):

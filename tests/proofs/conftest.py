@@ -6,8 +6,7 @@ from aitools.proofs.knowledge_base import KnowledgeBase
 from tests.implementations import storage_implementations
 
 logging.basicConfig(format="[%(levelname)s] %(name)s - %(message)s")
-logging.getLogger().setLevel(logging.WARNING)
-logging.getLogger('txn').setLevel(logging.WARNING)
+logging.getLogger().setLevel(logging.DEBUG)
 
 
 @pytest.fixture(params=storage_implementations)

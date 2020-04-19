@@ -68,11 +68,16 @@
                     - [nah] the two indices have a few common methods, they could be moved to a common superclass
             - [x] actually refactor the storage 
     - [ ]. implement persistence
-        - [ ]. refactor the NodeStorage to be... better :P
+        - [x] refactor the NodeStorage to be... better :P
             - [x] move it somewhere else
-            - [ ]. classes instead of dicts?
-        - [ ] implement another NodeStorage based on relational db
-        - [ ] add it to tests
+            - [nah] classes instead of dicts?
+        - [x] implement another NodeStorage based on relational db
+        - [x] add it to tests
+        - [ ]. make the tests work because, of course, they don't ._.
+            - [ ] switch to strings instead of ints for key elements
+            - [ ] switch to sqlalchemy core
+            - [ ] switch to upserts
+        - [ ] add caching?
     - [ ] cleanup
         - [x] remove xfailing case from `tests.proofs.conftest.TestKnowledgeBase`
         - [x] write somewhere how provers and listeners "storage" should work:

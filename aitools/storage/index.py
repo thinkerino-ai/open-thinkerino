@@ -11,7 +11,7 @@ from aitools.logic import Expression, LogicObject, Variable
 
 logger = logging.getLogger(__name__)
 T = TypeVar('T')
-WILDCARD = None
+WILDCARD = -1
 
 AbstruseKeyElement = Optional[Union[int, T]]
 AbstruseKeySlice = List[AbstruseKeyElement[T]]
@@ -94,13 +94,13 @@ class TrieIndex(Generic[T], ABC):
     def _traverse_next_key_element(self, key, level, found_key, use_wildcard):
         key_element = key[level]
         logger.debug("Considering the following element of the key: %s", key_element)
-        if key_element is not WILDCARD or not use_wildcard:
+        if key_element != WILDCARD or not use_wildcard:
             logger.debug("Searching for key element explicitly")
             yield from self._search_for_key_element_explicitly(key, key_element, level, found_key, use_wildcard)
-            if key_element is not WILDCARD:
+            if key_element != WILDCARD:
                 logger.debug("Searching for variables in the index")
                 yield from self._search_for_variable(key, level, found_key, use_wildcard)
-        elif key_element is WILDCARD and use_wildcard:
+        elif key_element == WILDCARD and use_wildcard:
             logger.debug("Element is a variable, performing wildcard search")
             yield from self._search_wildcard(key, level, found_key, use_wildcard)
 
@@ -228,7 +228,7 @@ class AbstruseIndex(Generic[T], ABC):
         result = []
 
         for i, projector in enumerate(projection_key):
-            if previous_key[i] is WILDCARD and isinstance(projector, int):
+            if previous_key[i] == WILDCARD and isinstance(projector, int):
                 # if previous_key[i] is a wildcard, the current key wouldn't have a corresponding item, so we "insert" wildcards
                 result.extend(itertools.repeat(WILDCARD, projector))
             elif isinstance(projector, int):

@@ -34,7 +34,7 @@ class PickleSerializingLogicObjectStorage(LogicObjectStorage):
     def __init__(self, storage):
 
         self._objects: AbstruseIndex = NodeStoringAbstruseIndex(
-            storage_id="root",
+            storage_id=0,
             node_storage=storage
         )
 
@@ -52,4 +52,4 @@ class PickleSerializingLogicObjectStorage(LogicObjectStorage):
                 yield obj, unifier
 
     def __len__(self):
-        return sum(1 for _ in self._objects.retrieve([[None]]))
+        return sum(1 for _ in self._objects.retrieve([[WILDCARD]]))

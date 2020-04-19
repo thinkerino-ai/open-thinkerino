@@ -29,31 +29,23 @@ class NodeStorage:
         pass
 
     @abstractmethod
-    def get_all_object_ids_in_trie_node(self, id):
+    def get_all_object_ids_in_trie_node(self, trie_id):
         pass
 
     @abstractmethod
-    def _get_trie_node(self, trie_id):
+    def get_object(self, object_id):
         pass
 
     @abstractmethod
-    def _get_abstruse_node(self, id):
+    def get_all_object_ids_in_abstruse_node(self, abstruse_id):
         pass
 
     @abstractmethod
-    def get_object(self, id):
+    def get_subindex_id_for_abstruse_node(self, abstruse_id):
         pass
 
     @abstractmethod
-    def get_all_object_ids_in_abstruse_node(self, id):
-        pass
-
-    @abstractmethod
-    def get_subindex_id_for_abstruse_node(self, id):
-        pass
-
-    @abstractmethod
-    def store_object_for_abstruse_node(self, id, obj_id):
+    def store_object_for_abstruse_node(self, abstruse_id, object_id):
         pass
 
     @abstractmethod
