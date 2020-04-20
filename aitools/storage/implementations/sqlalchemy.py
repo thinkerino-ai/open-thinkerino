@@ -129,7 +129,8 @@ class SQLAlchemyNodeStorage(NodeStorage):
         ).fetchall()
 
         for res in results:
-            yield res.key_element, res.subtrie_id
+            key = res.key_element if res.key_element[0] in "#*" else int(res.key_element)
+            yield key, res.subtrie_id
 
     def get_subindex_from_trie_by_key(self, trie_id, key_element):
         res = self.connection.execute(trie_to_key_and_subtrie.select(
