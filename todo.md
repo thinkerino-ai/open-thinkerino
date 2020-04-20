@@ -73,11 +73,37 @@
             - [nah] classes instead of dicts?
         - [x] implement another NodeStorage based on relational db
         - [x] add it to tests
-        - [ ]. make the tests work because, of course, they don't ._.
+        - [x] make the tests work because, of course, they don't ._.
             - [x] switch to strings instead of ints for key elements
-            - [ ] switch to sqlalchemy core
-            - [ ] switch to upserts
-        - [ ] add caching?
+            - [x] switch to sqlalchemy core
+            - [x] switch to upserts
+        - [ ]. add benchmarks
+            - [ ] specific formulas
+                - [ ] simple
+                - [ ] wide
+                - [ ] deep
+                - [ ] unlucky?
+                - [ ] ???
+            - [ ] formula distributions
+                - [ ] ???
+            - [ ] starting storages:
+                - [ ] empty
+                - [ ] 1k formulas
+                - [ ] 10k formulas
+                - [ ] 100k formulas?
+            - [ ] operations
+                - [ ] insertions
+                    - [ ] single formula, repeated (specific formula)
+                    - [ ] batch of 100, repeated (distribution)
+                    - [ ] batch of 1000 (distribution)
+                - [ ] retrievals
+                    ???
+        - [ ] refactor sqlalchemy implementation to 
+            - [ ] perform fewer queries
+            - [ ] generalize to a graph representation
+                - [ ] while I'm at it, why not also throw in a graph visualizer
+        - [ ] add a zodb implementation (it doesn't seem so slow anymore :/)
+        - [ ] add caching (because. it's. freaking. slow. T_T)
     - [ ] cleanup
         - [x] remove xfailing case from `tests.proofs.conftest.TestKnowledgeBase`
         - [x] write somewhere how provers and listeners "storage" should work:
