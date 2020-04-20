@@ -11,7 +11,7 @@ from aitools.logic import Expression, LogicObject, Variable
 
 logger = logging.getLogger(__name__)
 T = TypeVar('T')
-WILDCARD = -1
+WILDCARD = "*"
 
 AbstruseKeyElement = Optional[Union[int, T]]
 AbstruseKeySlice = List[AbstruseKeyElement[T]]

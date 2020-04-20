@@ -23,7 +23,7 @@ def make_plain_key(formula: LogicObject) -> AbstruseKey[str]:
         elif isinstance(_formula, Variable):
             res_slice.append(WILDCARD)
         else:
-            res_slice.append(str(hash(_formula)))
+            res_slice.append("#"+str(hash(_formula)))
 
     inner(formula, 0)
     return res

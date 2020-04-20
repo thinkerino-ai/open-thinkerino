@@ -74,7 +74,7 @@
         - [x] implement another NodeStorage based on relational db
         - [x] add it to tests
         - [ ]. make the tests work because, of course, they don't ._.
-            - [ ] switch to strings instead of ints for key elements
+            - [x] switch to strings instead of ints for key elements
             - [ ] switch to sqlalchemy core
             - [ ] switch to upserts
         - [ ] add caching?
