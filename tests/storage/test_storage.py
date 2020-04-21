@@ -9,7 +9,7 @@ from aitools.storage.base import LogicObjectStorage
 from tests import implementations
 
 
-@pytest.fixture(params=implementations.storage_implementations)
+@pytest.fixture(params=implementations.storage_implementations.values())
 def storage_implementation(request):
     return request.param
 

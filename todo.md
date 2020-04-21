@@ -84,25 +84,29 @@
                 - [ ] deep
                 - [ ] unlucky?
                 - [ ] ???
-            - [ ] formula distributions
+            - [ ]. formula distributions
+                - [x] the one I already used in a local test
                 - [ ] ???
-            - [ ] starting storages:
-                - [ ] empty
-                - [ ] 1k formulas
-                - [ ] 10k formulas
-                - [ ] 100k formulas?
-            - [ ] operations
-                - [ ] insertions
+            - [ ]. starting storages:
+                - [x] empty
+                - [ ] 1k formulas (from some distribution)
+                - [ ] 10k formulas (from some distribution)
+                - [ ] 100k formulas? (from some distribution)
+            - [ ]. operations
+                - [ ]. insertions
                     - [ ] single formula, repeated (specific formula)
                     - [ ] batch of 100, repeated (distribution)
-                    - [ ] batch of 1000 (distribution)
-                - [ ] retrievals
-                    ???
+                    - [x] batch of 1000 (distribution)
+                - [ ]. retrievals
+                    - [x] all formulas
+                    - [ ] ???
+        - [ ]. benchmark on sqlite files!
         - [ ] refactor sqlalchemy implementation to
-            - [ ] become a "low-level" sqlite3 implementation (so that we have 0 dependencies by default)
+            - [x] become a "low-level" sqlite3 implementation (so that we have 0 dependencies by default) (actually I just made a second implementation)
             - [ ] perform fewer queries
             - [ ] generalize to a graph representation
                 - [ ] while I'm at it, why not also throw in a graph visualizer
+        - [ ] refactor storages to be opened and closed :P maybe as context managers?
         - [ ] add a zodb implementation (it doesn't seem so slow anymore :/)
         - [ ] add caching (because. it's. freaking. slow. T_T)
     - [ ] cleanup

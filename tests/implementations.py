@@ -9,8 +9,8 @@ from aitools.storage.implementations.sqlalchemy import SQLAlchemyNodeStorage
 from aitools.storage.implementations.sqlite import SqliteNodeStorage
 
 
-def _make_storage_factory(storage, node_storage):
-    return lambda: storage(storage=node_storage())
+def make_storage_factory(storage_factory_name, storage_factory, node_storage_name, node_storage):
+    return f"{storage_factory_name}({node_storage_name})", lambda: storage_factory(storage=node_storage())
 
 
 def _create_in_memory_sqlalchemy_engine():
@@ -26,18 +26,18 @@ def _create_in_memory_sqlite3_connection():
 
 simple_storage_implementations = [DummyLogicObjectStorage, DummyIndexedLogicObjectStorage,
                                   DummyPickleSerializingLogicObjectStorage]
-node_storage_implementations = [
-    DummyNodeStorage,
-    lambda: SQLAlchemyNodeStorage(_create_in_memory_sqlalchemy_engine()),
-    lambda: SqliteNodeStorage(_create_in_memory_sqlite3_connection()),
-]
+node_storage_implementations = dict(
+    DummyNodeStorage=DummyNodeStorage,
+    SqliteNodeStorage__inmem=lambda: SqliteNodeStorage(_create_in_memory_sqlite3_connection()),
+    SqlAlchemyNodeStorage__inmem=lambda: SQLAlchemyNodeStorage(_create_in_memory_sqlalchemy_engine()),
+)
 node_based_storages_implementations = [PickleSerializingLogicObjectStorage]
 
-storage_implementations = [
-    *simple_storage_implementations,
-    *[
-        _make_storage_factory(storage, node_storage)
-        for storage in node_based_storages_implementations
-        for node_storage in node_storage_implementations
-    ]
-]
+storage_implementations = {
+    **{impl.__name__: impl for impl in simple_storage_implementations},
+    **dict(
+        make_storage_factory(storage_factory.__name__, storage_factory, node_storage_name, node_storage)
+        for storage_factory in node_based_storages_implementations
+        for node_storage_name, node_storage in node_storage_implementations.items()
+    )
+}
