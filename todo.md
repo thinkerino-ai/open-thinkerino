@@ -98,7 +98,8 @@
                     - [ ] batch of 1000 (distribution)
                 - [ ] retrievals
                     ???
-        - [ ] refactor sqlalchemy implementation to 
+        - [ ] refactor sqlalchemy implementation to
+            - [ ] become a "low-level" sqlite3 implementation (so that we have 0 dependencies by default)
             - [ ] perform fewer queries
             - [ ] generalize to a graph representation
                 - [ ] while I'm at it, why not also throw in a graph visualizer

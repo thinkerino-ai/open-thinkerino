@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Integer, String, BLOB, func, MetaData, Table, select, and_
+from sqlalchemy import Column, Integer, String, func, MetaData, Table, select, and_
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session
 
 from aitools.storage.base import NodeStorage
 
