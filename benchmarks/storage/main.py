@@ -18,9 +18,9 @@ all_storage_implementations = {
 
 all_distributions = [dummy_distribution]
 
-all_initializers = [leave_storage_empty, make_insert_n_formulas(1)]
+all_initializers = [leave_storage_empty, make_insert_n_formulas(1000)]
 
-all_insertions = [make_insert_n_formulas(1)]
+all_insertions = [make_insert_n_formulas(1000)]
 all_retrievals = [retrieve_all_formulas]
 
 
