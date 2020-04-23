@@ -1,4 +1,6 @@
 import pickle
+from abc import abstractmethod
+from contextlib import contextmanager
 from typing import Set, Iterable, Tuple, Dict, Optional
 
 from aitools.logic import LogicObject, Substitution
@@ -9,6 +11,10 @@ from aitools.storage.index import make_key, TrieIndex, AbstruseIndex, AbstruseKe
 class DummyLogicObjectStorage(LogicObjectStorage):
     def __init__(self):
         self._objects: Set[LogicObject] = set()
+
+    @contextmanager
+    def transaction(self):
+        raise TypeError("Not supported, soriiii")
 
     def add(self, *objects: LogicObject):
         for obj in objects:
@@ -78,6 +84,10 @@ class DummyIndexedLogicObjectStorage(LogicObjectStorage):
     def __init__(self):
         self._objects: DummyAbstruseIndex[LogicObject] = DummyAbstruseIndex()
 
+    @contextmanager
+    def transaction(self):
+        raise TypeError("Not supported, soriiii")
+
     def add(self, *objects: LogicObject):
         for obj in objects:
             key: AbstruseKey[LogicObject] = make_key(obj)
@@ -98,6 +108,10 @@ class DummyPickleSerializingLogicObjectStorage(LogicObjectStorage):
     def __init__(self):
         self._objects: Set[bytes] = set()
 
+    @contextmanager
+    def transaction(self):
+        raise TypeError("Not supported, soriiii")
+
     def add(self, *objects: LogicObject):
         for obj in objects:
             self._objects.add(pickle.dumps(obj))
@@ -114,12 +128,18 @@ class DummyPickleSerializingLogicObjectStorage(LogicObjectStorage):
 
 
 class DummyNodeStorage(NodeStorage):
+
     def __init__(self):
         self.last_id = 0
         self.abstruse_nodes = {}
         self.trie_nodes = {}
         self.objects_by_id = {}
         self.objects_by_value = {}
+
+    @contextmanager
+    def transaction(self):
+        # TODO: feeling lazy, might implement later :P
+        raise NotImplementedError()
 
     def next_id(self):
         self.last_id += 1

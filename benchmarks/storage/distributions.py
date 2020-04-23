@@ -3,14 +3,13 @@ import random
 from aitools.logic import Constant, Variable
 
 
-def dummy_distribution():
+def dummy_distribution(n):
+    random.seed(n)
     base_size = 10
     constant_count = base_size * 10
     variable_count = base_size * 1
     constants_ = [Constant() for _ in range(constant_count)]
     variables = [Variable() for _ in range(variable_count)]
-
-    random.seed(0)
 
     def _generate(max_child_length, repetitions, remaining_depth):
         if remaining_depth == 0:

@@ -77,36 +77,31 @@
             - [x] switch to strings instead of ints for key elements
             - [x] switch to sqlalchemy core
             - [x] switch to upserts
-        - [ ]. add benchmarks
-            - [ ] specific formulas
-                - [ ] simple
-                - [ ] wide
-                - [ ] deep
-                - [ ] unlucky?
-                - [ ] ???
-            - [ ]. formula distributions
+        - [x] transactions
+            - [x] some sort of tests
+        - [x] storage life-cycle
+            - [x] change fixtures to be already-built storages/kbs instead of factories
+            - [x] change factories to be context managers (whew this was a complex one :D)
+        - [x] add benchmarks
+            - [later] specific formulas
+                - [later] simple
+                - [later] wide
+                - [later] deep
+                - [later] unlucky?
+            - [x] formula distributions
                 - [x] the one I already used in a local test
-                - [ ] ???
-            - [ ]. starting storages:
-                - [x] empty
-                - [ ] 1k formulas (from some distribution)
-                - [ ] 10k formulas (from some distribution)
-                - [ ] 100k formulas? (from some distribution)
-            - [ ]. operations
-                - [ ]. insertions
-                    - [ ] single formula, repeated (specific formula)
-                    - [ ] batch of 100, repeated (distribution)
-                    - [x] batch of 1000 (distribution)
-                - [ ]. retrievals
+            - [x] starting storages
+            - [x] operations
+                - [x] insertions
+                - [x] retrievals
                     - [x] all formulas
-                    - [ ] ???
-        - [ ]. benchmark on sqlite files!
-        - [ ] refactor sqlalchemy implementation to
+        - [x]  benchmark on sqlite files!
+        - [later] benchmark on explicit retrieval of the same formulas!
+        - [nah] refactor sqlalchemy implementation to
             - [x] become a "low-level" sqlite3 implementation (so that we have 0 dependencies by default) (actually I just made a second implementation)
-            - [ ] perform fewer queries
-            - [ ] generalize to a graph representation
+            - [nah] perform fewer queries
+            - [nah] generalize to a graph representation
                 - [ ] while I'm at it, why not also throw in a graph visualizer
-        - [ ] refactor storages to be opened and closed :P maybe as context managers?
         - [ ] add a zodb implementation (it doesn't seem so slow anymore :/)
         - [ ] add caching (because. it's. freaking. slow. T_T)
     - [ ] cleanup

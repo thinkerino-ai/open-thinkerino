@@ -1,8 +1,9 @@
 import pickle
+from contextlib import contextmanager
 from typing import Iterable, Tuple
 
 from aitools.logic import LogicObject, Substitution, Expression, Variable
-from aitools.storage.base import LogicObjectStorage
+from aitools.storage.base import LogicObjectStorage, NodeStorage
 from aitools.storage.implementations.node_index import NodeStoringAbstruseIndex
 from aitools.storage.index import AbstruseIndex, AbstruseKey, WILDCARD
 
@@ -31,12 +32,17 @@ def make_plain_key(formula: LogicObject) -> AbstruseKey[str]:
 
 class PickleSerializingLogicObjectStorage(LogicObjectStorage):
 
-    def __init__(self, storage):
-
+    def __init__(self, storage: NodeStorage):
+        self._node_storage = storage
         self._objects: AbstruseIndex = NodeStoringAbstruseIndex(
             storage_id=0,
             node_storage=storage
         )
+
+    @contextmanager
+    def transaction(self):
+        with self._node_storage.transaction():
+            yield
 
     def add(self, *objects: LogicObject):
         for obj in objects:

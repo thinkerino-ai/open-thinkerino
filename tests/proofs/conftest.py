@@ -9,6 +9,8 @@ logging.basicConfig(format="[%(levelname)s] %(name)s - %(message)s")
 logging.getLogger().setLevel(logging.WARNING)
 
 
-@pytest.fixture(params=storage_implementations.items())
-def TestKnowledgeBase(request):
-    return lambda: KnowledgeBase(request.param[1]())
+@pytest.fixture(params=storage_implementations)
+def test_knowledge_base(request):
+    with request.param() as storage:
+        kb = KnowledgeBase(storage)
+        yield kb

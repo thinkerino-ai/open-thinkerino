@@ -1,5 +1,7 @@
+from contextlib import contextmanager
+
 from sqlalchemy import Column, Integer, String, func, MetaData, Table, select, and_
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Engine, Connection
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -46,12 +48,20 @@ object_to_data = Table(
 
 # TODO: handle the session creation in a sensible way :P like.. not here
 class SQLAlchemyNodeStorage(NodeStorage):
-    def __init__(self, engine: Engine):
-        self.engine = engine
-        self.connection = self.engine.connect()
-        metadata.create_all(self.engine)
+    def __init__(self, connection: Connection):
+        self.connection = connection
+
+        metadata.create_all(self.connection.engine)
 
         self.last_id = self.__fetch_last_id()
+
+    @contextmanager
+    def transaction(self):
+        # TODO: feeling lazy, might implement later :P
+        raise NotImplementedError()
+
+    def close(self):
+        self.connection.close()
 
     def __fetch_last_id(self):
         # TODO I'm sure there's a better way of doing this but SQLAlchemy eludes my feeble brain

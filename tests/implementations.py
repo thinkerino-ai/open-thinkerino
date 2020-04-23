@@ -1,4 +1,6 @@
 import sqlite3
+import tempfile
+from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 
@@ -13,31 +15,95 @@ def make_storage_factory(storage_factory_name, storage_factory, node_storage_nam
     return f"{storage_factory_name}({node_storage_name})", lambda: storage_factory(storage=node_storage())
 
 
-def _create_in_memory_sqlalchemy_engine():
+@contextmanager
+def in_memory_sqlalchemy_engine():
     db_str = "sqlite:///:memory:"
     engine = create_engine(db_str)
-    return engine
+    connection = engine.connect()
+    try:
+        yield connection
+    finally:
+        connection.close()
 
 
-def _create_in_memory_sqlite3_connection():
+@contextmanager
+def in_memory_sqlite3_connection():
     db_str = ":memory:"
-    return sqlite3.connect(db_str)
+    connection = sqlite3.connect(db_str)
+    try:
+        yield connection
+        connection.commit()
+    finally:
+        connection.close()
 
 
-simple_storage_implementations = [DummyLogicObjectStorage, DummyIndexedLogicObjectStorage,
-                                  DummyPickleSerializingLogicObjectStorage]
-node_storage_implementations = dict(
-    DummyNodeStorage=DummyNodeStorage,
-    SqliteNodeStorage__inmem=lambda: SqliteNodeStorage(_create_in_memory_sqlite3_connection()),
-    SqlAlchemyNodeStorage__inmem=lambda: SQLAlchemyNodeStorage(_create_in_memory_sqlalchemy_engine()),
-)
-node_based_storages_implementations = [PickleSerializingLogicObjectStorage]
+@contextmanager
+def tempfile_sqlite_connection():
+    with tempfile.NamedTemporaryFile(suffix=".db", prefix="sqlite") as db_file:
+        connection = sqlite3.connect(db_file.name)
+        connection.execute("PRAGMA cache_size=-200000")
+        try:
+            yield connection
+            connection.commit()
+        finally:
+            connection.close()
 
-storage_implementations = {
-    **{impl.__name__: impl for impl in simple_storage_implementations},
-    **dict(
-        make_storage_factory(storage_factory.__name__, storage_factory, node_storage_name, node_storage)
-        for storage_factory in node_based_storages_implementations
-        for node_storage_name, node_storage in node_storage_implementations.items()
+
+def _make_context_manager_from_simple_factory(storage_factory: type):
+    @contextmanager
+    def inner():
+        yield storage_factory()
+    inner.__name__ = storage_factory.__name__
+    return inner
+
+
+def _make_context_manager_from_factory_and_context_manager(storage_factory: type, context_manager):
+    @contextmanager
+    def inner():
+        with context_manager() as context:
+            yield storage_factory(context)
+    inner.__name__ = "{}({})".format(
+        storage_factory.__name__,
+        context_manager.__name__
     )
-}
+    return inner
+
+
+simple_storage_implementations = [
+    _make_context_manager_from_simple_factory(DummyLogicObjectStorage),
+    _make_context_manager_from_simple_factory(
+        DummyPickleSerializingLogicObjectStorage
+    ),
+    _make_context_manager_from_simple_factory(DummyIndexedLogicObjectStorage),
+]
+
+node_storage_implementations = [
+    _make_context_manager_from_simple_factory(DummyNodeStorage),
+    _make_context_manager_from_factory_and_context_manager(
+        SqliteNodeStorage,
+        in_memory_sqlite3_connection
+    ),
+    _make_context_manager_from_factory_and_context_manager(
+        SqliteNodeStorage,
+        tempfile_sqlite_connection
+    ),
+    _make_context_manager_from_factory_and_context_manager(
+        SQLAlchemyNodeStorage,
+        in_memory_sqlalchemy_engine
+    ),
+]
+node_based_storages_implementations = [
+    PickleSerializingLogicObjectStorage,
+]
+
+storage_implementations = [
+    *simple_storage_implementations,
+    *[
+        _make_context_manager_from_factory_and_context_manager(
+            storage_impl,
+            node_storage_impl
+        )
+        for storage_impl in node_based_storages_implementations
+        for node_storage_impl in node_storage_implementations
+     ]
+]

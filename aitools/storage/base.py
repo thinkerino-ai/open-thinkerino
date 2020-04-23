@@ -1,10 +1,24 @@
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from typing import Iterable, Tuple
 
 from aitools.logic import LogicObject, Substitution
 
 
 class LogicObjectStorage(ABC):
+
+    def supports_transactions(self):
+        try:
+            with self.transaction():
+                return True
+        except (TypeError, NotImplementedError):
+            return False
+
+    @abstractmethod
+    @contextmanager
+    def transaction(self):
+        raise NotImplementedError()
+
     @abstractmethod
     def add(self, *objects: LogicObject):
         raise NotImplementedError()
@@ -19,6 +33,11 @@ class LogicObjectStorage(ABC):
 
 
 class NodeStorage:
+
+    @abstractmethod
+    @contextmanager
+    def transaction(self):
+        raise NotImplementedError()
 
     @abstractmethod
     def next_id(self):

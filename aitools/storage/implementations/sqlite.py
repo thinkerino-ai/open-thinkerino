@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import contextmanager
 
 from aitools.storage.base import NodeStorage
 
@@ -9,6 +10,14 @@ class SqliteNodeStorage(NodeStorage):
         self.connection.row_factory = sqlite3.Row
         self.__ensure_db_present(self.connection)
         self.last_id = self.__fetch_last_id()
+
+    @contextmanager
+    def transaction(self):
+        with self.connection:
+            yield
+
+    def close(self):
+        self.connection.close()
 
     @staticmethod
     def __ensure_db_present(connection: sqlite3.Connection):

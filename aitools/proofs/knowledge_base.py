@@ -1,6 +1,7 @@
 import logging
 import typing
 from collections import deque
+from contextlib import contextmanager
 from typing import Iterable
 
 from aitools.logic import Expression, Substitution
@@ -24,6 +25,14 @@ class KnowledgeBase:
         # TODO switch to a custom collection with limited capacity, to avoid infinite growth
         self._temporary_listeners: typing.Set[Listener] = set()
         self._initialize_default_provers()
+
+    def supports_transactions(self) -> bool:
+        return self._storage.supports_transactions()
+
+    @contextmanager
+    def transaction(self):
+        with self._storage.transaction():
+            yield
 
     def _initialize_default_provers(self):
         self.add_provers(KnowledgeRetriever())
