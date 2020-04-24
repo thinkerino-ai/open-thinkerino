@@ -44,6 +44,12 @@ class PickleSerializingLogicObjectStorage(LogicObjectStorage):
         with self._node_storage.transaction():
             yield
 
+    def commit(self):
+        self._node_storage.commit()
+
+    def rollback(self):
+        self._node_storage.rollback()
+
     def add(self, *objects: LogicObject):
         for obj in objects:
             key = make_plain_key(obj)

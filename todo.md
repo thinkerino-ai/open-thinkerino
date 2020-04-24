@@ -101,7 +101,8 @@
             - [x] become a "low-level" sqlite3 implementation (so that we have 0 dependencies by default) (actually I just made a second implementation)
             - [nah] perform fewer queries
             - [nah] generalize to a graph representation
-                - [ ] while I'm at it, why not also throw in a graph visualizer
+                - [nah] while I'm at it, why not also throw in a graph visualizer
+        - [ ]. add interactive tools
         - [ ] add a zodb implementation (it doesn't seem so slow anymore :/)
         - [ ] add caching (because. it's. freaking. slow. T_T)
     - [ ] cleanup

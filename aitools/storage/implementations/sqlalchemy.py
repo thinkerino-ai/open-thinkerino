@@ -60,6 +60,14 @@ class SQLAlchemyNodeStorage(NodeStorage):
         # TODO: feeling lazy, might implement later :P
         raise NotImplementedError()
 
+    def commit(self):
+        # TODO: feeling lazy, might implement later :P
+        raise NotImplementedError()
+
+    def rollback(self):
+        # TODO: feeling lazy, might implement later :P
+        raise NotImplementedError()
+
     def close(self):
         self.connection.close()
 

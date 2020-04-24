@@ -41,7 +41,6 @@ def in_memory_sqlite3_connection():
 def tempfile_sqlite_connection():
     with tempfile.NamedTemporaryFile(suffix=".db", prefix="sqlite") as db_file:
         connection = sqlite3.connect(db_file.name)
-        connection.execute("PRAGMA cache_size=-200000")
         try:
             yield connection
             connection.commit()

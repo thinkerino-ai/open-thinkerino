@@ -34,6 +34,12 @@ class KnowledgeBase:
         with self._storage.transaction():
             yield
 
+    def commit(self):
+        self._storage.commit()
+
+    def rollback(self):
+        self._storage.rollback()
+
     def _initialize_default_provers(self):
         self.add_provers(KnowledgeRetriever())
         # although it's quite a standard proving strategy, I really don't like having MP as a default...

@@ -17,6 +17,15 @@ class LogicObjectStorage(ABC):
     @abstractmethod
     @contextmanager
     def transaction(self):
+        # TODO I don't like that subclasses have to implement both transaction and commit+rollback, refactor!
+        raise NotImplementedError()
+
+    @abstractmethod
+    def commit(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def rollback(self):
         raise NotImplementedError()
 
     @abstractmethod
@@ -37,6 +46,14 @@ class NodeStorage:
     @abstractmethod
     @contextmanager
     def transaction(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def commit(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def rollback(self):
         raise NotImplementedError()
 
     @abstractmethod

@@ -16,6 +16,12 @@ class DummyLogicObjectStorage(LogicObjectStorage):
     def transaction(self):
         raise TypeError("Not supported, soriiii")
 
+    def commit(self):
+        raise TypeError("Not supported, soriiii")
+
+    def rollback(self):
+        raise TypeError("Not supported, soriiii")
+
     def add(self, *objects: LogicObject):
         for obj in objects:
             self._objects.add(obj)
@@ -88,6 +94,12 @@ class DummyIndexedLogicObjectStorage(LogicObjectStorage):
     def transaction(self):
         raise TypeError("Not supported, soriiii")
 
+    def commit(self):
+        raise TypeError("Not supported, soriiii")
+
+    def rollback(self):
+        raise TypeError("Not supported, soriiii")
+
     def add(self, *objects: LogicObject):
         for obj in objects:
             key: AbstruseKey[LogicObject] = make_key(obj)
@@ -110,6 +122,18 @@ class DummyPickleSerializingLogicObjectStorage(LogicObjectStorage):
 
     @contextmanager
     def transaction(self):
+        raise TypeError("Not supported, soriiii")
+
+    def commit(self):
+        raise TypeError("Not supported, soriiii")
+
+    def rollback(self):
+        raise TypeError("Not supported, soriiii")
+
+    def commit(self):
+        raise TypeError("Not supported, soriiii")
+
+    def rollback(self):
         raise TypeError("Not supported, soriiii")
 
     def add(self, *objects: LogicObject):
@@ -138,6 +162,14 @@ class DummyNodeStorage(NodeStorage):
 
     @contextmanager
     def transaction(self):
+        # TODO: feeling lazy, might implement later :P
+        raise NotImplementedError()
+
+    def commit(self):
+        # TODO: feeling lazy, might implement later :P
+        raise NotImplementedError()
+
+    def rollback(self):
         # TODO: feeling lazy, might implement later :P
         raise NotImplementedError()
 
