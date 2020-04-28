@@ -27,6 +27,7 @@ class SqliteNodeStorage(NodeStorage):
 
     @staticmethod
     def __ensure_db_present(connection: sqlite3.Connection):
+        # TODO also index abstruse_to_subtrie.subtrie_id ?
         connection.executescript("""
         CREATE TABLE IF NOT EXISTS abstruse_to_object (
             abstruse_id INTEGER NOT NULL, 
@@ -56,6 +57,14 @@ class SqliteNodeStorage(NodeStorage):
             PRIMARY KEY (object_id), 
             UNIQUE (data)
         );
+        CREATE INDEX IF NOT EXISTS idx__abstruse_to_subtrie__abstruse_id
+            ON abstruse_to_subtrie (abstruse_id);
+        CREATE INDEX IF NOT EXISTS idx__abstruse_to_subtrie__subtrie_id
+            ON abstruse_to_subtrie (subtrie_id);
+        CREATE INDEX IF NOT EXISTS idx__abstruse_to_object__abstruse_id
+            ON abstruse_to_object (abstruse_id);
+        CREATE INDEX IF NOT EXISTS idx__trie_to_key_and_subtrie__trie_id
+            ON trie_to_key_and_subtrie (trie_id);
         """)
 
     def __fetch_last_id(self):

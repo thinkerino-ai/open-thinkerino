@@ -1,5 +1,5 @@
 
-- [ ]. persistence
+- [x] persistence
     - [x] refactor AbstruseIndex
         - [x] refactor key_function
             - [x] refactor key_function as an injected dependency
@@ -67,7 +67,7 @@
                     - [x] container Protocols can probably be removed
                     - [nah] the two indices have a few common methods, they could be moved to a common superclass
             - [x] actually refactor the storage 
-    - [ ]. implement persistence
+    - [x] implement persistence
         - [x] refactor the NodeStorage to be... better :P
             - [x] move it somewhere else
             - [nah] classes instead of dicts?
@@ -102,11 +102,11 @@
             - [nah] perform fewer queries
             - [nah] generalize to a graph representation
                 - [nah] while I'm at it, why not also throw in a graph visualizer
-        - [ ]. add interactive tools
-        - [ ] add a zodb implementation (it doesn't seem so slow anymore :/)
-        - [ ] add caching (because. it's. freaking. slow. T_T)
-    - [ ] cleanup
-        - [x] remove xfailing case from `tests.proofs.conftest.TestKnowledgeBase`
+        - [sorta]  add interactive tools
+        - [later] add a zodb implementation (it doesn't seem so slow anymore :/)
+        - [later] add caching (because. it's. freaking. slow. T_T)
+    - [x] cleanup
+        - [x] remove xfailing case from `tests.proofs.conftest.test_knowledge_base`
         - [x] write somewhere how provers and listeners "storage" should work:
             - provers and listeners are just configuration, so they are passed as input while building the knowledge base
             - changing provers and listeners will be possible only by reloading

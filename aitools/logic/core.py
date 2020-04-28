@@ -37,6 +37,9 @@ class LogicObject:
     def __call__(self, *other_children) -> Expression:
         return Expression(self, *other_children)
 
+    @property
+    def size(self):
+        return 1
 
 class LogicWrapper(LogicObject):
     """Wraps an object in a LogicObject"""
@@ -232,3 +235,7 @@ class Expression(LogicObject):
     def __setstate__(self, state):
         self.id = -1
         self.children = state
+
+    @property
+    def size(self):
+        return 1 + sum(c.size for c in self.children)
