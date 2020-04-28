@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional
 
 
 def fail(exception):
@@ -11,6 +12,7 @@ class LogicObject:
 
     def __init__(self):
         self.id = LogicObject._lastID
+        self.name = None
         LogicObject._lastID = LogicObject._lastID + 1
         super().__init__()
 
@@ -35,6 +37,9 @@ class LogicObject:
     def __call__(self, *other_children) -> Expression:
         return Expression(self, *other_children)
 
+    @property
+    def size(self):
+        return 1
 
 class LogicWrapper(LogicObject):
     """Wraps an object in a LogicObject"""
@@ -55,7 +60,11 @@ class LogicWrapper(LogicObject):
                 not isinstance(other, LogicObject) and self.value == other)
 
     def __hash__(self):
-        return hash(self.value)
+        # TODO this is TERRIBLE
+        try:
+            return hash(self.value)
+        except TypeError:
+            return hash(self.id)
 
     @staticmethod
     def __magic_binary(method, other):
@@ -159,7 +168,7 @@ class LogicWrapper(LogicObject):
 
 
 class Constant(LogicObject):
-    def __init__(self, name:str = None):
+    def __init__(self, name: Optional[str] = None):
         if name is not None and not (isinstance(name, str) and name):
             raise ValueError("Constant name must be a non-empty string!")
         super().__init__()
@@ -174,7 +183,7 @@ class Constant(LogicObject):
 
 class Variable(LogicObject):
 
-    def __init__(self, name:str = None):
+    def __init__(self, name: str = None):
         if name is not None and not (isinstance(name, str) and name):
             raise ValueError("Variable name must be a non-empty string!")
         super().__init__()
@@ -215,4 +224,18 @@ class Expression(LogicObject):
         return True
 
     def __hash__(self):
+        # TODO store this so that it is calculated only once
         return hash(self.children)
+
+    # TODO remove __getstate__ and __setstate__ as soon as IDs are removed (there's a GitHub issue about that and
+    #  a canary test I just wrote to make sure I remember about this)
+    def __getstate__(self):
+        return self.children
+
+    def __setstate__(self, state):
+        self.id = -1
+        self.children = state
+
+    @property
+    def size(self):
+        return 1 + sum(c.size for c in self.children)

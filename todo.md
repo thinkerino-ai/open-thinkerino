@@ -1,0 +1,118 @@
+
+- [x] persistence
+    - [x] refactor AbstruseIndex
+        - [x] refactor key_function
+            - [x] refactor key_function as an injected dependency
+            - [x] refactor key_function so that it is called once and returns the whole key
+            - [x] refactor key_function so that the key is passed from outside
+        - [x] refactor AbstruseIndex so that it is generic (no dependency on logic package)
+            - [x] remove Variable as a wildcard in keys
+            - [x] set logging level to WARNING in tests
+            - [x] remove references to "formula" from the index
+            - [x] make _ListKeyIndex a Trie
+            - [x] make AbstruseIndex generic (apparently it was already)
+            - [x] restructure modules
+        - [x] refactor AbstruseIndex to make it more abstract
+            - [x] make a DummyAbstruseIndex subclass and use that wherever needed
+            - [x] make other subclasses for all other "implementations"
+            - [x] remove container classes from the AbstruseIndex and pass them from the superclass constructors
+            - [x] add an "add_object" method to AbstruseIndex
+            - [x] repeat the same for TrieIndex
+                - [x] make subclasses
+                - [x] remove container class inputs
+            - [x] make AbstruseIndex and TrieIndex abstract
+            - [x] add a "make_node" abstract method to AbstruseIndex
+            - [x] add a "make_node" abstract method to TrieIndex
+            - [x] remove level field from AbstruseIndex
+            - [x] remove "add_object" methods (because I can't make my mind up :P)
+                - [x] from AbstruseIndex
+                - [x] from TrieIndex
+        - [x] refactor KnowledgeBases to use a storage
+            - [x] define the Storage interface
+            - [x] add dummy implementations
+                - [x] set-based
+                - [x] inmem serializing (new)
+                - [x] DummyAbstruseIndex-based
+                - [no] zodb
+                - [no] indexed zodb
+                - [x] inmem indexed serializing (also new)
+            - [x] add tests
+                - [x] reintroduce the "preserves-identity" thingie
+            - [x] remove zodb
+            - [x] refactor storage to yield both the object and the substitution
+            - [x] refactor knowledge base to receive a storage (so only one knowledge base class will exist)
+                - [x] create a common flexible KnowledgeBase class
+                - [x] change test fixtures so that they use the new class
+                - [x] remove all other KnowledgeBase classes
+            - [no] add a storage also for provers and listeners (no: see below)
+                - [no] provers 
+                - [no] listeners
+            - [no] refactor KnowledgeBase to use also those storages
+        - [x] wait, what? why is the AbstruseIndex in utils? it should be in storage o.o
+        - [x] switch to Python 3.8
+        - [x] refactor DummyIndexedSerializingLogicObjectStorage not to use DummyAbstruseIndex, but a custom, serializing class
+            - [x] TrieIndex and AbstruseIndex should take in input custom classes
+            - [x] further refactoring of AbstruseIndex and TrieIndex
+                - [x] TrieIndex
+                    - [x] all access to self.subindices should be abstracted away
+                    - [x] self.subindices should then be moved to subclasses
+                    - [x] access to self.objects should be abstracted away
+                    - [x] self.objects should then be moved to subclasses
+                - [x] AbstruseIndex 
+                    - [x] access to self.objects should be abstracted away
+                    - [x] self.objects should then be moved to subclasses
+                    - [x] access to _subindex_tree should be abstracted away
+                    - [x] self._subindex_tree should then be moved to subclasses
+                - [x] further
+                    - [x] container Protocols can probably be removed
+                    - [nah] the two indices have a few common methods, they could be moved to a common superclass
+            - [x] actually refactor the storage 
+    - [x] implement persistence
+        - [x] refactor the NodeStorage to be... better :P
+            - [x] move it somewhere else
+            - [nah] classes instead of dicts?
+        - [x] implement another NodeStorage based on relational db
+        - [x] add it to tests
+        - [x] make the tests work because, of course, they don't ._.
+            - [x] switch to strings instead of ints for key elements
+            - [x] switch to sqlalchemy core
+            - [x] switch to upserts
+        - [x] transactions
+            - [x] some sort of tests
+        - [x] storage life-cycle
+            - [x] change fixtures to be already-built storages/kbs instead of factories
+            - [x] change factories to be context managers (whew this was a complex one :D)
+        - [x] add benchmarks
+            - [later] specific formulas
+                - [later] simple
+                - [later] wide
+                - [later] deep
+                - [later] unlucky?
+            - [x] formula distributions
+                - [x] the one I already used in a local test
+            - [x] starting storages
+            - [x] operations
+                - [x] insertions
+                - [x] retrievals
+                    - [x] all formulas
+        - [x]  benchmark on sqlite files!
+        - [later] benchmark on explicit retrieval of the same formulas!
+        - [nah] refactor sqlalchemy implementation to
+            - [x] become a "low-level" sqlite3 implementation (so that we have 0 dependencies by default) (actually I just made a second implementation)
+            - [nah] perform fewer queries
+            - [nah] generalize to a graph representation
+                - [nah] while I'm at it, why not also throw in a graph visualizer
+        - [sorta]  add interactive tools
+        - [later] add a zodb implementation (it doesn't seem so slow anymore :/)
+        - [later] add caching (because. it's. freaking. slow. T_T)
+    - [x] cleanup
+        - [x] remove xfailing case from `tests.proofs.conftest.test_knowledge_base`
+        - [x] write somewhere how provers and listeners "storage" should work:
+            - provers and listeners are just configuration, so they are passed as input while building the knowledge base
+            - changing provers and listeners will be possible only by reloading
+                - eventually I count on providing a "hot reload" option, but who knows :P
+            - it is still possible to proceed as follows:
+                - create a general "listener", which listens for any new formula
+                - when the listener triggers, it queries the KB for a formula such as "ListenFor(formula, ?func)"
+                - ?func will be bound to a LogicWrapper which wraps a handler function
+                - I still need to work out the details, which will be here https://github.com/OneManEquipe/aitools/issues/13
