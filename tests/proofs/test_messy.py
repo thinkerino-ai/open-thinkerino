@@ -185,7 +185,7 @@ def test_deduction_chain(test_knowledge_base):
     test_knowledge_base.add_formulas(
         IsA(v._x, cat) << Implies >> IsA(v._x, mammal),
         IsA(v._x, mammal) << Implies >> IsA(v._x, animal),
-        IsA(dylan, mammal)
+        IsA(dylan, cat)
     )
 
     proofs = list(test_knowledge_base.prove(IsA(dylan, animal)))

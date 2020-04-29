@@ -41,6 +41,7 @@ class LogicObject:
     def size(self):
         return 1
 
+
 class LogicWrapper(LogicObject):
     """Wraps an object in a LogicObject"""
 
