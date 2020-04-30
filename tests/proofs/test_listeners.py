@@ -5,6 +5,26 @@ from aitools.logic.utils import VariableSource, constants
 from aitools.proofs.listeners import listener, Listener
 
 
+def test_basic_listener(test_knowledge_base):
+    v = VariableSource()
+
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
+
+    def cats_meow(some_cat):
+        yield Meows(some_cat)
+
+    listened_formula = Is(v._x, cat)
+    _listener = Listener(handler=cats_meow, listened_formula=listened_formula)
+
+    test_knowledge_base.add_listener(_listener)
+
+    # TODO names like "ponder" and "results"
+    deduction: Deduction = test_knowledge_base.ponder(Is(dylan, cat))
+
+    assert isinstance(deduction, Deduction)
+    assert set(deduction.results) == {Meows(dylan)}
+
+
 @pytest.mark.xfail(reason="I'm not even sure if it should be done :P")
 def test_listener_simple_retroactive(test_knowledge_base):
     v = VariableSource()
@@ -21,7 +41,7 @@ def test_listener_simple_retroactive(test_knowledge_base):
 
     assert not any(test_knowledge_base.prove(Meows(dylan)))
 
-    test_knowledge_base.add_listeners(deduce_meow, retroactive=True)
+    test_knowledge_base.add_listener(deduce_meow, retroactive=True)
 
     assert triggered, "The listener should have triggered retroactively!"
 
@@ -41,7 +61,7 @@ def test_listener_simple_non_retroactive(test_knowledge_base):
 
     test_knowledge_base.add_formulas(Is(dylan, cat))
 
-    test_knowledge_base.add_listeners(deduce_meow, retroactive=False)
+    test_knowledge_base.add_listener(deduce_meow, retroactive=False)
 
     assert not triggered, "The listener should **not** have triggered retroactively!"
 
@@ -62,7 +82,7 @@ def test_listener_multiple_formulas_returned(test_knowledge_base):
     def deduce_meow_and_purr(_x):
         return Meows(_x), Purrs(_x)
 
-    test_knowledge_base.add_listeners(deduce_meow_and_purr)
+    test_knowledge_base.add_listener(deduce_meow_and_purr)
     test_knowledge_base.add_formulas(Is(dylan, cat))
 
     assert any(test_knowledge_base.prove(Meows(dylan)))
@@ -78,7 +98,7 @@ def test_listener_complex_conjunction(test_knowledge_base):
         # note that since we don't care for _a we don't ask for it!
         return IsUncle(_c, _b)
 
-    test_knowledge_base.add_listeners(deduce_uncle)
+    test_knowledge_base.add_listener(deduce_uncle)
 
     test_knowledge_base.add_formulas(IsBrother(carl, alice))
 
@@ -100,7 +120,7 @@ def test_listener_complex_disjunction(test_knowledge_base):
         # UPDATE: I'm on a plane now, not drunk, still stupid, still going with it :P
         return Barks(_x)
 
-    test_knowledge_base.add_listeners(deduce_barks)
+    test_knowledge_base.add_listener(deduce_barks)
 
     # if you ever heard The Fox: yep yep yep yep yep yepyep yepyep :P
     test_knowledge_base.add_formulas(IsDog(luce), IsBarkingHuman(bard))
@@ -128,14 +148,14 @@ def test_listener_manual_generation(test_knowledge_base):
             a = subst.get_bound_object_for(v._a)
             return Listener(lambda _b, _c: IsUncle(c, _b), [IsParent(a, v._b)], previous_substitution=subst)
 
-    test_knowledge_base.add_listeners(deduce_uncle_but_in_a_weird_way)
+    test_knowledge_base.add_listener(deduce_uncle_but_in_a_weird_way)
     test_knowledge_base.add_formulas(IsParent(alice, bob))
 
     test_knowledge_base.add_formulas(IsBrother(carl, alice))
 
     assert any(test_knowledge_base.prove(IsUncle(carl, bob)))
 
-    test_knowledge_base.add_listeners(deduce_uncle_but_in_a_weird_way)
+    test_knowledge_base.add_listener(deduce_uncle_but_in_a_weird_way)
     test_knowledge_base.add_formulas(IsBrother(carl, alice))
 
     test_knowledge_base.add_formulas(IsParent(alice, bob))
@@ -158,9 +178,9 @@ def test_listener_chain(test_knowledge_base):
     def deduce_from_c_d(_x):
         return D(_x)
 
-    test_knowledge_base.add_listeners(deduce_from_b_c)
-    test_knowledge_base.add_listeners(deduce_from_a_b)
-    test_knowledge_base.add_listeners(deduce_from_c_d)
+    test_knowledge_base.add_listener(deduce_from_b_c)
+    test_knowledge_base.add_listener(deduce_from_a_b)
+    test_knowledge_base.add_listener(deduce_from_c_d)
 
     assert not any(test_knowledge_base.prove(D(foo)))
 
@@ -187,7 +207,9 @@ def test_listener_priority(test_knowledge_base):
     def listener_2():
         res.append(2)
 
-    test_knowledge_base.add_listeners(listener_1, listener_0, listener_2)
+    test_knowledge_base.add_listener(listener_1)
+    test_knowledge_base.add_listener(listener_0)
+    test_knowledge_base.add_listener(listener_2)
 
     assert res == []
 
@@ -218,7 +240,7 @@ def test_listener_consume(test_knowledge_base):
         other_triggered = True
         consume()
 
-    test_knowledge_base.add_listeners(consumer, other)
+    test_knowledge_base.add_listener(consumer, other)
     assert not consumer_triggered and not other_triggered
 
     test_knowledge_base.add_formulas(Go)

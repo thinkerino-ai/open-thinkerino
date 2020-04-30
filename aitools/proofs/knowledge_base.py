@@ -78,17 +78,16 @@ class KnowledgeBase:
     def _add_prover(self, prover):
         self._provers.add(prover)
 
-    def add_listeners(self, *listeners: typing.Union[Listener, _MultiListenerWrapper],
-                      retroactive: bool = False, temporary=False):
+    def add_listener(self, listener: typing.Union[Listener, _MultiListenerWrapper],
+                     retroactive: bool = False, temporary=False):
         if retroactive:
             raise NotImplementedError("Not implemented yet!")
 
-        for el in listeners:
-            if isinstance(el, Listener):
-                self._add_listener(el, retroactive=retroactive, temporary=temporary)
-            elif isinstance(el, _MultiListenerWrapper):
-                for l in el.listeners:
-                    self._add_listener(l, retroactive=retroactive, temporary=temporary)
+        if isinstance(listener, Listener):
+            self._add_listener(listener, retroactive=retroactive, temporary=temporary)
+        elif isinstance(listener, _MultiListenerWrapper):
+            for _listener in listener.listeners:
+                self._add_listener(_listener, retroactive=retroactive, temporary=temporary)
 
     def _add_listener(self, listener: Listener, retroactive: bool = False, temporary=False):
         destination = self._listeners if not temporary else self._temporary_listeners
@@ -157,6 +156,7 @@ class KnowledgeBase:
             if isinstance(obj, Expression):
                 self.add_formulas(obj)
             elif isinstance(obj, Listener):
-                self.add_listeners(obj, temporary=True)
+                self.add_listener(obj, temporary=True)
             elif isinstance(obj, _MultiListenerWrapper):
-                self.add_listeners(*obj.listeners, temporary=True)
+                for _listener in obj.listeners:
+                    self.add_listener(_listener, temporary=True)

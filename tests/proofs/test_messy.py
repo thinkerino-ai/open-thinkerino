@@ -458,7 +458,7 @@ def test_declarative_provers_as_listeners(test_knowledge_base):
         conclusions=[Or(v.A, v.B)]
     )
 
-    test_knowledge_base.add_listeners(binary_conjunction, binary_disjunction_1, binary_disjunction_2)
+    test_knowledge_base.add_listener(binary_conjunction, binary_disjunction_1, binary_disjunction_2)
 
     test_knowledge_base.add_formulas(IsNumber(seven), IsOdd(seven))
 
