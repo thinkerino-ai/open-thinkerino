@@ -51,9 +51,8 @@ class Pondering(Prover):
         raise TypeError('This is a "fake" prover, don\'t try to use it')
 
 
-
 class Listener:
-    def __init__(self, *, handler: Callable, listened_formula: LogicObject, argument_mode: HandlerArgumentMode,
+    def __init__(self, *, listened_formula: LogicObject, handler: Callable, argument_mode: HandlerArgumentMode,
                  pure: bool, safety: HandlerSafety):
         self.handler = handler
         self.listened_formula = listened_formula
@@ -71,7 +70,8 @@ class Listener:
             raise ValueError(f"{HandlerArgumentMode.RAW} requires the handler to take two arguments: "
                              f"(formula, substitution)")
 
-    def ponder(self, formula: LogicObject) -> Iterable[Proof]:
+    def ponder(self, proof: Proof) -> Iterable[Proof]:
+        formula = proof.conclusion
         if context.is_hypothetical_scenario() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
             raise UnsafePonderException("Unsafe listener cannot be used in hypothetical scenarios")
 
@@ -90,27 +90,30 @@ class Listener:
         if result is None:
             return
 
-        # if the handler returned a single value, wrap it in an iterable
-        if isinstance(result, (LogicObject, tuple)):
+        # if the handler returned a single value, wrap it in a tuple to make it iterable
+        if (
+                isinstance(result, LogicObject) or
+                # TODO decide whether to make this case a small dataclass with "result, conditions" instead of a tuple
+                # the result is a pair, but not "two results"
+                (isinstance(result, tuple) and len(result) == 2 and not isinstance(result[1], LogicObject))
+        ):
             result = (result,)
 
         for item in result:
             if isinstance(item, tuple):
                 conclusion, premises = item
+                # again, if a single proof was returned, we wrap it in a tuple to make it iterable
+                if isinstance(premises, Proof):
+                    premises = (premises,)
             else:
                 conclusion = item
                 premises = ()
 
-            trigger_premise = Proof(
-                inference_rule=TriggeringFormula(),
-                conclusion=formula,
-                substitution=Substitution()  # TODO remove this, I don't like it anymore
-            )
             proof = Proof(
                 inference_rule=Pondering(listener=self, triggering_formula=formula),
                 conclusion=conclusion,
                 substitution=Substitution(),  # TODO remove this, I don't like it anymore
-                premises=tuple(itertools.chain((trigger_premise,), premises))
+                premises=tuple(itertools.chain((proof,), premises))
             )
 
             yield proof

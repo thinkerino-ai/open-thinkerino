@@ -25,7 +25,7 @@ class ProofSet:
         self._proofs = proofs
 
     def __iter__(self):
-        yield from self._proofs
+        return self._proofs.__iter__()
 
     def __bool__(self):
-        return any(self._proofs)
+        return True

@@ -72,17 +72,17 @@ A handler can return:
 
 The `KnowledgeBase.ponder(formulas, ponder_mode)` method starts a "pondering" process, which proceeds as follows for each of the formulas:
 
-1. the formula is checked to be satisfiable, either by `retrieve` or `prove`, depending on the `ponder_mode`
-2. for each of the satisfying formulas, all listeners that it can trigger are retrieved
-3. each listener's `ponder(formula)` method is called, which in turn will call the handler
-4. each returned formula by the listener, with its premises (if any) is then packed in a `Proof` and yielded to the caller
-5. each returned formula by the listener is also further used for step 2
+1. the formula is checked to be satisfiable with `KnowledgeBase.prove`, passing `retrieve_only` in accordance to the `ponder_mode` argument
+2. for each of the found proofs, all listeners that it can trigger are retrieved
+3. each listener's `ponder(proof)` method is called, which in turn will call the handler
+4. each returned formula by the handler, with its premises (if any) is then packed in a `Proof` and yielded to the caller
+5. each returned proof by the listener is also further used for step 2
 
 The process terminates if no more formulas are available, so it can be infinite, but is lazily-generated, so unless a single step takes forever this should be of little consequence.
 
 The `ponder_mode` is an enumerative value of type `PonderMode` with the following options:
 
-- `PonderMode.KNOWN`: all formulas must be already known, `KnowledgeBase.retrieve(...)` is used (no proofs are searched)
+- `PonderMode.KNOWN`: all formulas must be already known, `KnowledgeBase.prove(..., retrieve_only=True)` is used (no proofs are searched)
 - `PonderMode.PROVE`: all formulas must be provable, `KnowledgeBase.prove(...)` is used
 - `PonderMode.HYPOTHETICALLY`: all formulas are added as hypotheses before proceeding, no check is required (we are adding them, we should know we did!)
 
@@ -91,7 +91,7 @@ The pondering process returns zero or more `Proof`s, based on what the single li
 - as a conclusion, the formula returned by the listener's handler
 - as premises
     - all the premises returned by the listener's handler
-    - the triggering formula (I'm not sure about this, but for now it is like that)
+    - the triggering formula, in turn wrapped in a proof, with any found proof due to the `ponder_mode` passed as its premises 
 - as inference rule, a `Pondering`, which wraps the listener and the triggering formula
 
 ## Hypothetical Scenarios

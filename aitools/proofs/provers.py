@@ -14,7 +14,7 @@ class KnowledgeRetriever(Prover):
     def __call__(self, formula: Expression, _kb=None, _truth: bool = True, _previous_substitution: Substitution = None):
         """Proves a formula to be true if it is found in the knowledge base"""
         logger.info("KnowledgeRetriever trying to prove %s with substitution %s", formula, _previous_substitution)
-        for subst in _kb.retrieve(formula, previous_substitution=_previous_substitution):
+        for subst in _kb._retrieve(formula, previous_substitution=_previous_substitution):
             logger.debug("Found a substitution: %s", subst)
             if _truth:
                 yield Proof(inference_rule=self, conclusion=formula, substitution=subst)
@@ -56,7 +56,7 @@ class NegationProver(Prover):
     def __call__(self, formula: Expression, _kb=None, _truth: bool = True, _previous_substitution: Substitution = None):
         """Proves the negation of a formula to be True/False by proving the formula to be False/True (respectively)"""
         if formula.children[0] == Not and len(formula.children) == 2:
-            for proof in _kb.prove(formula.children[1], not _truth, previous_substitution=_previous_substitution):
+            for proof in _kb.prove(formula.children[1], truth=not _truth, previous_substitution=_previous_substitution):
                 yield Proof(inference_rule=self, conclusion=formula, substitution=proof.substitution, premises=(proof,))
 
 

@@ -14,10 +14,11 @@ def test_retrieve_known_formula(test_knowledge_base):
     IsA, dylan, cat = constants('IsA, dylan, cat')
     test_knowledge_base.add_formulas(IsA(dylan, cat))
     # we can retrieve it because we already know it
-    substitutions = list(test_knowledge_base.retrieve(IsA(dylan, cat)))
+    proofs = list(test_knowledge_base.prove(IsA(dylan, cat), retrieve_only=True))
 
-    assert len(substitutions) == 1
-    assert all(isinstance(s, Substitution) for s in substitutions)
+    assert len(proofs) == 1
+    assert all(isinstance(p, Proof) for p in proofs)
+    assert all(proof.conclusion == IsA(dylan, cat) for proof in proofs)
 
 
 def test_retrieve_known_formula_transactional(test_knowledge_base):
@@ -29,7 +30,7 @@ def test_retrieve_known_formula_transactional(test_knowledge_base):
     with test_knowledge_base.transaction():
         test_knowledge_base.add_formulas(IsA(dylan, cat))
 
-    substitutions = list(test_knowledge_base.retrieve(IsA(dylan, cat)))
+    substitutions = list(test_knowledge_base.prove(IsA(dylan, cat), retrieve_only=True))
 
     assert len(substitutions) == 1
 
@@ -48,7 +49,7 @@ def test_retrieve_known_formula_rollback(test_knowledge_base):
             test_knowledge_base.add_formulas(IsA(dylan, cat))
             raise VeryCustomException()
 
-    substitutions = list(test_knowledge_base.retrieve(IsA(dylan, cat)))
+    substitutions = list(test_knowledge_base.prove(IsA(dylan, cat), retrieve_only=True))
     assert len(substitutions) == 0
 
 
@@ -63,13 +64,13 @@ def test_retrieve_known_open_formula(test_knowledge_base):
         IsA(hugo, cat)
     )
 
-    substitutions = list(test_knowledge_base.retrieve(IsA(v._x, cat)))
-    assert len(substitutions) == 2
+    proofs = list(test_knowledge_base.prove(IsA(v._x, cat), retrieve_only=True))
+    assert len(proofs) == 2
 
-    assert all(isinstance(s, Substitution) for s in substitutions)
+    assert all(isinstance(p, Proof) for p in proofs)
 
-    assert any(substitution.get_bound_object_for(v._x) == dylan for substitution in substitutions)
-    assert any(substitution.get_bound_object_for(v._x) == hugo for substitution in substitutions)
+    assert any(proof.substitution.apply_to(proof.conclusion) == IsA(dylan, cat) for proof in proofs)
+    assert any(proof.substitution.apply_to(proof.conclusion) == IsA(hugo, cat) for proof in proofs)
 
 
 def test_open_formulas_added_only_once(test_knowledge_base):
