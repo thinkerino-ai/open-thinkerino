@@ -1,8 +1,11 @@
+from typing import List
+
 import pytest
 
 from aitools.logic import Substitution, Constant
 from aitools.logic.utils import VariableSource, constants
-from aitools.proofs.listeners import listener, Listener
+from aitools.proofs.listeners import Listener, HandlerArgumentMode, HandlerSafety, PonderMode
+from aitools.proofs.proof import Proof
 
 
 def test_basic_listener(test_knowledge_base):
@@ -10,68 +13,26 @@ def test_basic_listener(test_knowledge_base):
 
     Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
 
-    def cats_meow(some_cat):
-        yield Meows(some_cat)
+    def cats_meow(cat):
+        yield Meows(cat)
 
-    listened_formula = Is(v._x, cat)
-    _listener = Listener(handler=cats_meow, listened_formula=listened_formula)
+    listened_formula = Is(v.cat, cat)
+    _listener = Listener(handler=cats_meow, listened_formula=listened_formula, argument_mode=HandlerArgumentMode.MAP,
+                         pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(_listener)
 
-    # TODO names like "ponder" and "results"
-    deduction: Deduction = test_knowledge_base.ponder(Is(dylan, cat))
-
-    assert isinstance(deduction, Deduction)
-    assert set(deduction.results) == {Meows(dylan)}
-
-
-@pytest.mark.xfail(reason="I'm not even sure if it should be done :P")
-def test_listener_simple_retroactive(test_knowledge_base):
-    v = VariableSource()
-    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
-    triggered = False
-
-    @listener(Is(v._x, cat))
-    def deduce_meow(_x):
-        nonlocal triggered
-        triggered = True
-        return Meows(_x)
-
     test_knowledge_base.add_formulas(Is(dylan, cat))
 
-    assert not any(test_knowledge_base.prove(Meows(dylan)))
+    proofs: List[Proof] = list(test_knowledge_base.ponder(Is(dylan, cat), ponder_mode=PonderMode.KNOWN))
 
-    test_knowledge_base.add_listener(deduce_meow, retroactive=True)
+    assert all(isinstance(p, Proof) for p in proofs)
+    assert len(proofs) == 1
 
-    assert triggered, "The listener should have triggered retroactively!"
+    proof: Proof = proofs.pop()
 
-    assert any(test_knowledge_base.prove(Meows(dylan)))
-
-
-def test_listener_simple_non_retroactive(test_knowledge_base):
-    v = VariableSource()
-    triggered = False
-    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
-
-    @listener(Is(v._x, cat))
-    def deduce_meow(_x):
-        nonlocal triggered
-        triggered = True
-        return Meows(_x)
-
-    test_knowledge_base.add_formulas(Is(dylan, cat))
-
-    test_knowledge_base.add_listener(deduce_meow, retroactive=False)
-
-    assert not triggered, "The listener should **not** have triggered retroactively!"
-
-    assert not any(test_knowledge_base.prove(Meows(dylan)))
-
-    _ = next(iter(test_knowledge_base.prove(Is(dylan, cat))))
-
-    assert triggered, "The listener should have triggered!"
-
-    assert any(test_knowledge_base.prove(Meows(dylan)))
+    assert proof.conclusion == Meows(dylan)
+    assert set(p.conclusion for p in proof.premises) == {Is(dylan, cat)}
 
 
 def test_listener_multiple_formulas_returned(test_knowledge_base):

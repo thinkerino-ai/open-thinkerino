@@ -56,9 +56,9 @@ With the `MAP*` options, `Variable` names in the trigger formula are matched to 
 
 The `safety` argument is an enumerative value of type `HandlerSafety` can have the following values:
 
-- `Safe`: the listener will only perform operations that can be repeated without worry
-- `TotallyUnsafe`: the listener performs "destructive" operations, and cannot be called in hypothetical scenarios or during verification
-- `SafeForHypotheses`: the listener performs "destructive" operations, but can be used in hypothetical scenarios (see below [Hypothetical Scenarios](#Hypothetical Scenarios)) 
+- `SAFE`: the listener will only perform operations that can be repeated without worry
+- `TOTALLY_UNSAFE`: the listener performs "destructive" operations, and cannot be called in hypothetical scenarios or during verification
+- `SAFE_FOR_HYPOTHESES`: the listener performs "destructive" operations, but can be used in hypothetical scenarios (see below [Hypothetical Scenarios](#Hypothetical Scenarios)) 
 
 A handler can return:
 
@@ -82,9 +82,9 @@ The process terminates if no more formulas are available, so it can be infinite,
 
 The `ponder_mode` is an enumerative value of type `PonderMode` with the following options:
 
-- `PonderMode.Known`: all formulas must be already known, `KnowledgeBase.retrieve(...)` is used (no proofs are searched)
-- `PonderMode.Prove`: all formulas must be provable, `KnowledgeBase.prove(...)` is used
-- `PonderMode.Hypothetically`: all formulas are added as hypotheses before proceeding, no check is required (we are adding them, we should know we did!)
+- `PonderMode.KNOWN`: all formulas must be already known, `KnowledgeBase.retrieve(...)` is used (no proofs are searched)
+- `PonderMode.PROVE`: all formulas must be provable, `KnowledgeBase.prove(...)` is used
+- `PonderMode.HYPOTHETICALLY`: all formulas are added as hypotheses before proceeding, no check is required (we are adding them, we should know we did!)
 
 The pondering process returns zero or more `Proof`s, based on what the single listeners returned. Each proof will have:
 
@@ -96,11 +96,11 @@ The pondering process returns zero or more `Proof`s, based on what the single li
 
 ## Hypothetical Scenarios
 
-A pondering process is considered to happen in a "hypothetical scenario" if at least one hypothesis is defined, either from the outside (with a hypothetical context), or by the process itself, when `PonderMode.Hypothetically` is used.
+A pondering process is in a "hypothetical scenario" if at least one hypothesis is defined, either from the outside (with a hypothetical context), or by the process itself, when `PonderMode.HYPOTHETICALLY` is used.
 
 A hypothetical scenario is considered unsafe, and as such if a listener is not safe it will not be triggered.
 
-To run an unsafe listener, it is possible to mark it as `SafeForHypotheses`, but care should be taken to ensure that any operation is not based on hypotheses (or that it is ok to do so).
+To run an unsafe listener, it is possible to mark it as `SAFE_FOR_HYPOTHESES`, but care should be taken to ensure that any operation is not based on hypotheses (or that it is ok to do so).
 
 For example, suppose that we have the hypothesis `IsCoworker(john)`, and that we ponder on an email received by John. The handler could have the following code:
 
@@ -111,12 +111,12 @@ def handle_email(email: Email):
     # we only respond to coworkers
     for proof in prove(IsCoworker(wrap(sender))):
         # but only to those that are based on actual knowledge
-        if not proof.is_hypothetical:
+        if not proof.is_hypothetical_scenario:
             # if you write "fuckerino" it is not a swear-word, so it is not rude
             email.respond(f"Dear {sender.name},\nI'm on vacation, please shut the fuckerino up")
 ```
 
-As the example shows, it is quite complex to manually ensure safety, so `HandlerSafety.TotallyUnsafe` should be used in most cases when destructive operations are performed.
+As the example shows, it is quite complex to manually ensure safety, so `HandlerSafety.TOTALLY_UNSAFE` should be used in most cases when destructive operations are performed.
 
 ## Listener Indexing and Dynamic Listeners
 
@@ -168,10 +168,10 @@ A "cache" storage could also be implemented to keep track of increasingly satisf
  
  - if the listener is pure, its premises are recursively verified, and that is all
  - if the listener is not pure
-    - if it is `Safe`, its premises are recursively verified, then used as knowledge context (i.e. added either to hypotheses or to a temporary knowledge base containing only those proofs) to call the listener's `ponder(...)` method, passing the triggering formula
-    - if it is not `Safe`, the proof is not verifiable, and as such will be discarded
+    - if it is `SAFE`, its premises are recursively verified, then used as knowledge context (i.e. added either to hypotheses or to a temporary knowledge base containing only those proofs) to call the listener's `ponder(...)` method, passing the triggering formula
+    - if it is not `SAFE`, the proof is not verifiable, and as such will be discarded
  
- `Safe`, impure listeners will be triggered at every verification. This could in turn request one or more proofs, possibly huge ones.
+ `SAFE`, impure listeners will be triggered at every verification. This could in turn request one or more proofs, possibly huge ones.
  
  However, this is not as inefficient as it sounds: since the premises are verified beforehand, a well-designed listener will already find all the information it needs, while a badly designed one will probably find no proofs and fail verification. The only repeated operations would (or at least should) be those that caused the listener to be marked as impure, like reading a database or a file.
  

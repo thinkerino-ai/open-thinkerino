@@ -1,17 +1,20 @@
+import itertools
 import logging
 import typing
 from collections import deque
 from contextlib import contextmanager
-from typing import Iterable
+from typing import Iterable, Iterator
 
-from aitools.logic import Expression, Substitution
+from aitools.logic import Expression, Substitution, LogicObject
 from aitools.logic.utils import normalize_variables, VariableSource
 from aitools.proofs.context import contextual
-from aitools.proofs.listeners import Listener, _MultiListenerWrapper
+from aitools.proofs.listeners import Listener, PonderMode
 from aitools.proofs.proof import Prover, ProofSet, Proof
 from aitools.proofs.provers import KnowledgeRetriever, RestrictedModusPonens
 from aitools.proofs.utils import EmbeddedProver
 from aitools.storage.base import LogicObjectStorage
+from aitools.storage.implementations.dummy import DummyAbstruseIndex
+from aitools.storage.index import AbstruseIndex, make_key
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +24,7 @@ class KnowledgeBase:
         self._storage = storage
         self._variable_source = VariableSource()
         self._provers: typing.Set[Prover] = set()
-        self._listeners: typing.Set[Listener] = set()
-        # TODO switch to a custom collection with limited capacity, to avoid infinite growth
-        self._temporary_listeners: typing.Set[Listener] = set()
+        self._listener_storage: AbstruseIndex[Listener] = DummyAbstruseIndex()
         self._initialize_default_provers()
 
     def supports_transactions(self) -> bool:
@@ -42,7 +43,7 @@ class KnowledgeBase:
 
     def _initialize_default_provers(self):
         self.add_provers(KnowledgeRetriever())
-        # although it's quite a standard proving strategy, I really don't like having MP as a default...
+        # TODO although it's quite a standard proving strategy, I really don't like having MP as a default...
         self.add_provers(RestrictedModusPonens())
 
     def retrieve(self, formula: Expression, *,
@@ -65,9 +66,6 @@ class KnowledgeBase:
 
         self._storage.add(*formulas)
 
-        for f in formulas:
-            self._on_formula_proven(f)
-
     def add_provers(self, *provers):
         for p in provers:
             if isinstance(p, Prover):
@@ -78,27 +76,9 @@ class KnowledgeBase:
     def _add_prover(self, prover):
         self._provers.add(prover)
 
-    def add_listener(self, listener: typing.Union[Listener, _MultiListenerWrapper],
-                     retroactive: bool = False, temporary=False):
-        if retroactive:
-            raise NotImplementedError("Not implemented yet!")
-
-        if isinstance(listener, Listener):
-            self._add_listener(listener, retroactive=retroactive, temporary=temporary)
-        elif isinstance(listener, _MultiListenerWrapper):
-            for _listener in listener.listeners:
-                self._add_listener(_listener, retroactive=retroactive, temporary=temporary)
-
-    def _add_listener(self, listener: Listener, retroactive: bool = False, temporary=False):
-        destination = self._listeners if not temporary else self._temporary_listeners
-        destination.add(listener)
-
-    def _get_listeners_for(self, formula: Expression, *, temporary=False):
-        # TODO indexing (we already take the formula as input to that purpose)
-        source = self._listeners if not temporary else self._temporary_listeners
-        # TODO use an ordered data structure! this is like the inefficientest of inefficiencies
-        for listener in sorted(source, key=lambda l: l.priority, reverse=True):
-            yield listener
+    def add_listener(self, listener: Listener):
+        key = make_key(listener.listened_formula)
+        self._listener_storage.add(key, listener)
 
     def __len__(self):
         return len(self._storage)
@@ -131,32 +111,59 @@ class KnowledgeBase:
                     pass
                 else:
                     proof_sources.append(source)
-                    self._on_formula_proven(new_proof.substitution.apply_to(new_proof.conclusion))
                     yield new_proof
 
         return ProofSet(_inner())
 
-    def _on_formula_proven(self, formula):
-        for listener in self._get_listeners_for(formula):
-            self._process_listener(listener, formula)
+    def ponder(self, *formulas: Iterable[LogicObject], ponder_mode: PonderMode):
+        input_sources: deque[Iterable[LogicObject]] = deque(
+            self._preprocess_pondering_inputs(formulas, ponder_mode)
+        )
 
-        for listener in self._get_listeners_for(formula, temporary=True):
-            self._process_listener(listener, formula)
+        pondering_processes: deque[Iterable[Proof]] = deque()
 
-    def _process_listener(self, listener, formula):
-        raw_output = listener.extract_and_call(formula)
-        if raw_output is None:
-            return
+        while any(input_sources) or any(pondering_processes):
+            # one step on input_processes, to produce more pondering_processes (if necessary)
+            if any(input_sources):
+                input_source = input_sources.popleft().__iter__()
+                try:
+                    new_input: LogicObject = next(input_source)
+                except StopIteration:
+                    pass
+                else:
+                    for listener in self.get_listeners_for(new_input):
+                        pondering_processes.append(listener.ponder(new_input))
+                    input_sources.append(input_source)
 
-        output = (raw_output,) if isinstance(raw_output, (Expression, Listener, _MultiListenerWrapper)) \
-            else raw_output
+            # one step on pondering_processes, to produce results (and more input_processes)
+            if any(pondering_processes):
+                pondering_process = pondering_processes.popleft().__iter__()
+                try:
+                    new_listener_proof: Proof = next(pondering_process)
+                except StopIteration:
+                    pass
+                else:
+                    input_sources.append((new_listener_proof.conclusion,))
+                    pondering_processes.append(pondering_process)
+                    yield new_listener_proof
 
-        # TODO it would help to keep these separated from the actual formulas, to prevent overflowing memory
-        for obj in output:
-            if isinstance(obj, Expression):
-                self.add_formulas(obj)
-            elif isinstance(obj, Listener):
-                self.add_listener(obj, temporary=True)
-            elif isinstance(obj, _MultiListenerWrapper):
-                for _listener in obj.listeners:
-                    self.add_listener(_listener, temporary=True)
+    def _preprocess_pondering_inputs(self, formulas, ponder_mode) -> Iterable[Iterable[LogicObject]]:
+        if ponder_mode == PonderMode.HYPOTHETICALLY:
+            raise NotImplementedError("This case requires hypotheses to be implemented :P")
+        elif ponder_mode == PonderMode.KNOWN:
+            input_sources = (
+                (s.apply_to(f) for s in self.retrieve(f))
+                for f in formulas
+            )
+        elif ponder_mode == PonderMode.PROVE:
+            input_sources = (
+                (p.conclusion for p in self.prove(f))
+                for f in formulas
+            )
+        else:
+            raise NotImplementedError(f"Unknown ponder mode: {ponder_mode}")
+        return input_sources
+
+    def get_listeners_for(self, formula):
+        key = make_key(formula)
+        yield from self._listener_storage.retrieve(key)

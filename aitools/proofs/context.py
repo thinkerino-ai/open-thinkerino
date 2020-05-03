@@ -28,13 +28,18 @@ class Context():
 
     kb = make_property('kb')
 
-
+# TODO tidy this up, I don't like creating a context like this, I should use a context manager!
 context = Context()
 context.kb = None
 
 
 def prove(formula: Expression, truth: bool = True) -> ProofSet:
     return context.kb.prove(formula, truth)
+
+
+def is_hypothetical_scenario() -> bool:
+    # TODO: when hypotheses exist, this must be done
+    return False
 
 
 def contextual(attribute_name, value):
