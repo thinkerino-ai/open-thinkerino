@@ -28,4 +28,4 @@ class ProofSet:
         return self._proofs.__iter__()
 
     def __bool__(self):
-        return True
+        return any(self._proofs)

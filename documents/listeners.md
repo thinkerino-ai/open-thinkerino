@@ -153,8 +153,8 @@ However, if one wanted to listen for multiple conditions to be true, the followi
 
 - subclass `Listener`, so that the constructor can take all the conditions in a "secondary parameter"
 - create one listener for each condition, with the `HandlerArgumentMode.RAW` option, and passing all the conditions as the secondary parameter
-- the handlers should all have a reference to the whole set of conditions, and check for the other conditions (through `prove` or `retrieve`) to be satisfiable
-- all calls to the handlers will not actually do anything, except for the last one, which will find all other conditions to be true, and cand then call the "real handler"
+- the handlers should all have a reference to the whole set of conditions, and check for the other conditions (through `prove`) to be satisfiable
+- all calls to the handlers will not actually do anything, except for the last one, which will find all other conditions to be true, and then call the "real handler"
 
 This approach only works when formulas are added to the knowledge base as well, or if all formulas are passed at the same time (or produced during the same pondering).
 

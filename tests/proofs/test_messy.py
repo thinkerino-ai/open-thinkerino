@@ -226,6 +226,7 @@ def IsMultipleOf4(n: int):
 
 @pytest.mark.xfail(reason="This needs to be implemented, but it's too complex for my little sleepy brain right now :P")
 def test_custom_prover_chain_adds_premises(test_knowledge_base):
+    # TODO implement this!
     proofs = list(test_knowledge_base.prove(IsMultipleOf4(20)))
     assert len(proofs[0].premises) > 0
 
