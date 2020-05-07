@@ -1,10 +1,11 @@
+import inspect
 from typing import List
 
 import pytest
 
 from aitools.logic import Substitution, LogicWrapper, LogicObject, Variable
-from aitools.logic.utils import VariableSource, constants
-from aitools.proofs.language import Implies
+from aitools.logic.utils import VariableSource, constants, wrap
+from aitools.proofs.language import Implies, Not
 from aitools.proofs.listeners import Listener, HandlerArgumentMode, HandlerSafety, PonderMode, TriggeringFormula
 from aitools.proofs.proof import Proof
 from aitools.proofs.provers import KnowledgeRetriever
@@ -21,10 +22,10 @@ def test_listener_with_just_side_effects(test_knowledge_base):
         calls.append(cat)
 
     listened_formula = Is(v.cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
+    listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
                          pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     test_knowledge_base.add_formulas(Is(dylan, cat))
 
@@ -44,10 +45,10 @@ def test_listener_single_result(test_knowledge_base):
         return Meows(cat)
 
     listened_formula = Is(v.cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
+    listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
                          pure=True, safety=HandlerSafety.SAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     test_knowledge_base.add_formulas(Is(dylan, cat))
 
@@ -102,13 +103,13 @@ def test_single_listener_added_multiple_times(test_knowledge_base):
         return Meows(cat)
 
     listened_formula = Is(v.cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
+    listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
                          pure=True, safety=HandlerSafety.SAFE)
 
-    test_knowledge_base.add_listener(_listener)
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
+    test_knowledge_base.add_listener(listener)
 
-    assert list(test_knowledge_base.get_listeners_for(listened_formula)) == [_listener]
+    assert list(test_knowledge_base.get_listeners_for(listened_formula)) == [listener]
 
 
 @pytest.mark.parametrize(['mode'], [[PonderMode.KNOWN], [PonderMode.PROVE]])
@@ -121,10 +122,10 @@ def test_listener_multiple_inputs(test_knowledge_base, mode):
         return Meows(cat)
 
     listened_formula = Is(v.cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
+    listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
                          pure=True, safety=HandlerSafety.SAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     test_knowledge_base.add_formulas(
         Is(dylan, cat),
@@ -149,10 +150,10 @@ def test_listener_known_requires_formula_in_kb(test_knowledge_base):
         yield Meows(cat)
 
     listened_formula = Is(v.cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
+    listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
                          pure=True, safety=HandlerSafety.SAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     proofs: List[Proof] = list(test_knowledge_base.ponder(Is(dylan, cat), ponder_mode=PonderMode.KNOWN))
 
@@ -203,7 +204,7 @@ def test_single_result_with_single_premise(test_knowledge_base):
     def deduce_meow_and_purr(_x):
         from aitools.proofs.context import prove
         proofs = list(prove(SomeDumbTruth))
-        return Meows(_x), proofs[0]
+        return Meows(_x), Substitution(), proofs[0]
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
                         argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
@@ -231,7 +232,7 @@ def test_multiple_results_with_multiple_premises(test_knowledge_base):
         from aitools.proofs.context import prove
         for proof in prove(SomeDumbTruth):
             for other_proof in prove(SomeOtherDumbTruth):
-                yield Meows(_x), (proof, other_proof)
+                yield Meows(_x), Substitution(), (proof, other_proof)
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
                         argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
@@ -294,10 +295,10 @@ def test_trigger_with_open_formula__known(test_knowledge_base):
         yield Meows(cat)
 
     listened_formula = Is(v.cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
+    listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
                          pure=True, safety=HandlerSafety.SAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     test_knowledge_base.add_formulas(
         Is(v.x, kitten) << Implies >> Is(v.x, cat),
@@ -320,10 +321,10 @@ def test_trigger_with_open_formula__prove(test_knowledge_base):
         yield Meows(cat)
 
     listened_formula = Is(v.cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
+    listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
                          pure=True, safety=HandlerSafety.SAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     test_knowledge_base.add_formulas(
         Is(v.x, kitten) << Implies >> Is(v.x, cat),
@@ -381,10 +382,10 @@ def test_listener_argument_mode_raw(test_knowledge_base):
         call_args.update(formula=formula, substitution=substitution)
 
     listened_formula = Is(v.cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=handler, argument_mode=HandlerArgumentMode.RAW,
-                         pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
+    listener = Listener(listened_formula=listened_formula, handler=handler, argument_mode=HandlerArgumentMode.RAW,
+                         pass_substitution_as='substitution', pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     test_knowledge_base.add_formulas(Is(dylan, cat))
 
@@ -399,6 +400,7 @@ def test_listener_argument_mode_raw(test_knowledge_base):
 
 
 def test_listener_argument_mode_raw_rejects_wrong_argument_names(test_knowledge_base):
+    raise NotImplementedError("This will work when validation is reimplemented :P")
     v = VariableSource()
 
     Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
@@ -410,7 +412,7 @@ def test_listener_argument_mode_raw_rejects_wrong_argument_names(test_knowledge_
 
     listened_formula = Is(v.cat, cat)
     with pytest.raises(ValueError):
-        _listener = Listener(listened_formula=listened_formula, handler=handler, argument_mode=HandlerArgumentMode.RAW,
+        listener = Listener(listened_formula=listened_formula, handler=handler, argument_mode=HandlerArgumentMode.RAW,
                              pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
 
@@ -430,11 +432,11 @@ def test_listener_argument_mode_map_unwrapped(test_knowledge_base):
         call_args.update(first_cat=first_cat, second_cat=second_cat)
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED, pure=True,
+    listener = Listener(listened_formula=listened_formula, handler=handler,
+                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED, pass_substitution_as=None, pure=True,
                          safety=HandlerSafety.TOTALLY_UNSAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     # poor cat :P
     wrapped_hugo = LogicWrapper("hugo")
@@ -463,11 +465,11 @@ def test_listener_argument_mode_map_unwrapped_required_fails_if_input_is_not_wra
         calls.append(dict(first_cat=first_cat, second_cat=second_cat))
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED, pure=True,
+    listener = Listener(listened_formula=listened_formula, handler=handler,
+                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED, pass_substitution_as=None, pure=True,
                          safety=HandlerSafety.TOTALLY_UNSAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     # poor cat :P
     wrapped_hugo = LogicWrapper("hugo")
@@ -491,11 +493,11 @@ def test_listener_argument_mode_map_unwrapped_required_succeeds_if_inputs_are_al
         call_args.update(first_cat=first_cat, second_cat=second_cat)
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED, pure=True,
+    listener = Listener(listened_formula=listened_formula, handler=handler,
+                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED, pass_substitution_as=None, pure=True,
                          safety=HandlerSafety.TOTALLY_UNSAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     # poor cats :P
     wrapped_hugo = LogicWrapper("hugo")
@@ -525,11 +527,11 @@ def test_listener_argument_mode_map_no_variables_rejects_variables(test_knowledg
         calls.append(dict(first_cat=first_cat, second_cat=second_cat))
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_NO_VARIABLES, pure=True,
+    listener = Listener(listened_formula=listened_formula, handler=handler,
+                         argument_mode=HandlerArgumentMode.MAP_NO_VARIABLES, pass_substitution_as=None, pure=True,
                          safety=HandlerSafety.TOTALLY_UNSAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     test_knowledge_base.add_formulas(Are(dylan, v.x, cat))
 
@@ -551,11 +553,11 @@ def test_listener_argument_mode_map_no_variables_succeeds_when_no_variables_are_
         call_args.update(first_cat=first_cat, second_cat=second_cat)
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_NO_VARIABLES, pure=True,
+    listener = Listener(listened_formula=listened_formula, handler=handler,
+                         argument_mode=HandlerArgumentMode.MAP_NO_VARIABLES, pass_substitution_as=None, pure=True,
                          safety=HandlerSafety.TOTALLY_UNSAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     test_knowledge_base.add_formulas(Are(dylan, hugo, cat))
 
@@ -580,11 +582,11 @@ def test_listener_argument_mode_map_unwrapped_no_variables_reject_variables(test
         calls.append(dict(first_cat=first_cat, second_cat=second_cat))
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_NO_VARIABLES, pure=True,
-                         safety=HandlerSafety.TOTALLY_UNSAFE)
+    listener = Listener(listened_formula=listened_formula, handler=handler,
+                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_NO_VARIABLES, pass_substitution_as=None,
+                         pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     test_knowledge_base.add_formulas(Are(dylan, v.x, cat))
 
@@ -606,11 +608,11 @@ def test_listener_argument_mode_map_unwrapped_no_variables_works_when_no_variabl
         call_args.update(first_cat=first_cat, second_cat=second_cat)
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_NO_VARIABLES, pure=True,
-                         safety=HandlerSafety.TOTALLY_UNSAFE)
+    listener = Listener(listened_formula=listened_formula, handler=handler,
+                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_NO_VARIABLES, pass_substitution_as=None,
+                         pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     # poor cat :P
     wrapped_hugo = LogicWrapper("hugo")
@@ -639,11 +641,11 @@ def test_listener_argument_mode_map_succeeds_with_variables(test_knowledge_base)
         call_args.update(first_cat=first_cat, second_cat=second_cat)
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
-    _listener = Listener(listened_formula=listened_formula, handler=handler,
+    listener = Listener(listened_formula=listened_formula, handler=handler,
                          argument_mode=HandlerArgumentMode.MAP, pure=True,
                          safety=HandlerSafety.TOTALLY_UNSAFE)
 
-    test_knowledge_base.add_listener(_listener)
+    test_knowledge_base.add_listener(listener)
 
     test_knowledge_base.add_formulas(Are(v.x, v.y, cat))
 
@@ -653,10 +655,55 @@ def test_listener_argument_mode_map_succeeds_with_variables(test_knowledge_base)
 
     assert isinstance(call_args['first_cat'], Variable)
     assert isinstance(call_args['second_cat'], Variable)
-    assert call_args == dict(
-        first_cat=v.x,
-        second_cat=v.y
-    )
+
+
+def test_listener_pass_substitution_as_default_is_ellipsis():
+    assert inspect.signature(Listener.__init__).parameters['pass_substitution_as'].default is Ellipsis
+
+
+@pytest.mark.parametrize(('argument_mode', 'equivalent_value', 'handler'), [
+    (HandlerArgumentMode.RAW, 'substitution', lambda formula, substitution: None),
+    (HandlerArgumentMode.MAP, None, lambda: None),
+    (HandlerArgumentMode.MAP_UNWRAPPED, None, lambda: None),
+    (HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED, None, lambda: None),
+    (HandlerArgumentMode.MAP_UNWRAPPED_NO_VARIABLES, None, lambda: None),
+    (HandlerArgumentMode.MAP_NO_VARIABLES, None, lambda: None),
+])
+def test_listener_pass_substitution_ellipsis_equivalence(argument_mode: HandlerArgumentMode, equivalent_value, handler):
+    listener = Listener(listened_formula=Variable(), handler=handler, argument_mode=argument_mode,
+                        pass_substitution_as=..., pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
+
+    assert listener.pass_substitution_as == equivalent_value
+
+
+@pytest.mark.parametrize(('argument_mode', 'handler'),[
+    # handlers return "Not(...)" to avoid infinite loops
+    (HandlerArgumentMode.RAW, lambda formula, some_substitution: (Not(formula), some_substitution)),
+    (HandlerArgumentMode.MAP, lambda x, some_substitution: (Not(wrap(x)), some_substitution)),
+    (HandlerArgumentMode.MAP_UNWRAPPED, lambda x, some_substitution: (Not(wrap(x)), some_substitution)),
+    (HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED, lambda x, some_substitution: (Not(wrap(x)), some_substitution)),
+    (HandlerArgumentMode.MAP_UNWRAPPED_NO_VARIABLES, lambda x, some_substitution: (Not(wrap(x)), some_substitution)),
+    (HandlerArgumentMode.MAP_NO_VARIABLES, lambda x, some_substitution: (Not(wrap(x)), some_substitution)),
+])
+def test_listener_pass_substitution_string_passes_the_chosen_name(test_knowledge_base,
+                                                                  argument_mode: HandlerArgumentMode, handler):
+    v = VariableSource()
+    IsA, cat = constants('IsA, cat')
+
+    listener = Listener(listened_formula=Variable(), handler=handler, argument_mode=argument_mode,
+                        pass_substitution_as='some_substitution', pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
+
+    # to make it work for MAP_UNPWRAPPED_REQUIRED without special cases
+    wrapped_dylan = LogicWrapper("dylan")
+
+    test_knowledge_base.add_listener(listener)
+    test_knowledge_base.add_formulas(IsA(wrapped_dylan, cat))
+
+    proofs: List[Proof] = list(test_knowledge_base.ponder(IsA(v.x, cat), ponder_mode=PonderMode.KNOWN))
+
+    assert proofs[0].substitution.apply_to(IsA(v.x, cat)) == IsA(wrapped_dylan, cat)
+
+
 
 
 # TODO multi-listener

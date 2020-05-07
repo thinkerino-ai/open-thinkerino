@@ -146,7 +146,7 @@ class KnowledgeBase:
                             trigger_premise = Proof(
                                 inference_rule=TriggeringFormula(),
                                 conclusion=new_input.substitution.apply_to(new_input.conclusion),
-                                substitution=Substitution(),
+                                substitution=new_input.substitution,
                                 premises=(new_input,)
                             )
                             pondering_processes.append(listener.ponder(trigger_premise))
