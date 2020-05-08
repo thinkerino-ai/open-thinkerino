@@ -6,7 +6,8 @@ import pytest
 from aitools.logic import Substitution, LogicWrapper, LogicObject, Variable
 from aitools.logic.utils import VariableSource, constants, wrap
 from aitools.proofs.language import Implies, Not
-from aitools.proofs.listeners import Listener, HandlerArgumentMode, HandlerSafety, PonderMode, TriggeringFormula
+from aitools.proofs.listeners import Listener, HandlerArgumentMode, HandlerSafety, PonderMode, TriggeringFormula, \
+    FormulaSubstitutionPremises, FormulaSubstitution
 from aitools.proofs.proof import Proof
 from aitools.proofs.provers import KnowledgeRetriever
 
@@ -23,7 +24,7 @@ def test_listener_with_just_side_effects(test_knowledge_base):
 
     listened_formula = Is(v.cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
-                         pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
+                        pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -46,7 +47,7 @@ def test_listener_single_result(test_knowledge_base):
 
     listened_formula = Is(v.cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
-                         pure=True, safety=HandlerSafety.SAFE)
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -104,7 +105,7 @@ def test_single_listener_added_multiple_times(test_knowledge_base):
 
     listened_formula = Is(v.cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
-                         pure=True, safety=HandlerSafety.SAFE)
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
     test_knowledge_base.add_listener(listener)
@@ -123,7 +124,7 @@ def test_listener_multiple_inputs(test_knowledge_base, mode):
 
     listened_formula = Is(v.cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
-                         pure=True, safety=HandlerSafety.SAFE)
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -151,7 +152,7 @@ def test_listener_known_requires_formula_in_kb(test_knowledge_base):
 
     listened_formula = Is(v.cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
-                         pure=True, safety=HandlerSafety.SAFE)
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -160,7 +161,7 @@ def test_listener_known_requires_formula_in_kb(test_knowledge_base):
     assert len(proofs) == 0
 
 
-def test_listener_multiple_formulas_returned(test_knowledge_base):
+def test_listener_2_tuple_formulas_returned(test_knowledge_base):
     v = VariableSource()
     Is, Meows, Purrs, cat, dylan = constants('Is, Meows, Purrs, cat, dylan')
 
@@ -176,6 +177,25 @@ def test_listener_multiple_formulas_returned(test_knowledge_base):
     proofs: List[Proof] = list(test_knowledge_base.ponder(Is(dylan, cat), ponder_mode=PonderMode.KNOWN))
 
     assert set(p.conclusion for p in proofs) == {Meows(dylan), Purrs(dylan)}
+
+
+def test_listener_3_tuple_formulas_returned(test_knowledge_base):
+    v = VariableSource()
+    # ok, go ahead, tell me my view of cats is stereotyped and offensive, I already know that :P
+    Is, Meows, Purrs, Sleeps, cat, dylan = constants('Is, Meows, Purrs, Sleeps, cat, dylan')
+
+    def deduce_meow_and_purr(_x):
+        return Meows(_x), Purrs(_x), Sleeps(_x)
+
+    listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
+                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+
+    test_knowledge_base.add_listener(listener)
+    test_knowledge_base.add_formulas(Is(dylan, cat))
+
+    proofs: List[Proof] = list(test_knowledge_base.ponder(Is(dylan, cat), ponder_mode=PonderMode.KNOWN))
+
+    assert set(p.conclusion for p in proofs) == {Meows(dylan), Purrs(dylan), Sleeps(dylan)}
 
 
 def test_listener_multiple_formulas_yielded(test_knowledge_base):
@@ -197,14 +217,14 @@ def test_listener_multiple_formulas_yielded(test_knowledge_base):
     assert set(p.conclusion for p in proofs) == {Meows(dylan), Purrs(dylan)}
 
 
-def test_single_result_with_single_premise(test_knowledge_base):
+def test_single_result_substitution_single_premise_triple(test_knowledge_base):
     v = VariableSource()
     Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
 
     def deduce_meow_and_purr(_x):
         from aitools.proofs.context import prove
         proofs = list(prove(SomeDumbTruth))
-        return Meows(_x), Substitution(), proofs[0]
+        return Meows(_x), proofs[0].substitution, proofs[0]
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
                         argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
@@ -222,7 +242,7 @@ def test_single_result_with_single_premise(test_knowledge_base):
     assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, KnowledgeRetriever}
 
 
-def test_multiple_results_with_multiple_premises(test_knowledge_base):
+def test_multiple_results_substitution_multiple_premises_triple(test_knowledge_base):
     v = VariableSource()
     Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan = constants(
         'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
@@ -232,7 +252,7 @@ def test_multiple_results_with_multiple_premises(test_knowledge_base):
         from aitools.proofs.context import prove
         for proof in prove(SomeDumbTruth):
             for other_proof in prove(SomeOtherDumbTruth):
-                yield Meows(_x), Substitution(), (proof, other_proof)
+                yield Meows(_x), other_proof.substitution, (proof, other_proof)
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
                         argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
@@ -251,6 +271,176 @@ def test_multiple_results_with_multiple_premises(test_knowledge_base):
     assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, KnowledgeRetriever}
     assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, TriggeringFormula)) == 1
     assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, KnowledgeRetriever)) == 2
+
+
+def test_single_result_substitution_pair(test_knowledge_base):
+    v = VariableSource()
+    Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
+
+    some_subst = Substitution()
+
+    def deduce_meow_and_purr(_x):
+        from aitools.proofs.context import prove
+        proofs = list(prove(SomeDumbTruth))
+        return Meows(_x), some_subst
+
+    listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
+                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+
+    test_knowledge_base.add_listener(listener)
+    test_knowledge_base.add_formulas(
+        SomeDumbTruth,
+        Is(dylan, cat)
+    )
+
+    proofs: List[Proof] = list(test_knowledge_base.ponder(Is(dylan, cat), ponder_mode=PonderMode.KNOWN))
+
+    assert set(p.conclusion for p in proofs) == {Meows(dylan)}
+    assert [p.substitution for p in proofs] == [some_subst]
+
+
+def test_multiple_results_substitution_pair(test_knowledge_base):
+    v = VariableSource()
+    Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan = constants(
+        'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
+    )
+
+    some_substitution = Substitution()
+    some_other_substution = Substitution()
+
+    def deduce_meow_and_purr(_x):
+        yield Meows(_x), some_substitution
+        yield Meows(_x), some_other_substution
+
+    listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
+                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+
+    test_knowledge_base.add_listener(listener)
+    test_knowledge_base.add_formulas(
+        SomeDumbTruth,
+        SomeOtherDumbTruth,
+        Is(dylan, cat)
+    )
+
+    proofs: List[Proof] = list(test_knowledge_base.ponder(Is(dylan, cat), ponder_mode=PonderMode.KNOWN))
+
+    assert set(p.conclusion for p in proofs) == {Meows(dylan)}
+    assert [p.substitution for p in proofs] == [some_substitution, some_other_substution]
+
+
+def test_single_formula_substitution_premises_dataclass(test_knowledge_base):
+    v = VariableSource()
+    Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
+
+    def deduce_meow_and_purr(_x):
+        from aitools.proofs.context import prove
+        proofs = list(prove(SomeDumbTruth))
+        return FormulaSubstitutionPremises(formula=Meows(_x), substitution=proofs[0].substitution, premises=proofs[0])
+
+    listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
+                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+
+    test_knowledge_base.add_listener(listener)
+    test_knowledge_base.add_formulas(
+        SomeDumbTruth,
+        Is(dylan, cat)
+    )
+
+    proofs: List[Proof] = list(test_knowledge_base.ponder(Is(dylan, cat), ponder_mode=PonderMode.KNOWN))
+
+    assert set(p.conclusion for p in proofs) == {Meows(dylan)}
+    assert set(p.conclusion for p in proofs[0].premises) == {SomeDumbTruth, Is(dylan, cat)}
+    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, KnowledgeRetriever}
+
+
+def test_multiple_results_substitution_multiple_premises_dataclass(test_knowledge_base):
+    v = VariableSource()
+    Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan = constants(
+        'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
+    )
+
+    def deduce_meow_and_purr(_x):
+        from aitools.proofs.context import prove
+        for proof in prove(SomeDumbTruth):
+            for other_proof in prove(SomeOtherDumbTruth):
+                yield FormulaSubstitutionPremises(
+                    formula=Meows(_x),
+                    substitution=other_proof.substitution,
+                    premises=(proof, other_proof)
+                )
+
+    listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
+                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+
+    test_knowledge_base.add_listener(listener)
+    test_knowledge_base.add_formulas(
+        SomeDumbTruth,
+        SomeOtherDumbTruth,
+        Is(dylan, cat)
+    )
+
+    proofs: List[Proof] = list(test_knowledge_base.ponder(Is(dylan, cat), ponder_mode=PonderMode.KNOWN))
+
+    assert set(p.conclusion for p in proofs) == {Meows(dylan)}
+    assert set(p.conclusion for p in proofs[0].premises) == {SomeDumbTruth, SomeOtherDumbTruth, Is(dylan, cat)}
+    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, KnowledgeRetriever}
+    assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, TriggeringFormula)) == 1
+    assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, KnowledgeRetriever)) == 2
+
+
+def test_single_result_substitution_dataclass(test_knowledge_base):
+    v = VariableSource()
+    Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
+
+    some_subst = Substitution()
+
+    def deduce_meow_and_purr(_x):
+        from aitools.proofs.context import prove
+        list(prove(SomeDumbTruth))
+        return FormulaSubstitution(formula=Meows(_x), substitution=some_subst)
+
+    listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
+                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+
+    test_knowledge_base.add_listener(listener)
+    test_knowledge_base.add_formulas(
+        SomeDumbTruth,
+        Is(dylan, cat)
+    )
+
+    proofs: List[Proof] = list(test_knowledge_base.ponder(Is(dylan, cat), ponder_mode=PonderMode.KNOWN))
+
+    assert set(p.conclusion for p in proofs) == {Meows(dylan)}
+    assert [p.substitution for p in proofs] == [some_subst]
+
+
+def test_multiple_results_substitution_dataclass(test_knowledge_base):
+    v = VariableSource()
+    Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan = constants(
+        'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
+    )
+
+    some_substitution = Substitution()
+    some_other_substution = Substitution()
+
+    def deduce_meow_and_purr(_x):
+        yield FormulaSubstitution(formula=Meows(_x), substitution=some_substitution)
+        yield FormulaSubstitution(formula=Meows(_x), substitution=some_other_substution)
+
+    listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
+                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+
+    test_knowledge_base.add_listener(listener)
+    test_knowledge_base.add_formulas(
+        SomeDumbTruth,
+        SomeOtherDumbTruth,
+        Is(dylan, cat)
+    )
+
+    proofs: List[Proof] = list(test_knowledge_base.ponder(Is(dylan, cat), ponder_mode=PonderMode.KNOWN))
+
+    assert set(p.conclusion for p in proofs) == {Meows(dylan)}
+    assert [p.substitution for p in proofs] == [some_substitution, some_other_substution]
 
 
 def test_listener_chain(test_knowledge_base):
@@ -296,7 +486,7 @@ def test_trigger_with_open_formula__known(test_knowledge_base):
 
     listened_formula = Is(v.cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
-                         pure=True, safety=HandlerSafety.SAFE)
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -322,7 +512,7 @@ def test_trigger_with_open_formula__prove(test_knowledge_base):
 
     listened_formula = Is(v.cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=cats_meow, argument_mode=HandlerArgumentMode.MAP,
-                         pure=True, safety=HandlerSafety.SAFE)
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -383,7 +573,7 @@ def test_listener_argument_mode_raw(test_knowledge_base):
 
     listened_formula = Is(v.cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=handler, argument_mode=HandlerArgumentMode.RAW,
-                         pass_substitution_as='substitution', pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
+                        pass_substitution_as='substitution', pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -412,13 +602,8 @@ def test_listener_argument_mode_raw_rejects_wrong_argument_names(test_knowledge_
 
     listened_formula = Is(v.cat, cat)
     with pytest.raises(ValueError):
-        listener = Listener(listened_formula=listened_formula, handler=handler, argument_mode=HandlerArgumentMode.RAW,
-                             pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
-
-
-def test_listener_argument_mode_map(test_knowledge_base):
-    # come on, can you blame me? :P
-    test_listener_with_just_side_effects(test_knowledge_base)
+        Listener(listened_formula=listened_formula, handler=handler, argument_mode=HandlerArgumentMode.RAW,
+                 pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
 
 def test_listener_argument_mode_map_unwrapped(test_knowledge_base):
@@ -433,8 +618,8 @@ def test_listener_argument_mode_map_unwrapped(test_knowledge_base):
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED, pass_substitution_as=None, pure=True,
-                         safety=HandlerSafety.TOTALLY_UNSAFE)
+                        argument_mode=HandlerArgumentMode.MAP_UNWRAPPED, pass_substitution_as=None, pure=True,
+                        safety=HandlerSafety.TOTALLY_UNSAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -466,8 +651,8 @@ def test_listener_argument_mode_map_unwrapped_required_fails_if_input_is_not_wra
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED, pass_substitution_as=None, pure=True,
-                         safety=HandlerSafety.TOTALLY_UNSAFE)
+                        argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED, pass_substitution_as=None, pure=True,
+                        safety=HandlerSafety.TOTALLY_UNSAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -494,8 +679,8 @@ def test_listener_argument_mode_map_unwrapped_required_succeeds_if_inputs_are_al
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED, pass_substitution_as=None, pure=True,
-                         safety=HandlerSafety.TOTALLY_UNSAFE)
+                        argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED, pass_substitution_as=None, pure=True,
+                        safety=HandlerSafety.TOTALLY_UNSAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -504,7 +689,8 @@ def test_listener_argument_mode_map_unwrapped_required_succeeds_if_inputs_are_al
     wrapped_dylan = LogicWrapper("dylan")
     test_knowledge_base.add_formulas(Are(wrapped_dylan, wrapped_hugo, cat))
 
-    proofs: List[Proof] = list(test_knowledge_base.ponder(Are(wrapped_dylan, wrapped_hugo, cat), ponder_mode=PonderMode.KNOWN))
+    proofs: List[Proof] = list(
+        test_knowledge_base.ponder(Are(wrapped_dylan, wrapped_hugo, cat), ponder_mode=PonderMode.KNOWN))
 
     assert len(proofs) == 0
 
@@ -528,8 +714,8 @@ def test_listener_argument_mode_map_no_variables_rejects_variables(test_knowledg
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_NO_VARIABLES, pass_substitution_as=None, pure=True,
-                         safety=HandlerSafety.TOTALLY_UNSAFE)
+                        argument_mode=HandlerArgumentMode.MAP_NO_VARIABLES, pass_substitution_as=None, pure=True,
+                        safety=HandlerSafety.TOTALLY_UNSAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -554,8 +740,8 @@ def test_listener_argument_mode_map_no_variables_succeeds_when_no_variables_are_
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_NO_VARIABLES, pass_substitution_as=None, pure=True,
-                         safety=HandlerSafety.TOTALLY_UNSAFE)
+                        argument_mode=HandlerArgumentMode.MAP_NO_VARIABLES, pass_substitution_as=None, pure=True,
+                        safety=HandlerSafety.TOTALLY_UNSAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -583,8 +769,8 @@ def test_listener_argument_mode_map_unwrapped_no_variables_reject_variables(test
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_NO_VARIABLES, pass_substitution_as=None,
-                         pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
+                        argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_NO_VARIABLES, pass_substitution_as=None,
+                        pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -609,8 +795,8 @@ def test_listener_argument_mode_map_unwrapped_no_variables_works_when_no_variabl
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_NO_VARIABLES, pass_substitution_as=None,
-                         pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
+                        argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_NO_VARIABLES, pass_substitution_as=None,
+                        pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -642,8 +828,8 @@ def test_listener_argument_mode_map_succeeds_with_variables(test_knowledge_base)
 
     listened_formula = Are(v.first_cat, v.second_cat, cat)
     listener = Listener(listened_formula=listened_formula, handler=handler,
-                         argument_mode=HandlerArgumentMode.MAP, pure=True,
-                         safety=HandlerSafety.TOTALLY_UNSAFE)
+                        argument_mode=HandlerArgumentMode.MAP, pure=True,
+                        safety=HandlerSafety.TOTALLY_UNSAFE)
 
     test_knowledge_base.add_listener(listener)
 
@@ -676,7 +862,7 @@ def test_listener_pass_substitution_ellipsis_equivalence(argument_mode: HandlerA
     assert listener.pass_substitution_as == equivalent_value
 
 
-@pytest.mark.parametrize(('argument_mode', 'handler'),[
+@pytest.mark.parametrize(('argument_mode', 'handler'), [
     # handlers return "Not(...)" to avoid infinite loops
     (HandlerArgumentMode.RAW, lambda formula, some_substitution: (Not(formula), some_substitution)),
     (HandlerArgumentMode.MAP, lambda x, some_substitution: (Not(wrap(x)), some_substitution)),
@@ -704,6 +890,11 @@ def test_listener_pass_substitution_string_passes_the_chosen_name(test_knowledge
     assert proofs[0].substitution.apply_to(IsA(v.x, cat)) == IsA(wrapped_dylan, cat)
 
 
+def test_listener_pass_substitution_none_explodes_for_raw():
+    with pytest.raises(ValueError):
+        Listener(listened_formula=Variable(), handler=lambda formula, substitution: ...,
+                 argument_mode=HandlerArgumentMode.RAW, pass_substitution_as=None, pure=True,
+                 safety=HandlerSafety.TOTALLY_UNSAFE)
 
 
 # TODO multi-listener

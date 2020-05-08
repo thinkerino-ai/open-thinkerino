@@ -1,4 +1,5 @@
 import sqlite3
+import sys
 import tempfile
 from contextlib import contextmanager
 
@@ -95,7 +96,7 @@ node_based_storages_implementations = [
     PickleSerializingLogicObjectStorage,
 ]
 
-storage_implementations = [
+all_storage_implementations = [
     *simple_storage_implementations,
     *[
         _make_context_manager_from_factory_and_context_manager(
@@ -106,3 +107,8 @@ storage_implementations = [
         for node_storage_impl in node_storage_implementations
      ]
 ]
+
+# TODO find a better way :P
+#storage_implementations = all_storage_implementations[:1]
+
+storage_implementations = all_storage_implementations

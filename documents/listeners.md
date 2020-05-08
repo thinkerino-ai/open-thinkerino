@@ -28,7 +28,8 @@ v = VariableSource()
 listener = Listener(
     handler=handle_email, 
     listened_formula=EmailReceived(v.email), 
-    argument_mode=HandlerArgumentMode.MAP_UNWRAPPED, 
+    argument_mode=HandlerArgumentMode.MAP_UNWRAPPED,
+    pass_substitution_as=...,
     pure=True, 
     safety=HandlerSafety.TotallyUnsafe
 )
@@ -54,6 +55,12 @@ The possible values are:
 
 With the `MAP*` options, `Variable` names in the trigger formula are matched to arguments in the handler, so creating them from a single `VariableSource` is advised (to guarantee that a single name is associated to the same variable).
 
+The `pass_substitution_as` argument determines if and how a substitution is passed to the handler, after being found by searching for proofs for a triggering formula (see [Pondering Process](#Pondering Process)). The possible values are:
+
+- `...`/`Ellipsis` (the default): equivalent to `'substitution'` for `RAW` mode and to `None` for `MAP*` modes
+- `None`: no substitution is passed to the handler, unsupported in `RAW` mode
+- a string: the found substitution is passed to the handler as a keyword argument of the same name 
+
 The `safety` argument is an enumerative value of type `HandlerSafety` can have the following values:
 
 - `SAFE`: the listener will only perform operations that can be repeated without worry
@@ -64,9 +71,13 @@ A handler can return:
 
 - nothing (`None`)
 - a `LogicObject`
-    - an iterable of them is allowed (e.g. generator functions)
-- a pair <`LogicObject`, premises> where the "premises" are an iterable of `Proof`s that the listener used to base its output on
-    - an iterable of them is allowed
+- a `Tuple[LogicObject, Substitution]`
+- a `Tuple[LogicObject, Substitution, Proof]` where the `Proof` is the premise under which the `LogicObject` is returned, and it will be packed in another proof (see [Pondering Process](#Pondering Process))
+    - instead of a single `Proof`, also an iterable of `Iterable[Proof]` is allowed
+- a `FormulaSubstitution` object
+- a `FormulaSubstitutionPremises` object
+    
+For all non-`None` values, an iterable of them is allowed (including tuples, since no ambiguity is possible).
     
 ## Pondering Process
 
@@ -74,8 +85,8 @@ The `KnowledgeBase.ponder(formulas, ponder_mode)` method starts a "pondering" pr
 
 1. the formula is checked to be satisfiable with `KnowledgeBase.prove`, passing `retrieve_only` in accordance to the `ponder_mode` argument
 2. for each of the found proofs, all listeners that it can trigger are retrieved
-3. each listener's `ponder(proof)` method is called, which in turn will call the handler
-4. each returned formula by the handler, with its premises (if any) is then packed in a `Proof` and yielded to the caller
+3. each listener's `ponder(proof)` method is called, which in turn will call the handler, possibly passing the substitution (depending on `pass_substitution_as`)
+4. each returned formula by the handler, with its substitution and premises (if any) is then packed in a `Proof` and yielded to the caller
 5. each returned proof by the listener is also further used for step 2
 
 The process terminates if no more formulas are available, so it can be infinite, but is lazily-generated, so unless a single step takes forever this should be of little consequence.
