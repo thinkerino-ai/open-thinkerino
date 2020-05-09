@@ -5,6 +5,7 @@ name: Python package
 
 on:
   push:
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
@@ -27,7 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         # flake8 and walrus operators... huh
-        pip install --upgrade pyflake
+        pip install --upgrade pyflakes
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
       run: |
