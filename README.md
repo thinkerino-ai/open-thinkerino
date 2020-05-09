@@ -1,3 +1,5 @@
+![Python package](https://github.com/OneManEquipe/aitools/workflows/Python%20package/badge.svg)
+
 # AI Tools
 
 This repository will contain some AI python packages I'll be working on.
