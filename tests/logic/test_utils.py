@@ -1,5 +1,8 @@
-from aitools.logic import Substitution
-from aitools.logic.utils import expr, constants, subst, VariableSource, normalize_variables
+import pytest
+
+from aitools.logic import Substitution, Variable, LogicObject, Constant
+from aitools.logic.utils import expr, constants, subst, VariableSource, normalize_variables, all_unique_variables_in, \
+    all_variables_in, map_variables_by_name
 
 
 def test_logic_object_invocation():
@@ -77,3 +80,57 @@ def test_normalize_variables_with_source_makes_expressions_equal():
     assert normalize_variables(e1, variable_source=norm) == normalize_variables(e3, variable_source=norm)
     assert normalize_variables(e1, variable_source=norm) == normalize_variables(e4, variable_source=norm)
     assert normalize_variables(e1, variable_source=norm) != normalize_variables(e_diff, variable_source=norm)
+
+
+def test_all_variables_in_single_variable():
+    v = Variable()
+    res = list(all_variables_in(v))
+
+    assert res == [v]
+
+
+def test_all_variables_in_logic_object_is_empty():
+    obj = LogicObject()
+    res = list(all_variables_in(obj))
+
+    assert len(res) == 0
+
+
+def test_all_variables_in_expression():
+    v = VariableSource()
+    a = Constant()
+    e1 = expr(v.x, (v.y, v.z), (a, v.x))
+
+    res = list(all_variables_in(e1))
+
+    assert res == [v.x, v.y, v.z, v.x]
+
+
+def test_all_unique_variables_in_expression():
+    v = VariableSource()
+    a = Constant()
+    e1 = expr(v.x, (v.y, v.z), (a, v.x))
+
+    res = all_unique_variables_in(e1)
+
+    assert res == {v.x, v.y, v.z}
+
+
+def test_map_variables_by_name_success():
+    v = VariableSource()
+    a = Constant()
+    e1 = expr(v.x, (v.y, v.z), (a, v.x))
+
+    res = map_variables_by_name(e1)
+
+    assert res == dict(x=v.x, y=v.y, z=v.z)
+
+
+def test_map_variables_by_name_homonymous_failure():
+    v1 = VariableSource()
+    v2 = VariableSource()
+    a = Constant()
+    e1 = expr(v1.x, (v1.y, v1.z), (a, v2.x))
+
+    with pytest.raises(ValueError):
+        map_variables_by_name(e1)

@@ -6,6 +6,7 @@ from enum import Enum, auto
 from typing import Iterable, Callable, List, Optional, Collection, Union
 
 from aitools.logic import Expression, Substitution, Variable, LogicObject, LogicWrapper
+from aitools.logic.utils import map_variables_by_name
 from aitools.proofs import context
 from aitools.proofs.proof import Proof, Prover
 
@@ -96,7 +97,16 @@ class Listener:
 
         self.pass_substitution_as: Optional[str] = pass_substitution_as
 
-        # TODO raise exception if argument names are not valid
+        self.variables_by_name = map_variables_by_name(listened_formula)
+        if self.argument_mode != HandlerArgumentMode.RAW:
+            unlistened_arg_names = list(
+                arg_name
+                for arg_name in self._func_arg_names
+                if arg_name not in self.variables_by_name and arg_name != pass_substitution_as
+            )
+            if any(unlistened_arg_names):
+                raise ValueError(f"Handler arguments {unlistened_arg_names} "
+                                 f"are not present in formula {self.listened_formula}")
 
     def ponder(self, proof: Proof) -> Iterable[Proof]:
         formula = proof.conclusion
