@@ -1,15 +1,14 @@
 import os
 import sqlite3
-import sys
 import tempfile
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine
+import pytest
 
 from aitools.storage.implementations.dummy import DummyLogicObjectStorage, DummyIndexedLogicObjectStorage, \
     DummyPickleSerializingLogicObjectStorage, DummyNodeStorage
 from aitools.storage.implementations.serializing import PickleSerializingLogicObjectStorage
-from aitools.storage.implementations.sqlalchemy import SQLAlchemyNodeStorage
+#from aitools.storage.implementations.sqlalchemy import SQLAlchemyNodeStorage
 from aitools.storage.implementations.sqlite import SqliteNodeStorage
 
 
@@ -19,6 +18,10 @@ def make_storage_factory(storage_factory_name, storage_factory, node_storage_nam
 
 @contextmanager
 def in_memory_sqlalchemy_engine():
+    try:
+        from sqlalchemy import create_engine
+    except ImportError:
+        pytest.xfail("No sqlalchemy, no party")
     db_str = "sqlite:///:memory:"
     engine = create_engine(db_str)
     connection = engine.connect()
@@ -90,10 +93,11 @@ node_storage_implementations = [
         SqliteNodeStorage,
         tempfile_sqlite_connection
     ),
-    _make_context_manager_from_factory_and_context_manager(
-        SQLAlchemyNodeStorage,
-        in_memory_sqlalchemy_engine
-    ),
+    # TODO it would be nice to implement "conditional tests": if you have sqlalchemy, we also test this
+    # _make_context_manager_from_factory_and_context_manager(
+    #     SQLAlchemyNodeStorage,
+    #     in_memory_sqlalchemy_engine
+    # ),
 ]
 node_based_storages_implementations = [
     PickleSerializingLogicObjectStorage,
