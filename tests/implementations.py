@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import sys
 import tempfile
@@ -40,13 +41,15 @@ def in_memory_sqlite3_connection():
 
 @contextmanager
 def tempfile_sqlite_connection():
-    with tempfile.NamedTemporaryFile(suffix=".db", prefix="sqlite") as db_file:
-        connection = sqlite3.connect(db_file.name)
-        try:
-            yield connection
-            connection.commit()
-        finally:
-            connection.close()
+    handle, filename = tempfile.mkstemp(suffix=".db", prefix="sqlite")
+    connection = sqlite3.connect(filename)
+    try:
+        yield connection
+        connection.commit()
+    finally:
+        connection.close()
+        os.close(handle)
+        os.remove(filename)
 
 
 def _make_context_manager_from_simple_factory(storage_factory: type):
