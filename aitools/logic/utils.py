@@ -1,5 +1,6 @@
+import itertools
 from collections.abc import Sequence
-from typing import Any, Iterable, Union, Dict
+from typing import Any, Iterable, Union, Dict, Set
 
 from aitools.logic.unification import Binding, Substitution
 from aitools.logic import Variable, Constant, Expression, LogicWrapper, LogicObject
@@ -102,3 +103,31 @@ def normalize_variables(expression: LogicObject, *, variable_source: VariableSou
         return result
 
     return _inner(expression, variable_mapping)
+
+
+def all_variables_in(obj: LogicObject) -> Iterable[Variable]:
+    if isinstance(obj, Variable):
+        yield obj
+    elif isinstance(obj, Expression):
+        yield from itertools.chain.from_iterable(all_variables_in(c) for c in obj.children)
+
+
+def all_unique_variables_in(obj: LogicObject) -> Set[Variable]:
+    return set(all_variables_in(obj))
+
+
+def map_variables_by_name(obj: LogicObject) -> Dict[str, Variable]:
+    result = {}
+
+    for v in all_variables_in(obj):
+        if v.name is not None:
+            already_present = result.get(v.name)
+            if already_present is None:
+                result[v.name] = v
+            else:
+                if v == already_present:
+                    continue
+                else:
+                    raise ValueError(f"Found two homonymous variables with name {v.name} in {obj}")
+
+    return result

@@ -5,7 +5,7 @@ from typing import FrozenSet, Dict, Optional
 from aitools.logic.core import LogicObject, Variable, Expression
 
 
-class Binding(LogicObject):
+class Binding:
     def __init__(self, variables: FrozenSet[Variable], head: LogicObject = None):
         if head is not None and not isinstance(head, LogicObject):
             raise TypeError("head must be a LogicObject!")
@@ -70,7 +70,7 @@ class Binding(LogicObject):
         return hash((self.head, self.variables))
 
 
-class Substitution(LogicObject):
+class Substitution:
     def __init__(self, *bindings: Binding):
         # TODO bindings should be a frozen set
         self._bindings_by_variable: Dict[Variable, Binding] = {}

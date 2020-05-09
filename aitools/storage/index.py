@@ -173,7 +173,7 @@ class AbstruseIndex(Generic[T], ABC):
     def make_node(self):
         raise NotImplementedError()
 
-    def retrieve(self, key):
+    def retrieve(self, key) -> Iterable[T]:
         return self._retrieve(full_key=key, level=0)
 
     def _retrieve(self, *, full_key, previous_key=None, projection_key=None, level):

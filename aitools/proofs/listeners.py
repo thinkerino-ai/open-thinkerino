@@ -1,88 +1,246 @@
 from __future__ import annotations
-from typing import Union, Iterable, Optional
 
-from aitools.logic import Expression, Substitution, Variable
+import itertools
+from dataclasses import dataclass
+from enum import Enum, auto
+from typing import Iterable, Callable, List, Optional, Collection, Union
+
+from aitools.logic import Expression, Substitution, Variable, LogicObject, LogicWrapper
+from aitools.logic.utils import map_variables_by_name
+from aitools.proofs import context
+from aitools.proofs.proof import Proof, Prover
+
+
+class UnsafePonderException(Exception):
+    pass
+
+
+class PonderMode(Enum):
+    KNOWN = auto()
+    PROVE = auto()
+    HYPOTHETICALLY = auto()
+
+
+class HandlerArgumentMode(Enum):
+    RAW = auto()
+    MAP = auto()
+    MAP_UNWRAPPED = auto()
+    MAP_UNWRAPPED_REQUIRED = auto()
+    MAP_UNWRAPPED_NO_VARIABLES = auto()
+    MAP_NO_VARIABLES = auto()
+
+
+class HandlerSafety(Enum):
+    TOTALLY_UNSAFE = auto()
+    SAFE_FOR_HYPOTHESES = auto()
+    SAFE = auto()
+
+
+class TriggeringFormula(Prover):
+    def __call__(self, formula: Expression, _kb=None, _truth: bool = True,
+                 _previous_substitution: Substitution = None) -> Iterable[Proof]:
+        raise TypeError('This is a "fake" prover, don\'t try to use it')
+
+
+@dataclass
+class FormulaSubstitution:
+    formula: LogicObject
+    substitution: Substitution
+
+
+@dataclass
+class FormulaSubstitutionPremises:
+    formula: LogicObject
+    substitution: Substitution
+    premises: Union[Proof, Collection[Proof]]
+
+
+@dataclass
+class Pondering(Prover):
+    listener: Listener
+    triggering_formula: LogicObject
+
+    def __call__(self, formula: Expression, _kb=None, _truth: bool = True,
+                 _previous_substitution: Substitution = None) -> Iterable[Proof]:
+        raise TypeError('This is a "fake" prover, don\'t try to use it')
 
 
 class Listener:
-    def __init__(self, wrapped_function, listened_formulas, previous_substitution: Substitution = None, priority=0,
-                 **_kwargs):
-        self.wrapped_function = wrapped_function
-        self.listened_formulas = listened_formulas
-        self.func_arg_names = wrapped_function.__code__.co_varnames[:wrapped_function.__code__.co_argcount]
-        self.previous_substitution = previous_substitution
-        self.priority = priority
+    def __init__(self, *,
+                 listened_formula: LogicObject, handler: Callable,
+                 argument_mode: HandlerArgumentMode, pass_substitution_as=...,
+                 pure: bool, safety: HandlerSafety):
+        self.handler = handler
+        self.listened_formula = listened_formula
+        self.argument_mode = argument_mode
+        self.pure = pure
+        self.safety = safety
 
-    def extract_and_call(self, formula):
-        if len(self.listened_formulas) == 1:
-            return self.arg_extractor_simple(formula)
+        self._func_arg_names = handler.__code__.co_varnames[:handler.__code__.co_argcount]
+
+        pass_substitution_as = self.__validate_pass_substitution_as(pass_substitution_as)
+
+        self.pass_substitution_as: Optional[str] = pass_substitution_as
+
+        self.variables_by_name = (
+            None if self.argument_mode == HandlerArgumentMode.RAW
+            else map_variables_by_name(listened_formula)
+        )
+
+        self.__validate_handler_arguments(pass_substitution_as)
+
+    def __validate_pass_substitution_as(self, pass_substitution_as):
+        if self.argument_mode == HandlerArgumentMode.RAW:
+            if pass_substitution_as is None:
+                raise ValueError(f"A substitution MUST be passed with {HandlerArgumentMode.RAW}")
+            elif pass_substitution_as is Ellipsis:
+                pass_substitution_as = 'substitution'
+
         else:
-            return self.arg_extractor_complex(formula)
+            if pass_substitution_as is Ellipsis:
+                pass_substitution_as = None
+        if isinstance(pass_substitution_as, str) and not pass_substitution_as.isidentifier():
+            raise ValueError("When 'pass_substitution_as' is a string it must be a valid python identifier")
+        return pass_substitution_as
 
-    def arg_extractor_simple(self, formula: Expression) -> Optional[Union[Expression, Iterable[Expression],
-                                                                 Listener, Iterable[Listener]]]:
-        listened_formula = self.listened_formulas[0]
-        subst = Substitution.unify(formula, listened_formula, previous=self.previous_substitution)
-        if subst is None:
-            return None
-        prepared_args = self._prepare_arguments(subst)
+    def __validate_handler_arguments(self, pass_substitution_as):
+        if self.handler.__code__.co_posonlyargcount > 0:
+            # TODO allow also kw-only args
+            raise ValueError("Handlers cannot have positional-only arguments")
 
-        return self.wrapped_function(**prepared_args)
+        if self.argument_mode == HandlerArgumentMode.RAW:
+            if self._func_arg_names != ('formula', self.pass_substitution_as):
+                raise ValueError(f"The handler has the wrong argument names {self._func_arg_names}! "
+                                 f"{HandlerArgumentMode.RAW} requires the handler to take two arguments: "
+                                 f"'formula' and '{pass_substitution_as}' (from the 'pass_substitution_as' arg)")
+        else:
+            unlistened_arg_names = list(
+                arg_name
+                for arg_name in self._func_arg_names
+                if arg_name not in self.variables_by_name and arg_name != self.pass_substitution_as
+            )
+            if any(unlistened_arg_names):
+                raise ValueError(f"The handler has the wrong argument names {self._func_arg_names}! "
+                                 f"Handler arguments {unlistened_arg_names} "
+                                 f"are not present in formula {self.listened_formula}")
 
-    def arg_extractor_complex(self, formula):
-        cumulative_substitution = self.previous_substitution
-        remaining_formulas = []
-        for listened_formula in self.listened_formulas:
-            subst = Substitution.unify(formula, listened_formula, previous=cumulative_substitution)
-            # if the formula is a match, we extend the substitution, otherwise we leave the formula for the future
-            if subst is not None:
-                cumulative_substitution = subst
+    def ponder(self, proof: Proof) -> Iterable[Proof]:
+        formula = proof.conclusion
+        if context.is_hypothetical_scenario() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
+            raise UnsafePonderException("Unsafe listener cannot be used in hypothetical scenarios")
+
+        unifier = Substitution.unify(formula, self.listened_formula, previous=proof.substitution)
+
+        if unifier is None:
+            return
+
+        try:
+            args_by_name = self._extract_args_by_name(formula, unifier)
+        except ValueError:
+            return
+
+        result = self.handler(**args_by_name)
+
+        if result is None:
+            return
+
+        # if the handler returned a single value, wrap it in a tuple to make it iterable
+        if (
+                isinstance(result, (LogicObject, FormulaSubstitution, FormulaSubstitutionPremises)) or
+                # the result is a pair or a triple, but not "made of results
+                (
+                        isinstance(result, tuple) and
+                        len(result) in (2, 3) and
+                        not all(isinstance(x, LogicObject) for x in result)
+                )
+        ):
+            result = (result,)
+
+        for item in result:
+            if isinstance(item, tuple):
+                if len(item) == 2:
+                    conclusion, substitution = item
+                    premises = ()
+                elif len(item) == 3:
+                    conclusion, substitution, premises = item
+                    # again, if a single proof was returned, we wrap it in a tuple to make it iterable
+                    if isinstance(premises, Proof):
+                        premises = (premises,)
+                else:
+                    raise ValueError("A handler returned tuple must have length 2 or 3")
+            elif isinstance(item, LogicObject):
+                conclusion = item
+                substitution = unifier
+                premises = ()
+            elif isinstance(item, FormulaSubstitution):
+                conclusion = item.formula
+                substitution = item.substitution
+                premises = ()
+            elif isinstance(item, FormulaSubstitutionPremises):
+                conclusion = item.formula
+                substitution = item.substitution
+                premises = (item.premises,) if isinstance(item.premises, Proof) else item.premises
             else:
-                remaining_formulas.append(listened_formula)
+                raise ValueError(f"A handler cannot return a {type(item)}, read the docs! LogicObjects, "
+                                 f"(formula, substitution) pairs, (formula, substitution, Proof/Proofs) triples, "
+                                 f"FormulaSubstitution instances or FormulaSubstitutionProofs instances! "
+                                 f"What is a {type(item)}????")
 
-        if cumulative_substitution is None:
-            return None
+            proof = Proof(
+                inference_rule=Pondering(listener=self, triggering_formula=formula),
+                conclusion=conclusion,
+                substitution=substitution,
+                premises=tuple(itertools.chain((proof,), premises))
+            )
 
-        if len(remaining_formulas) == 0:
-            prepared_args = self._prepare_arguments(cumulative_substitution)
-            return self.wrapped_function(**prepared_args)
-        else:
-            return Listener(self.wrapped_function, remaining_formulas, previous_substitution=cumulative_substitution)
+            yield proof
 
-    def _prepare_arguments(self, subst):
-        bindings_by_variable_name = {}
-        # TODO switch to some public API to get the bindings
-        for var in subst._bindings_by_variable:
-            bound_object = subst.get_bound_object_for(var)
-
-            # variables do not count as bound object (use a LogicWrapper if you need that)
-            if bound_object and not isinstance(bound_object, Variable):
-                bindings_by_variable_name[var.name] = bound_object
+    def _map_args(self, substitution: Substitution, func_arg_names: List[str]):
         prepared_args = {}
-        for arg in self.func_arg_names:
-            if arg in bindings_by_variable_name:
-                prepared_args[arg] = bindings_by_variable_name[arg]
+        for arg in func_arg_names:
+            if arg in self.variables_by_name:
+                prepared_args[arg] = substitution.get_bound_object_for(self.variables_by_name[arg])
         return prepared_args
 
+    def _extract_args_by_name(self, formula: LogicObject, unifier: Substitution):
+        if self.argument_mode == HandlerArgumentMode.RAW:
+            if self.pass_substitution_as is None:
+                raise ValueError("NOOOOOOOOOO! WHAT HAVE YOU DONE???????")
 
-class _MultiListenerWrapper:
-    def __init__(self, wrapped_function, *listeners):
-        self.wrapped_function = wrapped_function
-        self.listeners = listeners
-
-    def __call__(self, *args, **kwargs):
-        return self.wrapped_function(*args, *kwargs)
-
-
-def listener(*listened_formulas: Expression, priority=0):
-    def decorator(func_or_listeners):
-        if isinstance(func_or_listeners, _MultiListenerWrapper):
-            return _MultiListenerWrapper(
-                func_or_listeners,
-                Listener(func_or_listeners.wrapped_function, listened_formulas, priority=priority),
-                *func_or_listeners.listeners)
+            args_by_name = {'formula': formula}
         else:
-            return _MultiListenerWrapper(func_or_listeners,
-                                         Listener(func_or_listeners, listened_formulas, priority=priority))
+            args_by_name = self._map_args(substitution=unifier, func_arg_names=self._func_arg_names)
 
-    return decorator
+            if self.argument_mode == HandlerArgumentMode.MAP:
+                pass
+            elif self.argument_mode == HandlerArgumentMode.MAP_NO_VARIABLES:
+                if any(isinstance(arg, Variable) for arg in args_by_name.values()):
+                    raise ValueError()
+            elif self.argument_mode == HandlerArgumentMode.MAP_UNWRAPPED:
+                args_by_name = {
+                    key: arg.value if isinstance(arg, LogicWrapper) else arg
+                    for key, arg in args_by_name.items()
+                }
+            elif self.argument_mode == HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED:
+                if any(not isinstance(arg, LogicWrapper) for arg in args_by_name.values()):
+                    raise ValueError()
+
+                args_by_name = {
+                    key: arg.value if isinstance(arg, LogicWrapper) else arg
+                    for key, arg in args_by_name.items()
+                }
+            elif self.argument_mode == HandlerArgumentMode.MAP_UNWRAPPED_NO_VARIABLES:
+                if any(isinstance(arg, Variable) for arg in args_by_name.values()):
+                    raise ValueError()
+
+                args_by_name = {
+                    key: arg.value if isinstance(arg, LogicWrapper) else arg
+                    for key, arg in args_by_name.items()
+                }
+            else:
+                raise NotImplementedError(f"Unsupported argument mode: {self.argument_mode}")
+
+        if self.pass_substitution_as is not None:
+            args_by_name[self.pass_substitution_as] = unifier
+
+        return args_by_name

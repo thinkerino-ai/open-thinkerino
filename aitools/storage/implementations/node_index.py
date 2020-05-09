@@ -26,7 +26,7 @@ class NodeStoringAbstruseIndex(AbstruseIndex[LogicObject]):
             node_storage=self.node_storage
         )
 
-    def _get_all_objects(self) -> Iterable[T]:
+    def _get_all_objects(self) -> Iterable[LogicObject]:
         return (
             self.node_storage.get_object(_id)
             for _id in self.node_storage.get_all_object_ids_in_abstruse_node(self.id)
