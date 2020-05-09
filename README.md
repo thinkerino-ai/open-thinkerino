@@ -1,4 +1,4 @@
-![Python package](https://github.com/OneManEquipe/aitools/workflows/Python%20package/badge.svg)
+![Python package](https://github.com/OneManEquipe/aitools/workflows/Tests%20'n%20stuff/badge.svg)
 
 # AI Tools
 
