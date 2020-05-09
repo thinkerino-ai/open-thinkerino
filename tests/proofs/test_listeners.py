@@ -590,7 +590,6 @@ def test_listener_argument_mode_raw(test_knowledge_base):
 
 
 def test_listener_argument_mode_raw_rejects_wrong_argument_names(test_knowledge_base):
-    raise NotImplementedError("This will work when validation is reimplemented :P")
     v = VariableSource()
 
     Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
@@ -602,7 +601,7 @@ def test_listener_argument_mode_raw_rejects_wrong_argument_names(test_knowledge_
 
     listened_formula = Is(v.cat, cat)
     with pytest.raises(ValueError):
-        Listener(listened_formula=listened_formula, handler=handler, argument_mode=HandlerArgumentMode.RAW,
+        Listener(listened_formula=listened_formula, handler=handler, argument_mode=HandlerArgumentMode.MAP,
                  pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
 
@@ -876,7 +875,7 @@ def test_listener_pass_substitution_string_passes_the_chosen_name(test_knowledge
     v = VariableSource()
     IsA, cat = constants('IsA, cat')
 
-    listener = Listener(listened_formula=Variable(), handler=handler, argument_mode=argument_mode,
+    listener = Listener(listened_formula=IsA(v.x, cat), handler=handler, argument_mode=argument_mode,
                         pass_substitution_as='some_substitution', pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
     # to make it work for MAP_UNPWRAPPED_REQUIRED without special cases
@@ -885,15 +884,74 @@ def test_listener_pass_substitution_string_passes_the_chosen_name(test_knowledge
     test_knowledge_base.add_listener(listener)
     test_knowledge_base.add_formulas(IsA(wrapped_dylan, cat))
 
-    proofs: List[Proof] = list(test_knowledge_base.ponder(IsA(v.x, cat), ponder_mode=PonderMode.KNOWN))
+    proofs: List[Proof] = list(test_knowledge_base.ponder(IsA(v.y, cat), ponder_mode=PonderMode.KNOWN))
 
-    assert proofs[0].substitution.apply_to(IsA(v.x, cat)) == IsA(wrapped_dylan, cat)
+    assert proofs[0].substitution.apply_to(IsA(v.y, cat)) == IsA(wrapped_dylan, cat)
 
 
 def test_listener_pass_substitution_none_explodes_for_raw():
     with pytest.raises(ValueError):
         Listener(listened_formula=Variable(), handler=lambda formula, substitution: ...,
                  argument_mode=HandlerArgumentMode.RAW, pass_substitution_as=None, pure=True,
+                 safety=HandlerSafety.TOTALLY_UNSAFE)
+
+
+@pytest.mark.parametrize(('argument_mode', 'handler'), [
+    # handlers return Ellipsis since we don't even call them
+    (HandlerArgumentMode.MAP, lambda x, some_substitution: ...),
+    (HandlerArgumentMode.MAP_UNWRAPPED, lambda x, some_substitution: ...),
+    (HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED, lambda x, some_substitution: ...),
+    (HandlerArgumentMode.MAP_UNWRAPPED_NO_VARIABLES, lambda x, some_substitution: ...),
+    (HandlerArgumentMode.MAP_NO_VARIABLES, lambda x, some_substitution: ...),
+])
+def test_argument_validation_map_modes(argument_mode, handler):
+    v = VariableSource()
+    IsA, cat = constants('IsA, cat')
+    with pytest.raises(ValueError):
+        Listener(listened_formula=IsA(v.y, cat), handler=handler, argument_mode=argument_mode,
+                 pass_substitution_as='some_substitution', pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
+
+
+@pytest.mark.parametrize('handler', [
+    lambda formula, another_name_for_substitution: ...,
+    lambda another_name_for_formula, some_substitution: ...
+])
+def test_argument_validation_raw_mode(handler):
+    v = VariableSource()
+    IsA, cat = constants('IsA, cat')
+    with pytest.raises(ValueError):
+        Listener(listened_formula=IsA(v.y, cat), handler=handler, argument_mode=HandlerArgumentMode.RAW,
+                 pass_substitution_as='some_substitution', pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
+
+
+def test_homonymous_variables_are_allowed_in_raw_mode():
+    v1 = VariableSource()
+    v2 = VariableSource()
+    SomePredicate, = constants('SomePredicate')
+
+    try:
+        Listener(listened_formula=SomePredicate(v1.x, v2.x), handler=lambda formula, substitution: ...,
+                 argument_mode=HandlerArgumentMode.RAW, pass_substitution_as=..., pure=True,
+                 safety=HandlerSafety.TOTALLY_UNSAFE)
+    except Exception as e:
+        pytest.fail(f"Listener constructor failed: {e}")
+
+
+@pytest.mark.parametrize('argument_mode', [
+    HandlerArgumentMode.MAP,
+    HandlerArgumentMode.MAP_UNWRAPPED,
+    HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED,
+    HandlerArgumentMode.MAP_UNWRAPPED_NO_VARIABLES,
+    HandlerArgumentMode.MAP_NO_VARIABLES,
+])
+def test_homonymous_variables_are_forbidden_in_map_mode(argument_mode):
+    v1 = VariableSource()
+    v2 = VariableSource()
+    SomePredicate, = constants('SomePredicate')
+
+    with pytest.raises(ValueError):
+        Listener(listened_formula=SomePredicate(v1.x, v2.x), handler=lambda x: ...,
+                 argument_mode=argument_mode, pass_substitution_as=..., pure=True,
                  safety=HandlerSafety.TOTALLY_UNSAFE)
 
 

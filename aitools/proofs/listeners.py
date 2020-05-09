@@ -76,12 +76,20 @@ class Listener:
         self.pure = pure
         self.safety = safety
 
-        if handler.__code__.co_posonlyargcount > 0:
-            # TODO allow also kw-only args
-            raise ValueError("Handlers cannot have positional-only arguments")
+        self._func_arg_names = handler.__code__.co_varnames[:handler.__code__.co_argcount]
 
-        self._func_arg_names = handler.__code__.co_varnames
+        pass_substitution_as = self.__validate_pass_substitution_as(pass_substitution_as)
 
+        self.pass_substitution_as: Optional[str] = pass_substitution_as
+
+        self.variables_by_name = (
+            None if self.argument_mode == HandlerArgumentMode.RAW
+            else map_variables_by_name(listened_formula)
+        )
+
+        self.__validate_handler_arguments(pass_substitution_as)
+
+    def __validate_pass_substitution_as(self, pass_substitution_as):
         if self.argument_mode == HandlerArgumentMode.RAW:
             if pass_substitution_as is None:
                 raise ValueError(f"A substitution MUST be passed with {HandlerArgumentMode.RAW}")
@@ -91,21 +99,29 @@ class Listener:
         else:
             if pass_substitution_as is Ellipsis:
                 pass_substitution_as = None
-
         if isinstance(pass_substitution_as, str) and not pass_substitution_as.isidentifier():
             raise ValueError("When 'pass_substitution_as' is a string it must be a valid python identifier")
+        return pass_substitution_as
 
-        self.pass_substitution_as: Optional[str] = pass_substitution_as
+    def __validate_handler_arguments(self, pass_substitution_as):
+        if self.handler.__code__.co_posonlyargcount > 0:
+            # TODO allow also kw-only args
+            raise ValueError("Handlers cannot have positional-only arguments")
 
-        self.variables_by_name = map_variables_by_name(listened_formula)
-        if self.argument_mode != HandlerArgumentMode.RAW:
+        if self.argument_mode == HandlerArgumentMode.RAW:
+            if self._func_arg_names != ('formula', self.pass_substitution_as):
+                raise ValueError(f"The handler has the wrong argument names {self._func_arg_names}! "
+                                 f"{HandlerArgumentMode.RAW} requires the handler to take two arguments: "
+                                 f"'formula' and '{pass_substitution_as}' (from the 'pass_substitution_as' arg)")
+        else:
             unlistened_arg_names = list(
                 arg_name
                 for arg_name in self._func_arg_names
-                if arg_name not in self.variables_by_name and arg_name != pass_substitution_as
+                if arg_name not in self.variables_by_name and arg_name != self.pass_substitution_as
             )
             if any(unlistened_arg_names):
-                raise ValueError(f"Handler arguments {unlistened_arg_names} "
+                raise ValueError(f"The handler has the wrong argument names {self._func_arg_names}! "
+                                 f"Handler arguments {unlistened_arg_names} "
                                  f"are not present in formula {self.listened_formula}")
 
     def ponder(self, proof: Proof) -> Iterable[Proof]:
@@ -173,26 +189,17 @@ class Listener:
             proof = Proof(
                 inference_rule=Pondering(listener=self, triggering_formula=formula),
                 conclusion=conclusion,
-                substitution=substitution,  # TODO remove this, I don't like it anymore
+                substitution=substitution,
                 premises=tuple(itertools.chain((proof,), premises))
             )
 
             yield proof
 
-    @staticmethod
-    def _map_args(substitution: Substitution, func_arg_names: List[str]):
-
-        bindings_by_variable_name = {}
-        # TODO switch to some public API to get the bindings and maybe make this more efficient
-        for var in substitution._bindings_by_variable:
-            bound_object = substitution.get_bound_object_for(var)
-
-            if bound_object:
-                bindings_by_variable_name[var.name] = bound_object
+    def _map_args(self, substitution: Substitution, func_arg_names: List[str]):
         prepared_args = {}
         for arg in func_arg_names:
-            if arg in bindings_by_variable_name:
-                prepared_args[arg] = bindings_by_variable_name[arg]
+            if arg in self.variables_by_name:
+                prepared_args[arg] = substitution.get_bound_object_for(self.variables_by_name[arg])
         return prepared_args
 
     def _extract_args_by_name(self, formula: LogicObject, unifier: Substitution):

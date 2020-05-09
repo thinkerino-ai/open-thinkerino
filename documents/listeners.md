@@ -53,7 +53,9 @@ The possible values are:
 - `MAP_UNWRAPPED_NO_VARIABLES`: like `MAP`, but automatically unwraps `LogicWrapper`s and input variables can't be bound to logic `Variable`s
 - `MAP_NO_VARIABLES`: like `MAP`, but input variables can't be bound to logic `Variable`s
 
-With the `MAP*` options, `Variable` names in the trigger formula are matched to arguments in the handler, so creating them from a single `VariableSource` is advised (to guarantee that a single name is associated to the same variable).
+With the `MAP*` options, `Variable` names in the trigger formula are matched to arguments in the handler, and it is required that **no homonymous variables are present** (although the same variable repeated is allowed) and that **all arguments in the handler must be present as variable names in the listened formula**, with the exception of the substitution (see right below the discussion of `pass_substitution_as`). Using a `VariableSource` is advised, to guarantee that a single name is associated to the same variable.
+
+With the `RAW` option, the handler must take two argument: the first named "formula" and the second named according to` pass_substitution_as`. Homonymous variables are allowed.
 
 The `pass_substitution_as` argument determines if and how a substitution is passed to the handler, after being found by searching for proofs for a triggering formula (see [Pondering Process](#Pondering Process)). The possible values are:
 
