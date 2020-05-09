@@ -177,6 +177,28 @@ def test_simple_deduction(test_knowledge_base):
     assert all(isinstance(p, Proof) for p in proofs)
 
 
+def test_retrieve_known_formula_does_not_use_deduction(test_knowledge_base):
+    # this is the same as the basic retrieve case, but ensures deduction is not used
+
+    v = VariableSource()
+
+    IsA, Purrs, dylan, cat = constants('IsA, Purrs, dylan, cat')
+    test_knowledge_base.add_formulas(
+        IsA(dylan, cat),
+        Purrs(dylan)
+    )
+
+    # if it purrs like a cat, then it's a cat :P
+    test_knowledge_base.add_formulas(
+        Purrs(v.x) <<Implies>> IsA(v.x, cat)
+    )
+
+    # we can retrieve it because we already know it
+    proofs = list(test_knowledge_base.prove(IsA(dylan, cat), retrieve_only=True))
+
+    assert len(proofs) == 1
+
+
 def test_deduction_chain(test_knowledge_base):
     v = VariableSource()
 
