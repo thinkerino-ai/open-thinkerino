@@ -1,6 +1,6 @@
 import pytest
 
-from aitools.logic import Variable, Substitution, Expression
+from aitools.logic import Variable, Expression
 from aitools.logic.utils import subst, constants, wrap, VariableSource
 from aitools.proofs.language import Implies, MagicPredicate, Not, And, Or
 from aitools.proofs.proof import Proof
@@ -502,21 +502,3 @@ def test_declarative_provers_as_listeners(test_knowledge_base):
     assert any(proofs_disjunction_1)
     assert any(proofs_disjunction_2)
     assert any(proofs_disjunction_3)
-
-# altri casi:
-# - evaluator (come il prover, ma restituisce un valore/oggetto anziché True/False/Substitution, oppure solleva
-# eccezione se l'oggetto non è ancora abbastanza bound)
-# - evaluator generato da un prover (simboli funzionali)
-# - prover da un evaluator?
-# - 0-step proof -> cose che so già senza dover ragionare
-#   - with fix_knowledge() -> blocchi di codice che permettono di scrivere codice privo di reasoning
-# - magie sintattiche
-#   - _x == 2 -> Equals(_x, 2)
-#   - _x + 3 -> qualche oggetto che restituisce x + 3 quando il valore di x è noto (tipo il sistema può chiamare
-#   "evaluate"? anzi no! evaluators!)
-#   - A & B -> e compagnia bella
-#   - if A -> usare direttamente una Expression come bool
-#   - for s in A -> iterare direttamente per ottenere tutte le sostituzioni che soddisfano una formula
-#   - with assumptions(...) -> aggiunge **temporaneamente** alla KB del contesto corrente delle formule
-# - listener nel CognitiveSystem -> possono evitare che una cosa sia salvata nella KB
-# - cut?
