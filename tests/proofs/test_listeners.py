@@ -6,10 +6,11 @@ import pytest
 from aitools.logic import Substitution, LogicWrapper, LogicObject, Variable
 from aitools.logic.utils import VariableSource, constants, wrap
 from aitools.proofs.language import Implies, Not
-from aitools.proofs.listeners import Listener, HandlerArgumentMode, HandlerSafety, PonderMode, TriggeringFormula, \
+from aitools.proofs.listeners import Listener, PonderMode, TriggeringFormula, \
     FormulaSubstitutionPremises, FormulaSubstitution
-from aitools.proofs.proof import Proof
-from aitools.proofs.provers import KnowledgeRetriever
+from aitools.proofs.components import HandlerArgumentMode, HandlerSafety
+from aitools.proofs.provers import Proof
+from aitools.proofs.builtin_provers import KnowledgeRetriever
 
 
 def test_listener_with_just_side_effects(test_knowledge_base):

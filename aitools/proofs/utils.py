@@ -4,10 +4,10 @@ from typing import Union, Optional, Any, Iterable, Tuple
 from aitools.logic import Substitution, Expression, LogicWrapper
 from aitools.logic.utils import expr, wrap, ConstantSource, VariableSource
 from aitools.proofs.context import context
-from aitools.proofs.proof import Proof, Prover
+from aitools.proofs.provers import Proof, OLD_Prover
 
 
-class EmbeddedProver(Prover):
+class EmbeddedProver(OLD_Prover):
     def __init__(self, prover_function, proved_formula):
         self.prover_function = prover_function
         self.proved_formula = proved_formula

@@ -9,8 +9,8 @@ from aitools.logic import Expression, Substitution, LogicObject
 from aitools.logic.utils import normalize_variables, VariableSource
 from aitools.proofs.context import contextual
 from aitools.proofs.listeners import Listener, PonderMode, TriggeringFormula
-from aitools.proofs.proof import Prover, ProofSet, Proof
-from aitools.proofs.provers import KnowledgeRetriever, RestrictedModusPonens
+from aitools.proofs.provers import OLD_Prover, ProofSet, Proof
+from aitools.proofs.builtin_provers import KnowledgeRetriever, RestrictedModusPonens
 from aitools.proofs.utils import EmbeddedProver
 from aitools.storage.base import LogicObjectStorage
 from aitools.storage.implementations.dummy import DummyAbstruseIndex
@@ -24,9 +24,9 @@ class KnowledgeBase:
     def __init__(self, storage: LogicObjectStorage):
         self._storage = storage
         self._variable_source = VariableSource()
-        self._provers: typing.Set[Prover] = set()
+        self._provers: typing.Set[OLD_Prover] = set()
         self._listener_storage: AbstruseIndex[Listener] = DummyAbstruseIndex()
-        self.knowledge_retriever: Prover = KnowledgeRetriever()
+        self.knowledge_retriever: OLD_Prover = KnowledgeRetriever()
         self._initialize_default_provers()
 
     def supports_transactions(self) -> bool:
@@ -69,7 +69,7 @@ class KnowledgeBase:
 
     def add_provers(self, *provers):
         for p in provers:
-            if isinstance(p, Prover):
+            if isinstance(p, OLD_Prover):
                 self._add_prover(p)
             else:
                 self._add_prover(EmbeddedProver(p.wrapped_function, p.formula))
@@ -103,7 +103,7 @@ class KnowledgeBase:
                 for prover in self._provers
             )
 
-            _embedded_prover: Prover = getattr(formula, '_embedded_prover', None)
+            _embedded_prover: OLD_Prover = getattr(formula, '_embedded_prover', None)
             if _embedded_prover is not None:
                 proof_sources.appendleft(_embedded_prover(formula=formula, _kb=self, _truth=truth))
 

@@ -4,7 +4,6 @@ from inspect import isgeneratorfunction
 
 from aitools.logic import Expression
 from aitools.logic.utils import ConstantSource, VariableSource
-from aitools.proofs.proof import ProofSet
 
 
 def make_property(attr_name):
@@ -33,7 +32,7 @@ context = Context()
 context.kb = None
 
 
-def prove(formula: Expression, truth: bool = True) -> ProofSet:
+def prove(formula: Expression, truth: bool = True):
     return context.kb.prove(formula, truth=truth)
 
 

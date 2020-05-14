@@ -3,8 +3,8 @@ import pytest
 from aitools.logic import Variable, Expression
 from aitools.logic.utils import subst, constants, wrap, VariableSource
 from aitools.proofs.language import Implies, MagicPredicate, Not, And, Or
-from aitools.proofs.proof import Proof
-from aitools.proofs.provers import KnowledgeRetriever, NegationProver, DeclarativeProver
+from aitools.proofs.provers import Proof
+from aitools.proofs.builtin_provers import KnowledgeRetriever, NegationProver, DeclarativeProver
 from aitools.proofs.utils import predicate_function
 
 

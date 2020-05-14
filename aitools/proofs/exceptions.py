@@ -1,0 +1,2 @@
+class UnsafeOperationException(Exception):
+    pass
