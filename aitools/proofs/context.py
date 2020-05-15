@@ -33,7 +33,7 @@ context.kb = None
 
 
 def prove(formula: Expression, truth: bool = True):
-    return context.kb.prove(formula, truth=truth)
+    return context.kb.old_prove(formula, truth=truth)
 
 
 def is_hypothetical_scenario() -> bool:

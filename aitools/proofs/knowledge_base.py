@@ -85,8 +85,8 @@ class KnowledgeBase:
         return len(self._storage)
 
     # TODO 'formula' shouldn't be an Expression, because I could be trying to "prove a variable" (is this true? o.o I'm so sleepy)
-    def prove(self, formula: Expression, *, retrieve_only: bool = False, truth: bool = True,
-              previous_substitution=None) -> ProofSet:
+    def old_prove(self, formula: Expression, *, retrieve_only: bool = False, truth: bool = True,
+                  previous_substitution=None) -> ProofSet:
         """Backward search to prove a given formulas using all known provers"""
         logger.info("Trying to prove %s to be %s with previous substitution %s", formula, truth, previous_substitution)
 
@@ -171,12 +171,12 @@ class KnowledgeBase:
             raise NotImplementedError("This case requires hypotheses to be implemented :P")
         elif ponder_mode == PonderMode.KNOWN:
             input_sources = (
-                (lambda f: self.prove(f, retrieve_only=True))(formula)
+                (lambda f: self.old_prove(f, retrieve_only=True))(formula)
                 for formula in formulas
             )
         elif ponder_mode == PonderMode.PROVE:
             input_sources = (
-                (lambda f: self.prove(f))(formula)
+                (lambda f: self.old_prove(f))(formula)
                 for formula in formulas
             )
         else:

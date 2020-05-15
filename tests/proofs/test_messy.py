@@ -14,7 +14,7 @@ def test_retrieve_known_formula(test_knowledge_base):
     IsA, dylan, cat = constants('IsA, dylan, cat')
     test_knowledge_base.add_formulas(IsA(dylan, cat))
     # we can retrieve it because we already know it
-    proofs = list(test_knowledge_base.prove(IsA(dylan, cat), retrieve_only=True))
+    proofs = list(test_knowledge_base.old_prove(IsA(dylan, cat), retrieve_only=True))
 
     assert len(proofs) == 1
     assert all(isinstance(p, Proof) for p in proofs)
@@ -30,7 +30,7 @@ def test_retrieve_known_formula_transactional(test_knowledge_base):
     with test_knowledge_base.transaction():
         test_knowledge_base.add_formulas(IsA(dylan, cat))
 
-    substitutions = list(test_knowledge_base.prove(IsA(dylan, cat), retrieve_only=True))
+    substitutions = list(test_knowledge_base.old_prove(IsA(dylan, cat), retrieve_only=True))
 
     assert len(substitutions) == 1
 
@@ -49,7 +49,7 @@ def test_retrieve_known_formula_rollback(test_knowledge_base):
             test_knowledge_base.add_formulas(IsA(dylan, cat))
             raise VeryCustomException()
 
-    substitutions = list(test_knowledge_base.prove(IsA(dylan, cat), retrieve_only=True))
+    substitutions = list(test_knowledge_base.old_prove(IsA(dylan, cat), retrieve_only=True))
     assert len(substitutions) == 0
 
 
@@ -64,7 +64,7 @@ def test_retrieve_known_open_formula(test_knowledge_base):
         IsA(hugo, cat)
     )
 
-    proofs = list(test_knowledge_base.prove(IsA(v._x, cat), retrieve_only=True))
+    proofs = list(test_knowledge_base.old_prove(IsA(v._x, cat), retrieve_only=True))
     assert len(proofs) == 2
 
     assert all(isinstance(p, Proof) for p in proofs)
@@ -95,7 +95,7 @@ def test_formulas_are_be_normalized(test_knowledge_base):
         Bar(v.y) << Implies >> Baz(v.y)
     )
 
-    proofs = list(test_knowledge_base.prove(Baz(a)))
+    proofs = list(test_knowledge_base.old_prove(Baz(a)))
     assert any(proofs)
 
 
@@ -109,11 +109,11 @@ def test_open_formulas_can_be_used_more_than_once(test_knowledge_base):
         IsNatural(v.x) << Implies >> IsNatural(successor(v.x))
     )
 
-    baseline_proofs = list(test_knowledge_base.prove(IsNatural(successor(wrap(0)))))
+    baseline_proofs = list(test_knowledge_base.old_prove(IsNatural(successor(wrap(0)))))
     assert any(baseline_proofs)
 
     # actual test
-    proofs = list(test_knowledge_base.prove(IsNatural(successor(successor(wrap(0))))))
+    proofs = list(test_knowledge_base.old_prove(IsNatural(successor(successor(wrap(0))))))
     assert any(proofs)
 
 
@@ -129,7 +129,7 @@ def test_proof_known_formula(test_knowledge_base):
     test_knowledge_base.add_formulas(IsA(dylan, cat))
 
     target = IsA(dylan, cat)
-    proofs = list(test_knowledge_base.prove(target))
+    proofs = list(test_knowledge_base.old_prove(target))
 
     # at least one way to prove it directly!
     assert all(_is_known_formula_proof_of(p, target) for p in proofs)
@@ -147,7 +147,7 @@ def test_proof_known_open_formula(test_knowledge_base):
     )
 
     target = IsA(v._x, cat)
-    proofs = list(test_knowledge_base.prove(target))
+    proofs = list(test_knowledge_base.old_prove(target))
     assert len(proofs) == 2
     assert all(_is_known_formula_proof_of(proof, target) for proof in proofs)
 
@@ -172,7 +172,7 @@ def test_simple_deduction(test_knowledge_base):
 
     test_knowledge_base.add_formulas(IsA(dylan, cat))
 
-    proofs = list(test_knowledge_base.prove(IsA(dylan, animal)))
+    proofs = list(test_knowledge_base.old_prove(IsA(dylan, animal)))
     assert any(proofs)
     assert all(isinstance(p, Proof) for p in proofs)
 
@@ -194,7 +194,7 @@ def test_retrieve_known_formula_does_not_use_deduction(test_knowledge_base):
     )
 
     # we can retrieve it because we already know it
-    proofs = list(test_knowledge_base.prove(IsA(dylan, cat), retrieve_only=True))
+    proofs = list(test_knowledge_base.old_prove(IsA(dylan, cat), retrieve_only=True))
 
     assert len(proofs) == 1
 
@@ -210,7 +210,7 @@ def test_deduction_chain(test_knowledge_base):
         IsA(dylan, cat)
     )
 
-    proofs = list(test_knowledge_base.prove(IsA(dylan, animal)))
+    proofs = list(test_knowledge_base.old_prove(IsA(dylan, animal)))
 
     assert any(proofs)
 
@@ -226,15 +226,15 @@ def IsEven(n: int):
 
 
 def test_simple_custom_prover_passing_python_value(test_knowledge_base):
-    assert any(test_knowledge_base.prove(IsEven(2)))
+    assert any(test_knowledge_base.old_prove(IsEven(2)))
 
     # this means we can't prove it, not that we can prove it is false
-    assert not any(test_knowledge_base.prove(IsEven(3)))
+    assert not any(test_knowledge_base.old_prove(IsEven(3)))
 
 
 def test_simple_custom_prover_to_be_false(test_knowledge_base):
     # now *this* means that we can prove it is false :P
-    assert any(test_knowledge_base.prove(IsEven(3), truth=False))
+    assert any(test_knowledge_base.old_prove(IsEven(3), truth=False))
 
 
 @predicate_function
@@ -249,16 +249,16 @@ def IsMultipleOf4(n: int):
 @pytest.mark.xfail(reason="This needs to be implemented, but it's too complex for my little sleepy brain right now :P")
 def test_custom_prover_chain_adds_premises(test_knowledge_base):
     # TODO implement this!
-    proofs = list(test_knowledge_base.prove(IsMultipleOf4(20)))
+    proofs = list(test_knowledge_base.old_prove(IsMultipleOf4(20)))
     assert len(proofs[0].premises) > 0
 
 
 def test_custom_prover_chain(test_knowledge_base):
-    proofs = list(test_knowledge_base.prove(IsMultipleOf4(20)))
+    proofs = list(test_knowledge_base.old_prove(IsMultipleOf4(20)))
     assert any(proofs)
 
     # this means we can't prove it, not that we can prove it is false
-    assert not any(test_knowledge_base.prove(IsMultipleOf4(14)))
+    assert not any(test_knowledge_base.old_prove(IsMultipleOf4(14)))
 
 
 def test_custom_prover_in_open_formula(test_knowledge_base):
@@ -272,7 +272,7 @@ def test_custom_prover_in_open_formula(test_knowledge_base):
     # ok maybe this IS necessary :P otherwise the test_knowledge_base doesn't know how to use it
     test_knowledge_base.add_provers(IsEven)
 
-    assert any(test_knowledge_base.prove(IsNice(32)))
+    assert any(test_knowledge_base.old_prove(IsNice(32)))
 
 
 def test_custom_prover_with_explicit_formula(test_knowledge_base):
@@ -286,7 +286,7 @@ def test_custom_prover_with_explicit_formula(test_knowledge_base):
 
     test_knowledge_base.add_provers(name_here_does_not_matter)
 
-    assert any(test_knowledge_base.prove(
+    assert any(test_knowledge_base.old_prove(
         IsPayload({'code': 200, 'message': 'success!'})
     ))
 
@@ -304,10 +304,10 @@ def test_custom_prover_incomplete(test_knowledge_base):
 
     test_knowledge_base.add_provers(NegationProver())
 
-    assert any(test_knowledge_base.prove(IsPrime(2)))
-    assert any(test_knowledge_base.prove(Not(IsPrime(4))))
-    assert not any(test_knowledge_base.prove(IsPrime(10)))
-    assert not any(test_knowledge_base.prove(Not(IsPrime(10))))
+    assert any(test_knowledge_base.old_prove(IsPrime(2)))
+    assert any(test_knowledge_base.old_prove(Not(IsPrime(4))))
+    assert not any(test_knowledge_base.old_prove(IsPrime(10)))
+    assert not any(test_knowledge_base.old_prove(Not(IsPrime(10))))
 
 
 def test_multiple_custom_provers_for_the_same_formula(test_knowledge_base):
@@ -332,16 +332,16 @@ def test_multiple_custom_provers_for_the_same_formula(test_knowledge_base):
 
     test_knowledge_base.add_provers(prime_prover_012345, prime_prover_456789, NegationProver())
 
-    assert any(test_knowledge_base.prove(IsPrime(2)))
-    assert any(test_knowledge_base.prove(IsPrime(7)))
-    assert any(test_knowledge_base.prove(Not(IsPrime(0))))
-    assert any(test_knowledge_base.prove(Not(IsPrime(8))))
+    assert any(test_knowledge_base.old_prove(IsPrime(2)))
+    assert any(test_knowledge_base.old_prove(IsPrime(7)))
+    assert any(test_knowledge_base.old_prove(Not(IsPrime(0))))
+    assert any(test_knowledge_base.old_prove(Not(IsPrime(8))))
 
-    assert len(list(test_knowledge_base.prove(IsPrime(5)))) == 2
-    assert len(list(test_knowledge_base.prove(Not(IsPrime(4))))) == 2
+    assert len(list(test_knowledge_base.old_prove(IsPrime(5)))) == 2
+    assert len(list(test_knowledge_base.old_prove(Not(IsPrime(4))))) == 2
 
-    assert not any(test_knowledge_base.prove(IsPrime(11)))
-    assert not any(test_knowledge_base.prove(Not(IsPrime(11))))
+    assert not any(test_knowledge_base.old_prove(IsPrime(11)))
+    assert not any(test_knowledge_base.old_prove(Not(IsPrime(11))))
 
 
 def test_prover_returning_substitutions(test_knowledge_base):
@@ -378,18 +378,18 @@ def test_prover_returning_substitutions(test_knowledge_base):
         else:
             return True, subst((wrap(map[val]), [var]))
 
-    assert (test_knowledge_base.prove(Likes("lisa", "nelson")))
+    assert (test_knowledge_base.old_prove(Likes("lisa", "nelson")))
 
-    lisa_likes_proofs = list(test_knowledge_base.prove(Likes("lisa", v._y)))
+    lisa_likes_proofs = list(test_knowledge_base.old_prove(Likes("lisa", v._y)))
     assert (len(lisa_likes_proofs) == 1)
     assert (any(p.substitution.get_bound_object_for(v._y) == 'nelson' for p in lisa_likes_proofs))
 
-    likes_lisa_proofs = list(test_knowledge_base.prove(Likes(v._y, "lisa")))
+    likes_lisa_proofs = list(test_knowledge_base.old_prove(Likes(v._y, "lisa")))
     assert (len(likes_lisa_proofs) == 1)
     assert (any(p.substitution.get_bound_object_for(v._y) == "milhouse") for p in lisa_likes_proofs)
 
     # nobody likes milhouse
-    assert (not any(test_knowledge_base.prove(Likes(v._y, "milhouse"))))
+    assert (not any(test_knowledge_base.old_prove(Likes(v._y, "milhouse"))))
 
 
 def test_prover_returning_substitution_false(test_knowledge_base):
@@ -404,9 +404,9 @@ def test_prover_returning_substitution_false(test_knowledge_base):
 
     test_knowledge_base.add_provers(NegationProver())
 
-    assert not any(test_knowledge_base.prove(Likes("lisa", "milhouse")))
+    assert not any(test_knowledge_base.old_prove(Likes("lisa", "milhouse")))
 
-    assert any(test_knowledge_base.prove(Not(Likes("lisa", v._y))))
+    assert any(test_knowledge_base.old_prove(Not(Likes("lisa", v._y))))
 
 
 def test_prover_returning_multiple_results(test_knowledge_base):
@@ -423,13 +423,13 @@ def test_prover_returning_multiple_results(test_knowledge_base):
 
     test_knowledge_base.add_provers(NegationProver())
 
-    assert any(test_knowledge_base.prove(In(3, [1, 2, 3])))
-    assert any(test_knowledge_base.prove(Not(In(4, [1, 2, 3]))))
+    assert any(test_knowledge_base.old_prove(In(3, [1, 2, 3])))
+    assert any(test_knowledge_base.old_prove(Not(In(4, [1, 2, 3]))))
 
-    assert not any(test_knowledge_base.prove(In(4, [1, 2, 3])))
-    assert not any(test_knowledge_base.prove(Not(In(3, [1, 2, 3]))))
+    assert not any(test_knowledge_base.old_prove(In(4, [1, 2, 3])))
+    assert not any(test_knowledge_base.old_prove(Not(In(3, [1, 2, 3]))))
 
-    assert len(list(test_knowledge_base.prove(In(v._x, [1, 2, 3])))) == 3
+    assert len(list(test_knowledge_base.old_prove(In(v._x, [1, 2, 3])))) == 3
 
 
 def test_declarative_provers_as_provers(test_knowledge_base):
@@ -456,7 +456,7 @@ def test_declarative_provers_as_provers(test_knowledge_base):
 
     test_knowledge_base.add_formulas(IsNumber(seven), IsOdd(seven))
 
-    proofs = list(test_knowledge_base.prove(And(IsNumber(seven), Or(IsEven(seven), IsOdd(seven)))))
+    proofs = list(test_knowledge_base.old_prove(And(IsNumber(seven), Or(IsEven(seven), IsOdd(seven)))))
 
     assert any(proofs)
 
@@ -486,15 +486,15 @@ def test_declarative_provers_as_listeners(test_knowledge_base):
 
     test_knowledge_base.add_formulas(IsNumber(seven), IsOdd(seven))
 
-    proofs_conjunction_1 = test_knowledge_base.prove(And(IsNumber(seven), IsOdd(seven)))
-    proofs_conjunction_2 = test_knowledge_base.prove(And(IsOdd(seven), IsNumber(seven)))
+    proofs_conjunction_1 = test_knowledge_base.old_prove(And(IsNumber(seven), IsOdd(seven)))
+    proofs_conjunction_2 = test_knowledge_base.old_prove(And(IsOdd(seven), IsNumber(seven)))
     # is this even correct to have?
-    proofs_conjunction_3 = test_knowledge_base.prove(And(IsNumber(seven), IsNumber(seven)))
+    proofs_conjunction_3 = test_knowledge_base.old_prove(And(IsNumber(seven), IsNumber(seven)))
 
-    proofs_disjunction_1 = test_knowledge_base.prove(Or(IsOdd(seven), IsEven(seven)))
-    proofs_disjunction_2 = test_knowledge_base.prove(Or(IsEven(seven), IsOdd(seven)))
+    proofs_disjunction_1 = test_knowledge_base.old_prove(Or(IsOdd(seven), IsEven(seven)))
+    proofs_disjunction_2 = test_knowledge_base.old_prove(Or(IsEven(seven), IsOdd(seven)))
     # again: do I really want this?
-    proofs_disjunction_3 = test_knowledge_base.prove(Or(IsOdd(seven), IsOdd(seven)))
+    proofs_disjunction_3 = test_knowledge_base.old_prove(Or(IsOdd(seven), IsOdd(seven)))
 
     assert any(proofs_conjunction_1)
     assert any(proofs_conjunction_2)

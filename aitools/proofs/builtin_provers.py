@@ -47,7 +47,7 @@ class DeclarativeProver(OLD_Prover):
                         premises=tuple(premises))
         else:
             first, *rest = formulas
-            for proof in kb.prove(first, previous_substitution=previous_substitution):
+            for proof in kb.old_prove(first, previous_substitution=previous_substitution):
                 yield from self.__prove(kb, theorem, rest, previous_substitution=previous_substitution,
                                         premises=premises+[proof])
 
@@ -56,7 +56,7 @@ class NegationProver(OLD_Prover):
     def __call__(self, formula: Expression, _kb=None, _truth: bool = True, _previous_substitution: Substitution = None):
         """Proves the negation of a formula to be True/False by proving the formula to be False/True (respectively)"""
         if formula.children[0] == Not and len(formula.children) == 2:
-            for proof in _kb.prove(formula.children[1], truth=not _truth, previous_substitution=_previous_substitution):
+            for proof in _kb.old_prove(formula.children[1], truth=not _truth, previous_substitution=_previous_substitution):
                 yield Proof(inference_rule=self, conclusion=formula, substitution=proof.substitution, premises=(proof,))
 
 
@@ -70,10 +70,10 @@ class RestrictedModusPonens(OLD_Prover):
             logger.info("RestrictedModusPonens trying to prove %s with substitution %s", formula, _previous_substitution)
             rule_pattern = Implies(v._premise, formula)
 
-            for rule_proof in _kb.prove(rule_pattern, previous_substitution=_previous_substitution):
+            for rule_proof in _kb.old_prove(rule_pattern, previous_substitution=_previous_substitution):
                 premise = rule_proof.substitution.get_bound_object_for(v._premise)
                 logger.debug("Found a proof for an implication, searching for a proof of the premise %s", premise)
-                for premise_proof in _kb.prove(premise, previous_substitution=rule_proof.substitution):
+                for premise_proof in _kb.old_prove(premise, previous_substitution=rule_proof.substitution):
                     logger.debug("Found a proof for the premise")
                     yield Proof(inference_rule=self, conclusion=formula, substitution=premise_proof.substitution,
                                 premises=(rule_proof, premise_proof))
