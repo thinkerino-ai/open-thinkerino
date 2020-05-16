@@ -126,6 +126,7 @@ The currently built-in provers are the following:
 
 - `RestrictedModusPonens`: a `RAW` mode prover which implements Modus Ponens (given `P`, it search for proofs of `Implies(?Q, P)` and, if successful, `?Q`), but won't take formulas like `Implies(?A, ?B)` as its input, to avoid infinite loops (this limitation might be removed in the future)
 - `ClosedWorldAssumption`: a `RAW` mode prover which will only prove formulas like `Not(?P)`, and will return `True` if it cannot find a proof for `?P` (see [Semantics](#Semantics) and [Closed-world Assumption](#Closed-world Assumption) below)
+    - NOTE: `ClosedWorldAssumption` is limited in that if a formula is `Not(?P)` it will **remove** the `Not`, but it won't add another one. This is to ensure termination.
 
 Furthermore, every `KnowledgeBase` internally defines a "knowledge retriever", which accesses the internal storage.
 

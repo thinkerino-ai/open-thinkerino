@@ -1,11 +1,11 @@
 import logging
 
-from aitools.logic import Expression, Variable
+from aitools.logic import Expression, Variable, Substitution
 from aitools.logic.utils import VariableSource
 from aitools.proofs.components import HandlerArgumentMode, HandlerSafety
 from aitools.proofs.context import prove
-from aitools.proofs.language import Implies
-from aitools.proofs.provers import TruthSubstitutionPremises, Prover
+from aitools.proofs.language import Implies, Not
+from aitools.proofs.provers import TruthSubstitutionPremises, Prover, TruthSubstitution
 
 logger = logging.getLogger(__name__)
 
@@ -25,5 +25,21 @@ def restricted_modus_ponens(formula, substitution):
 
 RestrictedModusPonens = Prover(
     listened_formula=Variable(), handler=restricted_modus_ponens, argument_mode=HandlerArgumentMode.RAW,
+    pass_substitution_as=..., pure=True, safety=HandlerSafety.SAFE
+)
+
+
+def closed_world_assumption(formula, substitution):
+    v = VariableSource()
+    match = Substitution.unify(formula, Not(v.P))
+    if match is not None:
+        try:
+            next(prove(match.get_bound_object_for(v.P)))
+        except StopIteration:
+            return TruthSubstitution(True, substitution)
+
+
+ClosedWorldAssumption = Prover(
+    listened_formula=Variable(), handler=closed_world_assumption, argument_mode=HandlerArgumentMode.RAW,
     pass_substitution_as=..., pure=True, safety=HandlerSafety.SAFE
 )

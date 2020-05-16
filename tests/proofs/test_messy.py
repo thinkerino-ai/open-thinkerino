@@ -2,7 +2,7 @@ import pytest
 
 from aitools.logic import Variable, Expression, Constant
 from aitools.logic.utils import subst, constants, wrap, VariableSource
-from aitools.proofs.builtin_provers import RestrictedModusPonens
+from aitools.proofs.builtin_provers import RestrictedModusPonens, ClosedWorldAssumption
 from aitools.proofs.components import HandlerSafety, HandlerArgumentMode
 from aitools.proofs.knowledge_base import KnowledgeBase
 from aitools.proofs.language import Implies, MagicPredicate, Not, And, Or
@@ -362,6 +362,26 @@ def test_multiple_custom_provers_for_the_same_formula(test_knowledge_base):
     assert len(list(test_knowledge_base.prove(IsPrime(5)))) == 2
 
     assert not any(test_knowledge_base.prove(IsPrime(11)))
+
+
+def test_closed_world_assumption(test_knowledge_base):
+    v = VariableSource()
+
+    IsPrime = MagicPredicate()
+
+    prover = Prover(
+        listened_formula=IsPrime(v.n), handler=is_prime, argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED,
+        pass_substitution_as=..., pure=True, safety=HandlerSafety.SAFE
+    )
+
+    test_knowledge_base.add_prover(prover)
+    test_knowledge_base.add_prover(RestrictedModusPonens)
+
+    assert not any(test_knowledge_base.prove(Not(IsPrime(4))))
+
+    test_knowledge_base.add_prover(ClosedWorldAssumption)
+
+    assert any(test_knowledge_base.prove(Not(IsPrime(4))))
 
 
 @pytest.mark.xfail(reason="Come on, we can bring coverage up :P")
