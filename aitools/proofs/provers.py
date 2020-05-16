@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from typing import Iterable, Union, Collection, Any
 
 from aitools.logic import Substitution, Expression, LogicObject
+from aitools.logic.utils import normalize_variables
 from aitools.proofs.components import Component, HandlerSafety
-from aitools.proofs.context import context
+from aitools.proofs import context
 from aitools.proofs.exceptions import UnsafeOperationException
 
 
@@ -27,13 +28,14 @@ class Prover(Component):
         if context.is_hypothetical_scenario() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
             raise UnsafeOperationException("Unsafe listener cannot be used in hypothetical scenarios")
 
-        unifier = Substitution.unify(formula, self.listened_formula, previous=previous_substitution)
+        normalized_listened_formula, normalization_mapping = normalize_variables(self.listened_formula)
+        unifier = Substitution.unify(formula, normalized_listened_formula, previous=previous_substitution)
 
         if unifier is None:
             return
 
         try:
-            args_by_name = self._extract_args_by_name(formula, unifier)
+            args_by_name = self._extract_args_by_name(formula, unifier, normalization_mapping=normalization_mapping)
         except ValueError:
             return
 

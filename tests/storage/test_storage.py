@@ -47,10 +47,9 @@ def test_normalized_formulas_added_only_once(test_storage):
     Foo, a, b = constants('Foo, a, b')
 
     normalizer = VariableSource()
-    test_storage.add(*(
-        normalize_variables(x, variable_source=normalizer)
-        for x in (Foo(a, b), Foo(v.x, v.y), Foo(v.x, v.x), Foo(v.w, v.z))
-    ))
+    normalized_formulas = (normalize_variables(x, variable_source=normalizer) for x in
+          (Foo(a, b), Foo(v.x, v.y), Foo(v.x, v.x), Foo(v.w, v.z)))
+    test_storage.add(*(formula for formula, mapping in normalized_formulas))
 
     assert len(test_storage) == 3
 

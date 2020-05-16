@@ -2,7 +2,7 @@ from enum import Enum, auto
 from typing import Callable, Optional, List, Dict, Any
 
 from aitools.logic import LogicObject, Substitution, Variable, LogicWrapper
-from aitools.logic.utils import map_variables_by_name
+from aitools.logic.utils import map_variables_by_name, VariableSource, normalize_variables
 
 
 class HandlerArgumentMode(Enum):
@@ -26,7 +26,10 @@ class Component:
                  listened_formula: LogicObject, handler: Callable,
                  argument_mode: HandlerArgumentMode, pass_substitution_as=...,
                  pure: bool, safety: HandlerSafety):
+        self._normalization_variable_source = VariableSource()
+
         self.handler = handler
+        listened_formula, _ = normalize_variables(listened_formula)
         self.listened_formula = listened_formula
         self.argument_mode = argument_mode
         self.pure = pure
@@ -80,22 +83,28 @@ class Component:
                                  f"Handler arguments {unlistened_arg_names} "
                                  f"are not present in formula {self.listened_formula}")
 
-    def _map_substitution_to_function_args(self, substitution: Substitution,
-                                            func_arg_names: List[str]) -> Dict[str, Any] :
+    def _map_substitution_to_function_args(self, substitution: Substitution, func_arg_names: List[str],
+                                           normalization_mapping: Dict[Variable, Variable]) -> Dict[str, Any] :
         prepared_args = {}
         for arg in func_arg_names:
             if arg in self.variables_by_name:
-                prepared_args[arg] = substitution.get_bound_object_for(self.variables_by_name[arg])
+                mapped_variable = normalization_mapping.get(self.variables_by_name[arg], None)
+                if mapped_variable is None:
+                    raise ValueError("What is happening here?")
+                prepared_args[arg] = substitution.get_bound_object_for(mapped_variable)
         return prepared_args
 
-    def _extract_args_by_name(self, formula: LogicObject, unifier: Substitution) -> Dict[str, Any]:
+    def _extract_args_by_name(self, formula: LogicObject, unifier: Substitution,
+                              normalization_mapping: Dict[Variable, Variable]) -> Dict[str, Any]:
         if self.argument_mode == HandlerArgumentMode.RAW:
             if self.pass_substitution_as is None:
                 raise ValueError("NOOOOOOOOOO! WHAT HAVE YOU DONE???????")
 
             args_by_name = {'formula': formula}
         else:
-            args_by_name = self._map_substitution_to_function_args(substitution=unifier, func_arg_names=self._func_arg_names)
+            args_by_name = self._map_substitution_to_function_args(substitution=unifier,
+                                                                   func_arg_names=self._func_arg_names,
+                                                                   normalization_mapping=normalization_mapping)
 
             if self.argument_mode == HandlerArgumentMode.MAP:
                 pass

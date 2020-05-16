@@ -64,6 +64,8 @@ As stated above, the `pass_substitution_as` argument determines if and how a sub
 - `None`: no substitution is passed to the handler, unsupported in `RAW` mode
 - a string: the found substitution is passed to the handler as a keyword argument of the same name 
 
+NOTE: there is no guaranteed relationship between the substitution passed to the handler and the `listened_formula`. To underline this the `listened_formula` is normalized by the `Listener`'s constructor, so `listener.listened_formula` is actually another formula, with "renewed" variables.
+
 The `safety` argument is an enumerative value of type `HandlerSafety` can have the following values:
 
 - `SAFE`: the listener will only perform operations that can be repeated without worry

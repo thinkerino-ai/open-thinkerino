@@ -36,10 +36,13 @@ def test_normalize_variables():
     v = VariableSource()
     a, b, c = constants('a, b, c')
     e1 = expr(v.x, v.y, v.x)
-    e2 = normalize_variables(e1)
+    e2, mapping = normalize_variables(e1)
 
     assert e2.children[0] != e2.children[1]
     assert e2.children[0] == e2.children[2]
+
+    assert mapping[v.x] == e2.children[0]
+    assert mapping[v.y] == e2.children[1]
 
 
 def test_normalize_variables_preserves_unification():
@@ -47,7 +50,7 @@ def test_normalize_variables_preserves_unification():
     a, b, c, d = constants('a, b, c, d')
 
     e1 = expr(v.x, (v.y, v.z), d)
-    e2 = normalize_variables(e1)
+    e2, _ = normalize_variables(e1)
 
     e3 = expr(a, (b, c), d)
 
@@ -76,10 +79,14 @@ def test_normalize_variables_with_source_makes_expressions_equal():
     assert e1 != e4
     assert e1 != e_diff
 
-    assert normalize_variables(e1, variable_source=norm) == normalize_variables(e2, variable_source=norm)
-    assert normalize_variables(e1, variable_source=norm) == normalize_variables(e3, variable_source=norm)
-    assert normalize_variables(e1, variable_source=norm) == normalize_variables(e4, variable_source=norm)
-    assert normalize_variables(e1, variable_source=norm) != normalize_variables(e_diff, variable_source=norm)
+    assert normalize_variables(e1, variable_source=norm)[0] == normalize_variables(e2, variable_source=norm)[0]
+    assert normalize_variables(e1, variable_source=norm)[1] != normalize_variables(e2, variable_source=norm)[1]
+    assert normalize_variables(e1, variable_source=norm)[0] == normalize_variables(e3, variable_source=norm)[0]
+    assert normalize_variables(e1, variable_source=norm)[1] != normalize_variables(e3, variable_source=norm)[1]
+    assert normalize_variables(e1, variable_source=norm)[0] == normalize_variables(e4, variable_source=norm)[0]
+    assert normalize_variables(e1, variable_source=norm)[1] != normalize_variables(e4, variable_source=norm)[1]
+    assert normalize_variables(e1, variable_source=norm)[0] != normalize_variables(e_diff, variable_source=norm)[0]
+    assert normalize_variables(e1, variable_source=norm)[1] != normalize_variables(e_diff, variable_source=norm)[1]
 
 
 def test_all_variables_in_single_variable():

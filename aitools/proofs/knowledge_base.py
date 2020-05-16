@@ -60,8 +60,9 @@ class KnowledgeBase:
         No proofs are searched, so either a formula is **IN** the KB, or nothing will be returned."""
         # TODO here I am performing unification twice! I need to optimize this
         for expr, _ in self._storage.search_unifiable(other=formula):
+            normalized_expr, _ = normalize_variables(expr)
             subst = Substitution.unify(
-                normalize_variables(expr), formula,
+                normalized_expr, formula,
                 previous=previous_substitution
             )
 
@@ -70,7 +71,8 @@ class KnowledgeBase:
 
     def add_formulas(self, *formulas: Expression):
         """Adds all of the given formulas to the currently known formulas."""
-        formulas = tuple(normalize_variables(f, variable_source=self._variable_source) for f in formulas)
+        normalized_formulas = (normalize_variables(f, variable_source=self._variable_source) for f in formulas)
+        formulas = tuple(res for res, _ in normalized_formulas)
 
         self._storage.add(*formulas)
 
