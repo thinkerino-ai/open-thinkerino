@@ -8,13 +8,13 @@ On the other hand, calling `prove(IsPrime(v.x))` might yield an infinite sequenc
 
 "The right configuration" means having appropriate `Prover`s added to the knowledge base.
 
-In fact, even checking if a formula is **directly** known (i.e. contained in the knowledge base's storage) is achieved with a built-in `Prover` called `KnowledgeRetriever` (see section [Built-in Provers](#Built-in Provers)).
+In fact, even checking if a formula is **directly** known (i.e. contained in the knowledge base's storage) is achieved with a built-in `Prover` which acts as a knowledge retriever (see section [Built-in Provers](#Built-in Provers)).
 
 ## Prover Objects
 
 A `Prover` is built by passing:
 
-- a "proven formula", which is what the `Prover` can prove (e.g. `IsPrime(?number)`)
+- a "listened formula", which is what the `Prover` can prove (e.g. `IsPrime(?number)`)
 - a "handler" function, which will be called when the prover is triggered
 - an `argument_mode` enum value, which will determine how the triggering formula will be passed to the handler (see after the example right below)
 - a `pass_substitution_as` value, which can be `None`, a string or the `Ellipsis` (`...`), and determines if and how the handler receives a substitution
@@ -32,7 +32,7 @@ v = VariableSource()
 
 prover = Prover(
     handler=is_prime, 
-    proven_formula=IsPrime(v.number), 
+    listened_formula=IsPrime(v.number), 
     argument_mode=HandlerArgumentMode.MAP_UNWRAPPED,
     pass_substitution_as=...,
     pure=True, 
@@ -55,7 +55,7 @@ The possible values are:
 - `MAP_UNWRAPPED_NO_VARIABLES`: like `MAP`, but automatically unwraps `LogicWrapper`s and input variables can't be bound to logic `Variable`s
 - `MAP_NO_VARIABLES`: like `MAP`, but input variables can't be bound to logic `Variable`s
 
-With the `MAP*` options, `Variable` names in the trigger formula are matched to arguments in the handler, and it is required that **no homonymous variables are present** (although the same variable repeated is allowed) and that **all arguments in the handler must be present as variable names in the proven formula**, with the exception of the substitution (see right below the discussion of `pass_substitution_as`). Using a `VariableSource` is advised, to guarantee that a single name is associated to the same variable.
+With the `MAP*` options, `Variable` names in the trigger formula are matched to arguments in the handler, and it is required that **no homonymous variables are present** (although the same variable repeated is allowed) and that **all arguments in the handler must be present as variable names in the listened formula**, with the exception of the substitution (see right below the discussion of `pass_substitution_as`). Using a `VariableSource` is advised, to guarantee that a single name is associated to the same variable.
 
 With the `RAW` option, the handler must take two argument: the first named "formula" and the second named according to` pass_substitution_as`. Homonymous variables are allowed.
 
@@ -86,7 +86,7 @@ For all non-`None` and non-boolean values, an iterable of them is allowed (inclu
     
 ## Proof Process
 
-The `KnowledgeBase.prove(formula)` method starts a "proof" process, which proceeds as follows:
+The `KnowledgeBase.prove(formula, *, retrieve_only, previous_substitution)` method starts a "proof" process, which proceeds as follows:
 
 1. all provers that can prove the formula are retrieved
 2. each prover's `prove(formula)` method is called, which in turn will call the handler, possibly passing the substitution (depending on `pass_substitution_as`)
@@ -105,12 +105,12 @@ The proof process returns zero or more `Proof`s, based on what the single prover
 
 The `KnowledgeBase.prove(...)` method also accepts two further arguments:
 
-- `retrieve_only`, if `True`, the only prover that will be used is the `KnowledgeRetriever` thus preventing any form of inference (see section [Built-in Provers](#Built-in Provers)
-- `previous_substitution`, a `Substitution` which will be passed down the line to any `Prover.prove` call 
+- `retrieve_only`, if `True`, the only prover that will be used is the `KnowledgeRetriever` thus preventing any form of inference (see section [Built-in Provers](#Built-in Provers), the default is `False`
+- `previous_substitution`, a `Substitution` which will be passed down the line to any `Prover.prove` call, the default is `None` 
 
 ## Open Formulas
 
-Note that no constraint is placed on the proven_formula: it can be an open formula, and the proof process will gracefully skip any prover that does not support it, such as those with `MAP_NO_VARIABLES` mode.
+Note that no constraint is placed on the listened_formula: it can be an open formula, and the proof process will gracefully skip any prover that does not support it, such as those with `MAP_NO_VARIABLES` mode.
 
 The `RAW` mode directly receives the formula, while the `MAP*` modes can receive the variables directly as arguments.
 
@@ -122,9 +122,10 @@ In these cases, also passing the substitution to the handler is necessary, so th
 
 The currently built-in provers are the following:
 
-- `KnowledgeRetriever`: a `RAW` mode prover, which searches for the input formula in the `KnowledgeBase`s storage
 - `RestrictedModusPonens`: a `RAW` mode prover which implements Modus Ponens (given `P`, it search for proofs of `Implies(?Q, P)` and, if successful, `?Q`), but won't take formulas like `Implies(?A, ?B)` as its input, to avoid infinite loops (this limitation might be removed in the future)
 - `ClosedWorldAssumption`: a `RAW` mode prover which will only prove formulas like `Not(?P)`, and will return `True` if it cannot find a proof for `?P` (see [Semantics](#Semantics) and [Closed-world Assumption](#Closed-world Assumption) below)
+
+Furthermore, every `KnowledgeBase` internally defines a "knowledge retriever", which accesses the internal storage.
 
 ## Semantics
 
@@ -145,7 +146,7 @@ It is perfectly reasonable that such handlers return `True` or `False`: why woul
 How do you prove that a number is not prime? There is quite a simple solution:
 
 1. create a new handler function `is_not_prime(x)` that returns `not is_prime(x)`
-2. register a `Prover(proven_formula=Not(IsPrime(v.x)), handler=is_not_prime, ...)`
+2. register a `Prover(listened_formula=Not(IsPrime(v.x)), handler=is_not_prime, ...)`
 
 This will turn every `False` value to `True`, making the whole process work.
 
@@ -171,7 +172,7 @@ I can't think of a reasonable example right now for provers, so anyone intereste
 
 Provers are part of the machinery, not the data.
 
-Provers are pure Python objects, that expose a "proven formula", which is used to index them in a separate in-memory storage. When a formula is being proven, it is matched with those in the provers storage to retrieve the correct provers.
+Provers are pure Python objects, that expose a "listened formula", which is used to index them in a separate in-memory storage. When a formula is being proven, it is matched with those in the provers storage to retrieve the correct provers.
 
 This means that provers should be added "statically" when the knowledge base is being set up, and not dynamically by listeners (although this is not enforced, since some listeners could be part of the setup process if `ponder` is called on some "configuration formulas") (note: I am not considering the case where provers add other provers since I don't think it is reasonable).
 
@@ -179,7 +180,7 @@ This may be limiting, as we may want to allow the user to dinamically add new in
 
 More generally, at least two approaches are possible:
 
-- create a single prover that can prove any formula (i.e. its proven formula is a `Variable`)
+- create a single prover that can prove any formula (i.e. its listened formula is a `Variable`)
   - the handler would be called in `RAW` mode and would:
     - search for `ProveWith(formula, ?handler)` on the knowledge base, where `?handler` will be bound to a user-defined handler
     - ask `?handler` to prove the formula

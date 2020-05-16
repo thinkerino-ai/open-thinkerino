@@ -1,17 +1,16 @@
-import itertools
 import logging
 import typing
 from collections import deque
 from contextlib import contextmanager
 from typing import Iterable
 
-from aitools.logic import Expression, Substitution, LogicObject
+from aitools.logic import Expression, Substitution, LogicObject, Variable
 from aitools.logic.utils import normalize_variables, VariableSource
+from aitools.proofs.builtin_provers import RestrictedModusPonens
+from aitools.proofs.components import HandlerArgumentMode, HandlerSafety
 from aitools.proofs.context import contextual
 from aitools.proofs.listeners import Listener, PonderMode, TriggeringFormula
-from aitools.proofs.provers import OLD_Prover, ProofSet, Proof
-from aitools.proofs.builtin_provers import KnowledgeRetriever, RestrictedModusPonens
-from aitools.proofs.utils import EmbeddedProver
+from aitools.proofs.provers import Proof, Prover
 from aitools.storage.base import LogicObjectStorage
 from aitools.storage.implementations.dummy import DummyAbstruseIndex
 from aitools.storage.index import AbstruseIndex, make_key
@@ -24,10 +23,11 @@ class KnowledgeBase:
     def __init__(self, storage: LogicObjectStorage):
         self._storage = storage
         self._variable_source = VariableSource()
-        self._provers: typing.Set[OLD_Prover] = set()
+
+        self._prover_storage: AbstruseIndex[Prover] = DummyAbstruseIndex()
         self._listener_storage: AbstruseIndex[Listener] = DummyAbstruseIndex()
-        self.knowledge_retriever: OLD_Prover = KnowledgeRetriever()
-        self._initialize_default_provers()
+
+        self.knowledge_retriever: Prover = self.__make_knowledge_retriever()
 
     def supports_transactions(self) -> bool:
         return self._storage.supports_transactions()
@@ -43,9 +43,16 @@ class KnowledgeBase:
     def rollback(self):
         self._storage.rollback()
 
-    def _initialize_default_provers(self):
-        # TODO although it's quite a standard proving strategy, I really don't like having MP as a default...
-        self.add_provers(RestrictedModusPonens())
+    def __make_knowledge_retriever(self):
+        def retrieve_knowledge(formula, substitution):
+            for substitution in self._retrieve(formula, previous_substitution=substitution):
+                yield substitution
+
+        # this is impure to ensure it is always called during proof verification
+        return Prover(
+            listened_formula=Variable(), handler=retrieve_knowledge, argument_mode=HandlerArgumentMode.RAW,
+            pass_substitution_as=..., pure=False, safety=HandlerSafety.SAFE
+        )
 
     def _retrieve(self, formula: Expression, *,
                   previous_substitution: Substitution = None) -> Iterable[Substitution]:
@@ -67,15 +74,9 @@ class KnowledgeBase:
 
         self._storage.add(*formulas)
 
-    def add_provers(self, *provers):
-        for p in provers:
-            if isinstance(p, OLD_Prover):
-                self._add_prover(p)
-            else:
-                self._add_prover(EmbeddedProver(p.wrapped_function, p.formula))
-
-    def _add_prover(self, prover):
-        self._provers.add(prover)
+    def add_prover(self, prover: Prover):
+        key = make_key(prover.listened_formula)
+        self._prover_storage.add(key, prover)
 
     def add_listener(self, listener: Listener):
         key = make_key(listener.listened_formula)
@@ -84,44 +85,37 @@ class KnowledgeBase:
     def __len__(self):
         return len(self._storage)
 
-    # TODO 'formula' shouldn't be an Expression, because I could be trying to "prove a variable" (is this true? o.o I'm so sleepy)
-    def old_prove(self, formula: Expression, *, retrieve_only: bool = False, truth: bool = True,
-                  previous_substitution=None) -> ProofSet:
-        """Backward search to prove a given formulas using all known provers"""
-        logger.info("Trying to prove %s to be %s with previous substitution %s", formula, truth, previous_substitution)
+    def prove(self, formula: LogicObject, *, retrieve_only: bool = False,
+              previous_substitution: typing.Optional[Substitution] = None):
+        logger.info("Trying to prove %s with previous substitution %s", formula, previous_substitution)
 
         previous_substitution = previous_substitution or Substitution()
 
         proof_sources: typing.Deque[Iterable[Proof]] = deque()
         proof_sources.append(
-            self.knowledge_retriever(formula, _kb=self, _truth=truth, _previous_substitution=previous_substitution)
+            self.knowledge_retriever.prove(formula, previous_substitution=previous_substitution)
         )
 
         if not retrieve_only:
             proof_sources.extend(
-                prover(formula, _kb=self, _truth=truth, _previous_substitution=previous_substitution)
-                for prover in self._provers
+                prover.prove(formula, previous_substitution=previous_substitution)
+                for prover in self.get_provers_for(formula)
             )
-
-            _embedded_prover: OLD_Prover = getattr(formula, '_embedded_prover', None)
-            if _embedded_prover is not None:
-                proof_sources.appendleft(_embedded_prover(formula=formula, _kb=self, _truth=truth))
 
         @contextual('kb', self)
         def _inner():
             while any(proof_sources):
                 source = proof_sources.popleft().__iter__()
-                logger.debug("Trying to prove %s with %s", formula, source)
                 try:
                     new_proof = next(source)
-                    logger.debug("Found a proof...")
                 except StopIteration:
                     pass
                 else:
                     proof_sources.append(source)
                     yield new_proof
 
-        return ProofSet(_inner())
+        for proof in _inner():
+            yield proof
 
     def ponder(self, *formulas: Iterable[LogicObject], ponder_mode: PonderMode):
         @contextual('kb', self)
@@ -171,12 +165,12 @@ class KnowledgeBase:
             raise NotImplementedError("This case requires hypotheses to be implemented :P")
         elif ponder_mode == PonderMode.KNOWN:
             input_sources = (
-                (lambda f: self.old_prove(f, retrieve_only=True))(formula)
+                (lambda f: self.prove(f, retrieve_only=True))(formula)
                 for formula in formulas
             )
         elif ponder_mode == PonderMode.PROVE:
             input_sources = (
-                (lambda f: self.old_prove(f))(formula)
+                (lambda f: self.prove(f))(formula)
                 for formula in formulas
             )
         else:
@@ -186,3 +180,7 @@ class KnowledgeBase:
     def get_listeners_for(self, formula):
         key = make_key(formula)
         yield from self._listener_storage.retrieve(key)
+
+    def get_provers_for(self, formula):
+        key = make_key(formula)
+        yield from self._prover_storage.retrieve(key)

@@ -10,7 +10,6 @@ from aitools.proofs.listeners import Listener, PonderMode, TriggeringFormula, \
     FormulaSubstitutionPremises, FormulaSubstitution
 from aitools.proofs.components import HandlerArgumentMode, HandlerSafety
 from aitools.proofs.provers import Proof
-from aitools.proofs.builtin_provers import KnowledgeRetriever
 
 
 def test_listener_with_just_side_effects(test_knowledge_base):
@@ -240,7 +239,7 @@ def test_single_result_substitution_single_premise_triple(test_knowledge_base):
 
     assert set(p.conclusion for p in proofs) == {Meows(dylan)}
     assert set(p.conclusion for p in proofs[0].premises) == {SomeDumbTruth, Is(dylan, cat)}
-    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, KnowledgeRetriever}
+    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, OLD_KnowledgeRetriever}
 
 
 def test_multiple_results_substitution_multiple_premises_triple(test_knowledge_base):
@@ -269,9 +268,9 @@ def test_multiple_results_substitution_multiple_premises_triple(test_knowledge_b
 
     assert set(p.conclusion for p in proofs) == {Meows(dylan)}
     assert set(p.conclusion for p in proofs[0].premises) == {SomeDumbTruth, SomeOtherDumbTruth, Is(dylan, cat)}
-    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, KnowledgeRetriever}
+    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, OLD_KnowledgeRetriever}
     assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, TriggeringFormula)) == 1
-    assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, KnowledgeRetriever)) == 2
+    assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, OLD_KnowledgeRetriever)) == 2
 
 
 def test_single_result_substitution_pair(test_knowledge_base):
@@ -351,7 +350,7 @@ def test_single_formula_substitution_premises_dataclass(test_knowledge_base):
 
     assert set(p.conclusion for p in proofs) == {Meows(dylan)}
     assert set(p.conclusion for p in proofs[0].premises) == {SomeDumbTruth, Is(dylan, cat)}
-    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, KnowledgeRetriever}
+    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, OLD_KnowledgeRetriever}
 
 
 def test_multiple_results_substitution_multiple_premises_dataclass(test_knowledge_base):
@@ -384,9 +383,9 @@ def test_multiple_results_substitution_multiple_premises_dataclass(test_knowledg
 
     assert set(p.conclusion for p in proofs) == {Meows(dylan)}
     assert set(p.conclusion for p in proofs[0].premises) == {SomeDumbTruth, SomeOtherDumbTruth, Is(dylan, cat)}
-    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, KnowledgeRetriever}
+    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, OLD_KnowledgeRetriever}
     assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, TriggeringFormula)) == 1
-    assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, KnowledgeRetriever)) == 2
+    assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, OLD_KnowledgeRetriever)) == 2
 
 
 def test_single_result_substitution_dataclass(test_knowledge_base):

@@ -32,8 +32,8 @@ context = Context()
 context.kb = None
 
 
-def prove(formula: Expression, truth: bool = True):
-    return context.kb.old_prove(formula, truth=truth)
+def prove(formula: Expression, previous_substitution=None):
+    return context.kb.prove(formula, previous_substitution=previous_substitution)
 
 
 def is_hypothetical_scenario() -> bool:

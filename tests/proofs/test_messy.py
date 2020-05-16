@@ -4,8 +4,6 @@ from aitools.logic import Variable, Expression
 from aitools.logic.utils import subst, constants, wrap, VariableSource
 from aitools.proofs.language import Implies, MagicPredicate, Not, And, Or
 from aitools.proofs.provers import Proof
-from aitools.proofs.builtin_provers import KnowledgeRetriever, NegationProver, DeclarativeProver
-from aitools.proofs.utils import predicate_function
 
 
 def test_retrieve_known_formula(test_knowledge_base):
@@ -119,7 +117,7 @@ def test_open_formulas_can_be_used_more_than_once(test_knowledge_base):
 
 def _is_known_formula_proof_of(proof: Proof, formula: Expression) -> bool:
     return (isinstance(proof, Proof) and not any(proof.premises) and
-            isinstance(proof.inference_rule, KnowledgeRetriever) and
+            isinstance(proof.inference_rule, OLD_KnowledgeRetriever) and
             proof.substitution.apply_to(formula) == proof.substitution.apply_to(proof.conclusion))
 
 
@@ -217,7 +215,6 @@ def test_deduction_chain(test_knowledge_base):
     assert len(proofs[0].premises) > 0
 
 
-@predicate_function
 def IsEven(n: int):
     if n % 2 == 0:
         return True
@@ -237,7 +234,6 @@ def test_simple_custom_prover_to_be_false(test_knowledge_base):
     assert any(test_knowledge_base.old_prove(IsEven(3), truth=False))
 
 
-@predicate_function
 def IsMultipleOf4(n: int):
     from aitools.proofs.context import prove
     if prove(IsEven(n // 2)):
@@ -280,7 +276,7 @@ def test_custom_prover_with_explicit_formula(test_knowledge_base):
 
     IsPayload = MagicPredicate()
 
-    @predicate_function(proves=IsPayload(v._x))
+    # @predicate_function(proves=IsPayload(v._x))
     def name_here_does_not_matter(x: dict):
         return isinstance(x, dict) and isinstance(x['code'], int) and isinstance(x['message'], str)
 
@@ -293,7 +289,7 @@ def test_custom_prover_with_explicit_formula(test_knowledge_base):
 
 def test_custom_prover_incomplete(test_knowledge_base):
     # this prover can only prove its formula in some cases
-    @predicate_function
+
     def IsPrime(n: int):
         if n in (2, 3, 5, 7):
             return True
@@ -314,7 +310,7 @@ def test_multiple_custom_provers_for_the_same_formula(test_knowledge_base):
     v = VariableSource()
     IsPrime = MagicPredicate()
 
-    @predicate_function(proves=IsPrime(v._n))
+    # @predicate_function(proves=IsPrime(v._n))
     def prime_prover_012345(_n: int):
         if _n in (2, 3, 5):
             return True
@@ -322,7 +318,7 @@ def test_multiple_custom_provers_for_the_same_formula(test_knowledge_base):
             return False
         return None
 
-    @predicate_function(proves=IsPrime(v._n))
+    # @predicate_function(proves=IsPrime(v._n))
     def prime_prover_456789(_n: int):
         if _n in (5, 7):
             return True
@@ -347,7 +343,7 @@ def test_multiple_custom_provers_for_the_same_formula(test_knowledge_base):
 def test_prover_returning_substitutions(test_knowledge_base):
     v = VariableSource()
 
-    @predicate_function
+
     def Likes(_x: str, _y: str):
         """We prove that lisa likes nelson and milhouse likes lisa.
         We also prove that nobody likes milhouse."""
@@ -395,7 +391,7 @@ def test_prover_returning_substitutions(test_knowledge_base):
 def test_prover_returning_substitution_false(test_knowledge_base):
     v = VariableSource()
 
-    @predicate_function
+
     def Likes(_x, _y):
         if _x == "lisa" and isinstance(_y, Variable):
             return False, subst((wrap("milhouse"), [_y]))
@@ -412,7 +408,7 @@ def test_prover_returning_substitution_false(test_knowledge_base):
 def test_prover_returning_multiple_results(test_knowledge_base):
     v = VariableSource()
 
-    @predicate_function
+
     def In(_x, _collection):
 
         if isinstance(_x, Variable):

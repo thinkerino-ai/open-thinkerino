@@ -19,6 +19,7 @@ class HandlerSafety(Enum):
     SAFE_FOR_HYPOTHESES = auto()
     SAFE = auto()
 
+
 # TODO make this generic in the handler return type
 class Component:
     def __init__(self, *,

@@ -5,11 +5,11 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Iterable, Collection, Union
 
-from aitools.logic import Expression, Substitution, LogicObject
+from aitools.logic import Substitution, LogicObject
 from aitools.proofs import context
 from aitools.proofs.components import HandlerSafety, Component
 from aitools.proofs.exceptions import UnsafeOperationException
-from aitools.proofs.provers import Proof, OLD_Prover
+from aitools.proofs.provers import Proof
 
 
 class PonderMode(Enum):
@@ -18,10 +18,8 @@ class PonderMode(Enum):
     HYPOTHETICALLY = auto()
 
 
-class TriggeringFormula(OLD_Prover):
-    def __call__(self, formula: Expression, _kb=None, _truth: bool = True,
-                 _previous_substitution: Substitution = None) -> Iterable[Proof]:
-        raise TypeError('This is a "fake" prover, don\'t try to use it')
+class TriggeringFormula:
+    pass
 
 
 @dataclass
@@ -38,13 +36,9 @@ class FormulaSubstitutionPremises:
 
 
 @dataclass
-class Pondering(OLD_Prover):
+class Pondering:
     listener: Listener
     triggering_formula: LogicObject
-
-    def __call__(self, formula: Expression, _kb=None, _truth: bool = True,
-                 _previous_substitution: Substitution = None) -> Iterable[Proof]:
-        raise TypeError('This is a "fake" prover, don\'t try to use it')
 
 
 class Listener(Component):

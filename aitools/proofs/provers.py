@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Union, Collection
+from typing import Iterable, Union, Collection, Any
 
 from aitools.logic import Substitution, Expression, LogicObject
 from aitools.proofs.components import Component, HandlerSafety
@@ -101,28 +101,10 @@ class Prover(Component):
                 yield proof
 
 
-
-class OLD_Prover:
-    def __call__(self, formula: Expression, _kb=None, _truth: bool = True,
-                 _previous_substitution: Substitution = None) -> Iterable[Proof]:
-        raise NotImplementedError
-
-
 @dataclass(frozen=True)
 class Proof:
-    # TODO inference_rule should be a Verifier or something, so that Listener and Prover have equal "dignity"
-    inference_rule: OLD_Prover
+    # TODO inference_rule should be a Verifier or something
+    inference_rule: Any
     conclusion: Expression
     substitution: Substitution
     premises: Iterable[Proof] = ()
-
-
-class ProofSet:
-    def __init__(self, proofs: Iterable[Proof]):
-        self._proofs = proofs
-
-    def __iter__(self):
-        return self._proofs.__iter__()
-
-    def __bool__(self):
-        return any(self._proofs)
