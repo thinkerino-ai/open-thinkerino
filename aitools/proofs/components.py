@@ -26,6 +26,7 @@ class Component:
                  listened_formula: LogicObject, handler: Callable,
                  argument_mode: HandlerArgumentMode, pass_substitution_as=...,
                  pure: bool, safety: HandlerSafety):
+
         self._normalization_variable_source = VariableSource()
 
         self.handler = handler
@@ -139,3 +140,6 @@ class Component:
             args_by_name[self.pass_substitution_as] = unifier
 
         return args_by_name
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.handler.__module__}.{self.handler.__name__})"

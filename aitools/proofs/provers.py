@@ -46,7 +46,7 @@ class Prover(Component):
 
         # if the handler returned a single value, wrap it in a tuple to make it iterable
         if (
-                isinstance(result, (Substitution, TruthSubstitution, TruthSubstitutionPremises)) or
+                isinstance(result, (bool, Substitution, TruthSubstitution, TruthSubstitutionPremises)) or
                 # the result is a pair or a triple, but not "made of results
                 (
                         isinstance(result, tuple) and

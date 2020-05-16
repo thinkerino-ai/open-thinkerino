@@ -57,8 +57,8 @@ def run_basic_benchmark(storage_implementations, formulas):
                         results.append(res_f)
             tend = datetime.now()
             print(f"\t{tend - tadded} to retrieve")
-            print(len(results))
-            print(len(set(results)))
+            print("total retrieved formulas:", len(results))
+            print("total unique retrieved formulas:", len(set(results)))
             print("-----------------------------------------------------------------")
 
 

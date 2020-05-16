@@ -5,7 +5,7 @@ from aitools.logic import LogicObject, LogicWrapper, Constant
 from aitools.logic.utils import constants
 
 
-class MagicPredicate(LogicObject):
+class MagicPredicate(Constant):
     def __call__(self, *other_children):
         return super().__call__(*(c if isinstance(c, LogicObject) else LogicWrapper(c) for c in other_children))
 
