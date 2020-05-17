@@ -44,20 +44,21 @@ def run_basic_benchmark(storage_implementations, formulas):
 
             print(f"storage :{storage_implementation.__name__}")
             with transaction_manager():
-                storage.add(*[normalize_variables(f) for f in formulas])
+                normalized_formulas = (normalize_variables(f) for f in formulas)
+                storage.add(*[res for res, _ in normalized_formulas])
 
             tadded = datetime.now()
             print(f"\t{tadded - tstart} to insert")
             results = []
             with transaction_manager():
                 for f in formulas:
-                    f = normalize_variables(f)
+                    f, _ = normalize_variables(f)
                     for res_f, _ in storage.search_unifiable(f):
                         results.append(res_f)
             tend = datetime.now()
             print(f"\t{tend - tadded} to retrieve")
-            print(len(results))
-            print(len(set(results)))
+            print("total retrieved formulas:", len(results))
+            print("total unique retrieved formulas:", len(set(results)))
             print("-----------------------------------------------------------------")
 
 

@@ -3,13 +3,14 @@ from typing import List
 
 import pytest
 
-from aitools.logic import Substitution, LogicWrapper, LogicObject, Variable
+from aitools.logic import Substitution, LogicWrapper, LogicObject, Variable, Constant
 from aitools.logic.utils import VariableSource, constants, wrap
+from aitools.proofs.builtin_provers import RestrictedModusPonens
 from aitools.proofs.language import Implies, Not
-from aitools.proofs.listeners import Listener, HandlerArgumentMode, HandlerSafety, PonderMode, TriggeringFormula, \
+from aitools.proofs.listeners import Listener, PonderMode, TriggeringFormula, \
     FormulaSubstitutionPremises, FormulaSubstitution
-from aitools.proofs.proof import Proof
-from aitools.proofs.provers import KnowledgeRetriever
+from aitools.proofs.components import HandlerArgumentMode, HandlerSafety
+from aitools.proofs.provers import Proof
 
 
 def test_listener_with_just_side_effects(test_knowledge_base):
@@ -221,13 +222,13 @@ def test_single_result_substitution_single_premise_triple(test_knowledge_base):
     v = VariableSource()
     Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
 
-    def deduce_meow_and_purr(_x):
-        from aitools.proofs.context import prove
-        proofs = list(prove(SomeDumbTruth))
+    def deduce_meow_and_purr(_x, kb):
+        proofs = list(kb.prove(SomeDumbTruth))
         return Meows(_x), proofs[0].substitution, proofs[0]
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
-                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+                        argument_mode=HandlerArgumentMode.MAP, pass_knowledge_base_as='kb',
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
     test_knowledge_base.add_formulas(
@@ -239,7 +240,10 @@ def test_single_result_substitution_single_premise_triple(test_knowledge_base):
 
     assert set(p.conclusion for p in proofs) == {Meows(dylan)}
     assert set(p.conclusion for p in proofs[0].premises) == {SomeDumbTruth, Is(dylan, cat)}
-    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, KnowledgeRetriever}
+    assert set(p.inference_rule for p in proofs[0].premises) == {
+        TriggeringFormula(),
+        test_knowledge_base.knowledge_retriever
+    }
 
 
 def test_multiple_results_substitution_multiple_premises_triple(test_knowledge_base):
@@ -248,14 +252,14 @@ def test_multiple_results_substitution_multiple_premises_triple(test_knowledge_b
         'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
     )
 
-    def deduce_meow_and_purr(_x):
-        from aitools.proofs.context import prove
-        for proof in prove(SomeDumbTruth):
-            for other_proof in prove(SomeOtherDumbTruth):
+    def deduce_meow_and_purr(_x, kb):
+        for proof in kb.prove(SomeDumbTruth):
+            for other_proof in kb.prove(SomeOtherDumbTruth):
                 yield Meows(_x), other_proof.substitution, (proof, other_proof)
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
-                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+                        argument_mode=HandlerArgumentMode.MAP, pass_knowledge_base_as='kb',
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
     test_knowledge_base.add_formulas(
@@ -268,9 +272,14 @@ def test_multiple_results_substitution_multiple_premises_triple(test_knowledge_b
 
     assert set(p.conclusion for p in proofs) == {Meows(dylan)}
     assert set(p.conclusion for p in proofs[0].premises) == {SomeDumbTruth, SomeOtherDumbTruth, Is(dylan, cat)}
-    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, KnowledgeRetriever}
+
+    assert set(p.inference_rule for p in proofs[0].premises) == {
+        TriggeringFormula(),
+        test_knowledge_base.knowledge_retriever
+    }
+
     assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, TriggeringFormula)) == 1
-    assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, KnowledgeRetriever)) == 2
+    assert sum(1 for p in proofs[0].premises if p.inference_rule is test_knowledge_base.knowledge_retriever) == 2
 
 
 def test_single_result_substitution_pair(test_knowledge_base):
@@ -280,8 +289,6 @@ def test_single_result_substitution_pair(test_knowledge_base):
     some_subst = Substitution()
 
     def deduce_meow_and_purr(_x):
-        from aitools.proofs.context import prove
-        proofs = list(prove(SomeDumbTruth))
         return Meows(_x), some_subst
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
@@ -332,13 +339,13 @@ def test_single_formula_substitution_premises_dataclass(test_knowledge_base):
     v = VariableSource()
     Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
 
-    def deduce_meow_and_purr(_x):
-        from aitools.proofs.context import prove
-        proofs = list(prove(SomeDumbTruth))
+    def deduce_meow_and_purr(_x, kb):
+        proofs = list(kb.prove(SomeDumbTruth))
         return FormulaSubstitutionPremises(formula=Meows(_x), substitution=proofs[0].substitution, premises=proofs[0])
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
-                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+                        argument_mode=HandlerArgumentMode.MAP, pass_knowledge_base_as='kb',
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
     test_knowledge_base.add_formulas(
@@ -350,7 +357,10 @@ def test_single_formula_substitution_premises_dataclass(test_knowledge_base):
 
     assert set(p.conclusion for p in proofs) == {Meows(dylan)}
     assert set(p.conclusion for p in proofs[0].premises) == {SomeDumbTruth, Is(dylan, cat)}
-    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, KnowledgeRetriever}
+    assert set(p.inference_rule for p in proofs[0].premises) == {
+        TriggeringFormula(),
+        test_knowledge_base.knowledge_retriever
+    }
 
 
 def test_multiple_results_substitution_multiple_premises_dataclass(test_knowledge_base):
@@ -359,10 +369,9 @@ def test_multiple_results_substitution_multiple_premises_dataclass(test_knowledg
         'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
     )
 
-    def deduce_meow_and_purr(_x):
-        from aitools.proofs.context import prove
-        for proof in prove(SomeDumbTruth):
-            for other_proof in prove(SomeOtherDumbTruth):
+    def deduce_meow_and_purr(_x, kb):
+        for proof in kb.prove(SomeDumbTruth):
+            for other_proof in kb.prove(SomeOtherDumbTruth):
                 yield FormulaSubstitutionPremises(
                     formula=Meows(_x),
                     substitution=other_proof.substitution,
@@ -370,7 +379,8 @@ def test_multiple_results_substitution_multiple_premises_dataclass(test_knowledg
                 )
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
-                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+                        argument_mode=HandlerArgumentMode.MAP, pass_knowledge_base_as='kb',
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
     test_knowledge_base.add_formulas(
@@ -383,9 +393,14 @@ def test_multiple_results_substitution_multiple_premises_dataclass(test_knowledg
 
     assert set(p.conclusion for p in proofs) == {Meows(dylan)}
     assert set(p.conclusion for p in proofs[0].premises) == {SomeDumbTruth, SomeOtherDumbTruth, Is(dylan, cat)}
-    assert set(type(p.inference_rule) for p in proofs[0].premises) == {TriggeringFormula, KnowledgeRetriever}
+
+    assert set(p.inference_rule for p in proofs[0].premises) == {
+        TriggeringFormula(),
+        test_knowledge_base.knowledge_retriever
+    }
+
     assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, TriggeringFormula)) == 1
-    assert sum(1 for p in proofs[0].premises if isinstance(p.inference_rule, KnowledgeRetriever)) == 2
+    assert sum(1 for p in proofs[0].premises if p.inference_rule is test_knowledge_base.knowledge_retriever) == 2
 
 
 def test_single_result_substitution_dataclass(test_knowledge_base):
@@ -395,8 +410,6 @@ def test_single_result_substitution_dataclass(test_knowledge_base):
     some_subst = Substitution()
 
     def deduce_meow_and_purr(_x):
-        from aitools.proofs.context import prove
-        list(prove(SomeDumbTruth))
         return FormulaSubstitution(formula=Meows(_x), substitution=some_subst)
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
@@ -476,6 +489,30 @@ def test_listener_chain(test_knowledge_base):
     assert list(p.conclusion for p in proofs) == [B(foo), C(foo), D(foo)]
 
 
+def test_listener_chain_normalizes_listened_formula(test_knowledge_base):
+    v = VariableSource()
+
+    IsNatural = Constant(name="IsNatural")
+
+    calls = []
+    def countdown(x: int):
+        if x > 0:
+            calls.append(x)
+            return IsNatural(wrap(x - 1))
+
+    test_knowledge_base.add_listener(Listener(
+        listened_formula=IsNatural(v.x), handler=countdown, argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED,
+        pure=True, safety=HandlerSafety.SAFE
+    ))
+
+    test_knowledge_base.add_formulas(IsNatural(wrap(5)))
+
+    proofs = list(test_knowledge_base.ponder(IsNatural(wrap(5)), ponder_mode=PonderMode.KNOWN))
+
+    assert set(p.conclusion for p in proofs) == set(IsNatural(wrap(n)) for n in range(0, 5))
+    assert calls == list(range(5, 0, -1))
+
+
 def test_trigger_with_open_formula__known(test_knowledge_base):
     v = VariableSource()
 
@@ -515,6 +552,7 @@ def test_trigger_with_open_formula__prove(test_knowledge_base):
                         pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
+    test_knowledge_base.add_prover(RestrictedModusPonens)
 
     test_knowledge_base.add_formulas(
         Is(v.x, kitten) << Implies >> Is(v.x, cat),
@@ -583,10 +621,35 @@ def test_listener_argument_mode_raw(test_knowledge_base):
 
     assert len(proofs) == 0
 
-    assert call_args == dict(
-        formula=Is(dylan, cat),
-        substitution=Substitution.unify(Is(v.cat, cat), Is(dylan, cat))
-    )
+    assert call_args['formula'] == Is(dylan, cat)
+    assert isinstance(call_args['substitution'], Substitution)
+
+
+def test_listener_argument_mode_raw_with_open_input(test_knowledge_base):
+    v_listener = VariableSource()
+    v_process = VariableSource()
+
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
+
+    call_args = {}
+
+    def handler(formula, substitution):
+        call_args.update(formula=formula, substitution=substitution)
+
+    listened_formula = Is(v_listener.cat, cat)
+    listener = Listener(listened_formula=listened_formula, handler=handler, argument_mode=HandlerArgumentMode.RAW,
+                        pass_substitution_as='substitution', pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
+
+    test_knowledge_base.add_listener(listener)
+
+    test_knowledge_base.add_formulas(Is(dylan, cat))
+
+    proofs: List[Proof] = list(test_knowledge_base.ponder(Is(v_process.some_cat, cat), ponder_mode=PonderMode.KNOWN))
+
+    assert len(proofs) == 0
+
+    assert call_args['formula'] == Is(dylan, cat)
+    assert call_args['substitution'].apply_to(Is(v_process.some_cat, cat)) == Is(dylan, cat)
 
 
 def test_listener_argument_mode_raw_rejects_wrong_argument_names(test_knowledge_base):

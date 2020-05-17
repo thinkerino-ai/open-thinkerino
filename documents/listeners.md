@@ -13,6 +13,7 @@ A `Listener` is built by passing:
 - a "listened formula", which is what the `Listener` listens for (e.g. `EmailReceived(?email)`)
 - a "handler" function, which will be called when the listener triggers
 - an `argument_mode` enum value, which will determine how the triggering formula will be passed to the handler (see after the example right below)
+- a `pass_substitution_as` value, which can be `None`, a string or the `Ellipsis` (`...`), and determines if and how the handler receives a substitution
 - a `pure` boolean, which states whether the results produced by the listener are world-state-independent or not (see below [Verification](#Verification))
 - a `safety` enum value, which states whether the listener performs only "safe" operations (i.e. things you don't mind happening a second time, like reading from a database vs writing on it) and controls how it is called in "safe" scenarios (hypothetical or verification)
 
@@ -31,7 +32,7 @@ listener = Listener(
     argument_mode=HandlerArgumentMode.MAP_UNWRAPPED,
     pass_substitution_as=...,
     pure=True, 
-    safety=HandlerSafety.TotallyUnsafe
+    safety=HandlerSafety.TOTALLY_UNSAFE
 )
 
 kb.add_listener(listener)
@@ -39,7 +40,7 @@ kb.add_listener(listener)
 # I have no idea how to make this look realistic :P
 some_email = Email(sender="your friend", object="cat picture", body=...)
 
-kb.ponder(EmailReceived(wrap(some_email), closed=True)
+kb.ponder(EmailReceived(wrap(some_email))
 ```
 
 The `Listener` constructor argument `argument_mode=HandlerArgumentMode.UNWRAPPED_REQUIRED` tells the listener to unwrap a `LogicWrapper` before passing it to the function, and also to fail if an input variable is bound to anything but a `LogicWrapper` (intuitively, this is to write handlers that don't accept LogicObjects as inputs).
@@ -57,11 +58,21 @@ With the `MAP*` options, `Variable` names in the trigger formula are matched to 
 
 With the `RAW` option, the handler must take two argument: the first named "formula" and the second named according to` pass_substitution_as`. Homonymous variables are allowed.
 
-The `pass_substitution_as` argument determines if and how a substitution is passed to the handler, after being found by searching for proofs for a triggering formula (see [Pondering Process](#Pondering Process)). The possible values are:
+As stated above, the `pass_substitution_as` argument determines if and how a substitution is passed to the handler, after being found by searching for proofs for a triggering formula (see [Pondering Process](#Pondering Process)). The possible values are:
 
 - `...`/`Ellipsis` (the default): equivalent to `'substitution'` for `RAW` mode and to `None` for `MAP*` modes
 - `None`: no substitution is passed to the handler, unsupported in `RAW` mode
 - a string: the found substitution is passed to the handler as a keyword argument of the same name 
+
+NOTE: there is no guaranteed relationship between the substitution passed to the handler and the `listened_formula`. To underline this the `listened_formula` is normalized by the `Listener`'s constructor, so `listener.listened_formula` is actually another formula, with "renewed" variables.
+
+The `pass_knowledge_base_as` works similarly to `pass_substitution_as`, and allows to specify whether the handler will receive the current `KnowledgeBase` as input, and, if so, with what name. It accepts:
+
+- `...`/`Ellipsis` (the default): equivalent to `None`
+- `None`: no knowledge base is passed to the handler
+- a string: the current knowledge base is passed to the handler as a keyword argument of the same name
+
+Note that all values for `pass_knowledge_base_as` are allowed for all argument modes.
 
 The `safety` argument is an enumerative value of type `HandlerSafety` can have the following values:
 
@@ -69,12 +80,12 @@ The `safety` argument is an enumerative value of type `HandlerSafety` can have t
 - `TOTALLY_UNSAFE`: the listener performs "destructive" operations, and cannot be called in hypothetical scenarios or during verification
 - `SAFE_FOR_HYPOTHESES`: the listener performs "destructive" operations, but can be used in hypothetical scenarios (see below [Hypothetical Scenarios](#Hypothetical Scenarios)) 
 
-A handler can return:
+Besides performing arbitrary actions, a handler can return a variety of values, which intuitively mean that the handler has concluded some truth(s) from the triggering formula (and possibly further queries it performed):
 
 - nothing (`None`)
 - a `LogicObject`
 - a `Tuple[LogicObject, Substitution]`
-- a `Tuple[LogicObject, Substitution, Proof]` where the `Proof` is the premise under which the `LogicObject` is returned, and it will be packed in another proof (see [Pondering Process](#Pondering Process))
+- a `Tuple[LogicObject, Substitution, Proof]` where the `Proof` is the premise under which the result is returned, and it will be packed in another proof (see [Pondering Process](#Pondering Process))
     - instead of a single `Proof`, also an iterable of `Iterable[Proof]` is allowed
 - a `FormulaSubstitution` object
 - a `FormulaSubstitutionPremises` object
@@ -88,7 +99,7 @@ The `KnowledgeBase.ponder(formulas, ponder_mode)` method starts a "pondering" pr
 1. the formula is checked to be satisfiable with `KnowledgeBase.prove`, passing `retrieve_only` in accordance to the `ponder_mode` argument
 2. for each of the found proofs, all listeners that it can trigger are retrieved
 3. each listener's `ponder(proof)` method is called, which in turn will call the handler, possibly passing the substitution (depending on `pass_substitution_as`)
-4. each returned formula by the handler, with its substitution and premises (if any) is then packed in a `Proof` and yielded to the caller
+4. each formula returned by the handler, with its substitution and premises (if any) is then packed in a `Proof` and yielded to the caller
 5. each returned proof by the listener is also further used for step 2
 
 The process terminates if no more formulas are available, so it can be infinite, but is lazily-generated, so unless a single step takes forever this should be of little consequence.
@@ -101,9 +112,10 @@ The `ponder_mode` is an enumerative value of type `PonderMode` with the followin
 
 The pondering process returns zero or more `Proof`s, based on what the single listeners returned. Each proof will have:
 
-- as a conclusion, the formula returned by the listener's handler
+- as a conclusion, the formula returned by the handler
+- as a substitution, the substitution returned by the handler, or the one found before calling it if no substitution was returned
 - as premises
-    - all the premises returned by the listener's handler
+    - all the premises returned by the handler
     - the triggering formula, in turn wrapped in a proof, with any found proof due to the `ponder_mode` passed as its premises 
 - as inference rule, a `Pondering`, which wraps the listener and the triggering formula
 
@@ -149,7 +161,7 @@ This can be easily solved in at least two ways:
     - run the resulting bindings for `?action` with some "execute" functionality
   - when the user adds a new dynamic listener for a formula and an action, it is actually added as a new `ListenFor(formula, action)`
   - whenever a formula is pondered on, this listener will trigger and possibly do its thing
-- create a single listener that listens for `ListenFor(?formula, ?action)` (note that now `?formula` is a variable now)
+- create a single listener that listens for `ListenFor(?formula, ?action)` (note that `?formula` is a variable now)
   - the handler would just create and dynamically add a `Listener` to the knowledge base (yes, the very thing I said you shouldn't normally do :P)
     - its handler would just execute the action
   - during application set-up, retrieve and ponder on all `ListenFor(?formula, ?action)` formulas in the kb, so that listeners are initialized

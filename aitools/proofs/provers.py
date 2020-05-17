@@ -1,79 +1,113 @@
-import logging
-from typing import Iterable, List, Collection, Dict
+from __future__ import annotations
 
-from aitools.logic import Expression, Substitution, Variable
-from aitools.logic.utils import VariableSource, normalize_variables
-from aitools.proofs.language import Implies, Not
-from aitools.proofs.proof import Prover, Proof
+from dataclasses import dataclass
+from typing import Iterable, Union, Collection, Any
 
-logger = logging.getLogger(__name__)
-
-
-class KnowledgeRetriever(Prover):
-
-    def __call__(self, formula: Expression, _kb=None, _truth: bool = True, _previous_substitution: Substitution = None):
-        """Proves a formula to be true if it is found in the knowledge base"""
-        logger.info("KnowledgeRetriever trying to prove %s with substitution %s", formula, _previous_substitution)
-        for subst in _kb._retrieve(formula, previous_substitution=_previous_substitution):
-            logger.debug("Found a substitution: %s", subst)
-            if _truth:
-                yield Proof(inference_rule=self, conclusion=formula, substitution=subst)
+from aitools.logic import Substitution, Expression, LogicObject
+from aitools.logic.utils import normalize_variables
+from aitools.proofs.components import Component, HandlerSafety
+from aitools.proofs.exceptions import UnsafeOperationException
 
 
-class DeclarativeProver(Prover):
-    def __init__(self, *, premises: Iterable[Expression], conclusions: Iterable[Expression], **_kwargs):
-        self.premises = premises
-        self.conclusions = conclusions
-
-    def __call__(self, formula: Expression, _kb=None, _truth: bool = True,
-                 _previous_substitution: Substitution = None) -> Iterable[Proof]:
-        # can only prove formulas to be true
-        if _truth:
-            variable_mapping: Dict[Variable, Variable] = {}
-            normalized_conclusions = (normalize_variables(c, variable_mapping=variable_mapping)
-                                      for c in self.conclusions)
-            for conclusion in normalized_conclusions:
-                subst = Substitution.unify(formula, conclusion, previous=_previous_substitution)
-                if subst is not None:
-                    normalized_premises = (normalize_variables(p, variable_mapping=variable_mapping)
-                                           for p in self.premises)
-                    yield from self.__prove(_kb, conclusion, list(normalized_premises),
-                                            previous_substitution=subst, premises=[])
-
-    def __prove(self, kb, theorem: Expression, formulas: Collection[Expression], previous_substitution: Substitution,
-                premises: List[Proof]):
-        if len(formulas) == 0:
-            yield Proof(inference_rule=self, conclusion=theorem, substitution=previous_substitution,
-                        premises=tuple(premises))
-        else:
-            first, *rest = formulas
-            for proof in kb.prove(first, previous_substitution=previous_substitution):
-                yield from self.__prove(kb, theorem, rest, previous_substitution=previous_substitution,
-                                        premises=premises+[proof])
+@dataclass
+class TruthSubstitution:
+    truth: bool
+    substitution: Substitution
 
 
-class NegationProver(Prover):
-    def __call__(self, formula: Expression, _kb=None, _truth: bool = True, _previous_substitution: Substitution = None):
-        """Proves the negation of a formula to be True/False by proving the formula to be False/True (respectively)"""
-        if formula.children[0] == Not and len(formula.children) == 2:
-            for proof in _kb.prove(formula.children[1], truth=not _truth, previous_substitution=_previous_substitution):
-                yield Proof(inference_rule=self, conclusion=formula, substitution=proof.substitution, premises=(proof,))
+@dataclass
+class TruthSubstitutionPremises:
+    truth: bool
+    substitution: Substitution
+    premises: Union[Proof, Collection[Proof]]
 
 
-class RestrictedModusPonens(Prover):
-    """Restricted backward version of modus ponens, which won't perform recursive proof of implications.
-    Also, it can only prove formulas to be True"""
+class Prover(Component):
+    def prove(self, formula: LogicObject, *, previous_substitution: Substitution, knowledge_base) -> Iterable[Proof]:
+        if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
+            raise UnsafeOperationException("Unsafe listener cannot be used in hypothetical scenarios")
 
-    def __call__(self, formula: Expression, _kb=None, _truth: bool = True, _previous_substitution: Substitution = None):
-        v = VariableSource()
-        if _truth and isinstance(formula, Expression) and not formula.children[0] == Implies:
-            logger.info("RestrictedModusPonens trying to prove %s with substitution %s", formula, _previous_substitution)
-            rule_pattern = Implies(v._premise, formula)
+        normalized_listened_formula, normalization_mapping = normalize_variables(self.listened_formula)
+        unifier = Substitution.unify(formula, normalized_listened_formula, previous=previous_substitution)
 
-            for rule_proof in _kb.prove(rule_pattern, previous_substitution=_previous_substitution):
-                premise = rule_proof.substitution.get_bound_object_for(v._premise)
-                logger.debug("Found a proof for an implication, searching for a proof of the premise %s", premise)
-                for premise_proof in _kb.prove(premise, previous_substitution=rule_proof.substitution):
-                    logger.debug("Found a proof for the premise")
-                    yield Proof(inference_rule=self, conclusion=formula, substitution=premise_proof.substitution,
-                                premises=(rule_proof, premise_proof))
+        if unifier is None:
+            return
+
+        try:
+            args_by_name = self._extract_args_by_name(formula=formula, unifier=unifier,
+                                                      knowledge_base=knowledge_base,
+                                                      normalization_mapping=normalization_mapping)
+        except ValueError:
+            return
+
+        result = self.handler(**args_by_name)
+
+        if result is None:
+            return
+
+        # if the handler returned a single value, wrap it in a tuple to make it iterable
+        if (
+                isinstance(result, (bool, Substitution, TruthSubstitution, TruthSubstitutionPremises)) or
+                # the result is a pair or a triple, but not "made of results
+                (
+                        isinstance(result, tuple) and
+                        len(result) in (2, 3) and
+                        not all(isinstance(x, Substitution) for x in result)
+                )
+        ):
+            result = (result,)
+
+        for item in result:
+            if isinstance(item, tuple):
+                if len(item) == 2:
+                    truth, substitution = item
+                    premises = ()
+                elif len(item) == 3:
+                    truth, substitution, premises = item
+                    # again, if a single proof was returned, we wrap it in a tuple to make it iterable
+                    if isinstance(premises, Proof):
+                        premises = (premises,)
+                else:
+                    raise ValueError("A handler returned tuple must have length 2 or 3")
+            elif isinstance(item, bool):
+                truth = item
+                substitution = unifier
+                premises = ()
+            elif isinstance(item, Substitution):
+                truth = True
+                substitution = item
+                premises = ()
+            elif isinstance(item, TruthSubstitution):
+                truth = item.truth
+                substitution = item.substitution
+                premises = ()
+            elif isinstance(item, TruthSubstitutionPremises):
+                truth = item.truth
+                substitution = item.substitution
+                premises = (item.premises,) if isinstance(item.premises, Proof) else item.premises
+            else:
+                raise ValueError(
+                    f"A Prover's handler cannot return a {type(item)}, read the docs! Substitutions, booleans, "
+                    f"(boolean, substitution) pairs, (boolean, substitution, Proof/Proofs) triples, "
+                    f"TruthSubstitution instances or TruthSubstitutionPremises instances! "
+                    f"What is a {type(item)}????"
+                )
+
+            if truth:
+                proof = Proof(
+                    inference_rule=self,
+                    conclusion=substitution.apply_to(formula),
+                    substitution=substitution,
+                    premises=tuple(premises)
+                )
+
+                yield proof
+
+
+@dataclass(frozen=True)
+class Proof:
+    # TODO inference_rule should be a Verifier or something
+    inference_rule: Any
+    conclusion: Expression
+    substitution: Substitution
+    premises: Iterable[Proof] = ()

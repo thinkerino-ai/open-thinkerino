@@ -1,6 +1,6 @@
 import itertools
 from collections.abc import Sequence
-from typing import Any, Iterable, Union, Dict, Set
+from typing import Any, Iterable, Union, Dict, Set, Tuple
 
 from aitools.logic.unification import Binding, Substitution
 from aitools.logic import Variable, Constant, Expression, LogicWrapper, LogicObject
@@ -89,7 +89,7 @@ class ConstantSource:
 
 
 def normalize_variables(expression: LogicObject, *, variable_source: VariableSource = None,
-                        variable_mapping=None) -> Expression:
+                        variable_mapping=None) -> Tuple[Expression, Dict[Variable, Variable]]:
     variable_mapping = variable_mapping if variable_mapping is not None else {}
     """Normalizes an expression by either using completely new variables or a standard set"""
     def _inner(obj, mapping):
@@ -102,7 +102,7 @@ def normalize_variables(expression: LogicObject, *, variable_source: VariableSou
             result = obj
         return result
 
-    return _inner(expression, variable_mapping)
+    return _inner(expression, variable_mapping), variable_mapping
 
 
 def all_variables_in(obj: LogicObject) -> Iterable[Variable]:
