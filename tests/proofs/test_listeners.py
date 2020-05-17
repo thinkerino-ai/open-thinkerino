@@ -222,13 +222,13 @@ def test_single_result_substitution_single_premise_triple(test_knowledge_base):
     v = VariableSource()
     Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
 
-    def deduce_meow_and_purr(_x):
-        from aitools.proofs.context import prove
-        proofs = list(prove(SomeDumbTruth))
+    def deduce_meow_and_purr(_x, kb):
+        proofs = list(kb.prove(SomeDumbTruth))
         return Meows(_x), proofs[0].substitution, proofs[0]
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
-                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+                        argument_mode=HandlerArgumentMode.MAP, pass_knowledge_base_as='kb',
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
     test_knowledge_base.add_formulas(
@@ -252,14 +252,14 @@ def test_multiple_results_substitution_multiple_premises_triple(test_knowledge_b
         'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
     )
 
-    def deduce_meow_and_purr(_x):
-        from aitools.proofs.context import prove
-        for proof in prove(SomeDumbTruth):
-            for other_proof in prove(SomeOtherDumbTruth):
+    def deduce_meow_and_purr(_x, kb):
+        for proof in kb.prove(SomeDumbTruth):
+            for other_proof in kb.prove(SomeOtherDumbTruth):
                 yield Meows(_x), other_proof.substitution, (proof, other_proof)
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
-                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+                        argument_mode=HandlerArgumentMode.MAP, pass_knowledge_base_as='kb',
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
     test_knowledge_base.add_formulas(
@@ -289,8 +289,6 @@ def test_single_result_substitution_pair(test_knowledge_base):
     some_subst = Substitution()
 
     def deduce_meow_and_purr(_x):
-        from aitools.proofs.context import prove
-        proofs = list(prove(SomeDumbTruth))
         return Meows(_x), some_subst
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
@@ -341,13 +339,13 @@ def test_single_formula_substitution_premises_dataclass(test_knowledge_base):
     v = VariableSource()
     Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
 
-    def deduce_meow_and_purr(_x):
-        from aitools.proofs.context import prove
-        proofs = list(prove(SomeDumbTruth))
+    def deduce_meow_and_purr(_x, kb):
+        proofs = list(kb.prove(SomeDumbTruth))
         return FormulaSubstitutionPremises(formula=Meows(_x), substitution=proofs[0].substitution, premises=proofs[0])
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
-                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+                        argument_mode=HandlerArgumentMode.MAP, pass_knowledge_base_as='kb',
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
     test_knowledge_base.add_formulas(
@@ -371,10 +369,9 @@ def test_multiple_results_substitution_multiple_premises_dataclass(test_knowledg
         'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
     )
 
-    def deduce_meow_and_purr(_x):
-        from aitools.proofs.context import prove
-        for proof in prove(SomeDumbTruth):
-            for other_proof in prove(SomeOtherDumbTruth):
+    def deduce_meow_and_purr(_x, kb):
+        for proof in kb.prove(SomeDumbTruth):
+            for other_proof in kb.prove(SomeOtherDumbTruth):
                 yield FormulaSubstitutionPremises(
                     formula=Meows(_x),
                     substitution=other_proof.substitution,
@@ -382,7 +379,8 @@ def test_multiple_results_substitution_multiple_premises_dataclass(test_knowledg
                 )
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
-                        argument_mode=HandlerArgumentMode.MAP, pure=True, safety=HandlerSafety.SAFE)
+                        argument_mode=HandlerArgumentMode.MAP, pass_knowledge_base_as='kb',
+                        pure=True, safety=HandlerSafety.SAFE)
 
     test_knowledge_base.add_listener(listener)
     test_knowledge_base.add_formulas(
@@ -412,8 +410,6 @@ def test_single_result_substitution_dataclass(test_knowledge_base):
     some_subst = Substitution()
 
     def deduce_meow_and_purr(_x):
-        from aitools.proofs.context import prove
-        list(prove(SomeDumbTruth))
         return FormulaSubstitution(formula=Meows(_x), substitution=some_subst)
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,

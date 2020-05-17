@@ -7,7 +7,6 @@ from typing import Iterable, Collection, Union
 
 from aitools.logic import Substitution, LogicObject
 from aitools.logic.utils import normalize_variables
-from aitools.proofs import context
 from aitools.proofs.components import HandlerSafety, Component
 from aitools.proofs.exceptions import UnsafeOperationException
 from aitools.proofs.provers import Proof
@@ -45,10 +44,10 @@ class Pondering:
 
 class Listener(Component):
 
-    def ponder(self, proof: Proof) -> Iterable[Proof]:
+    def ponder(self, proof: Proof, knowledge_base) -> Iterable[Proof]:
         formula = proof.conclusion
 
-        if context.is_hypothetical_scenario() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
+        if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
             raise UnsafeOperationException("Unsafe listener cannot be used in hypothetical scenarios")
 
         normalized_listened_formula, normalization_mapping = normalize_variables(self.listened_formula)
@@ -59,7 +58,9 @@ class Listener(Component):
             return
 
         try:
-            args_by_name = self._extract_args_by_name(formula, unifier, normalization_mapping)
+            args_by_name = self._extract_args_by_name(formula=formula, unifier=unifier,
+                                                      knowledge_base=knowledge_base,
+                                                      normalization_mapping=normalization_mapping)
         except ValueError:
             return
 

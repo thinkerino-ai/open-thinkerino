@@ -66,6 +66,14 @@ As stated above, the `pass_substitution_as` argument determines if and how a sub
 
 NOTE: there is no guaranteed relationship between the substitution passed to the handler and the `listened_formula`. To underline this the `listened_formula` is normalized by the `Listener`'s constructor, so `listener.listened_formula` is actually another formula, with "renewed" variables.
 
+The `pass_knowledge_base_as` works similarly to `pass_substitution_as`, and allows to specify whether the handler will receive the current `KnowledgeBase` as input, and, if so, with what name. It accepts:
+
+- `...`/`Ellipsis` (the default): equivalent to `None`
+- `None`: no knowledge base is passed to the handler
+- a string: the current knowledge base is passed to the handler as a keyword argument of the same name
+
+Note that all values for `pass_knowledge_base_as` are allowed for all argument modes.
+
 The `safety` argument is an enumerative value of type `HandlerSafety` can have the following values:
 
 - `SAFE`: the listener will only perform operations that can be repeated without worry

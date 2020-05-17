@@ -6,9 +6,7 @@ from typing import Iterable
 
 from aitools.logic import Expression, Substitution, LogicObject, Variable
 from aitools.logic.utils import normalize_variables, VariableSource
-from aitools.proofs.builtin_provers import RestrictedModusPonens
 from aitools.proofs.components import HandlerArgumentMode, HandlerSafety
-from aitools.proofs.context import contextual
 from aitools.proofs.listeners import Listener, PonderMode, TriggeringFormula
 from aitools.proofs.provers import Proof, Prover
 from aitools.storage.base import LogicObjectStorage
@@ -95,72 +93,63 @@ class KnowledgeBase:
 
         proof_sources: typing.Deque[Iterable[Proof]] = deque()
         proof_sources.append(
-            self.knowledge_retriever.prove(formula, previous_substitution=previous_substitution)
+            self.knowledge_retriever.prove(formula, previous_substitution=previous_substitution, knowledge_base=self)
         )
 
         if not retrieve_only:
             proof_sources.extend(
-                prover.prove(formula, previous_substitution=previous_substitution)
+                prover.prove(formula, previous_substitution=previous_substitution, knowledge_base=self)
                 for prover in self.get_provers_for(formula)
             )
 
-        @contextual('kb', self)
-        def _inner():
-            while any(proof_sources):
-                source = proof_sources.popleft().__iter__()
+        while any(proof_sources):
+            source = proof_sources.popleft().__iter__()
+            try:
+                new_proof = next(source)
+            except StopIteration:
+                pass
+            else:
+                proof_sources.append(source)
+                yield new_proof
+
+    def ponder(self, *formulas: Iterable[LogicObject], ponder_mode: PonderMode):
+        input_sources: deque[Iterable[Proof]] = deque(
+            self._preprocess_pondering_inputs(formulas, ponder_mode)
+        )
+
+        pondering_processes: deque[Iterable[Proof]] = deque()
+
+        while len(input_sources) > 0 or len(pondering_processes) > 0:
+            # one step on input_processes, to produce more pondering_processes (if necessary)
+            if len(input_sources) > 0:
+                first_source_iterable = input_sources.popleft()
+                input_source = first_source_iterable.__iter__()
                 try:
-                    new_proof = next(source)
+                    new_input: Proof = next(input_source)
                 except StopIteration:
                     pass
                 else:
-                    proof_sources.append(source)
-                    yield new_proof
+                    for listener in self.get_listeners_for(new_input.conclusion):
+                        trigger_premise = Proof(
+                            inference_rule=TriggeringFormula(),
+                            conclusion=new_input.substitution.apply_to(new_input.conclusion),
+                            substitution=new_input.substitution,
+                            premises=(new_input,)
+                        )
+                        pondering_processes.append(listener.ponder(trigger_premise, knowledge_base=self))
+                    input_sources.append(input_source)
 
-        for proof in _inner():
-            yield proof
-
-    def ponder(self, *formulas: Iterable[LogicObject], ponder_mode: PonderMode):
-        @contextual('kb', self)
-        def _inner():
-            input_sources: deque[Iterable[Proof]] = deque(
-                self._preprocess_pondering_inputs(formulas, ponder_mode)
-            )
-
-            pondering_processes: deque[Iterable[Proof]] = deque()
-
-            while len(input_sources) > 0 or len(pondering_processes) > 0:
-                # one step on input_processes, to produce more pondering_processes (if necessary)
-                if len(input_sources) > 0:
-                    first_source_iterable = input_sources.popleft()
-                    input_source = first_source_iterable.__iter__()
-                    try:
-                        new_input: Proof = next(input_source)
-                    except StopIteration:
-                        pass
-                    else:
-                        for listener in self.get_listeners_for(new_input.conclusion):
-                            trigger_premise = Proof(
-                                inference_rule=TriggeringFormula(),
-                                conclusion=new_input.substitution.apply_to(new_input.conclusion),
-                                substitution=new_input.substitution,
-                                premises=(new_input,)
-                            )
-                            pondering_processes.append(listener.ponder(trigger_premise))
-                        input_sources.append(input_source)
-
-                # one step on pondering_processes, to produce results (and more input_processes)
-                if len(pondering_processes) > 0:
-                    pondering_process = pondering_processes.popleft().__iter__()
-                    try:
-                        new_listener_proof: Proof = next(pondering_process)
-                    except StopIteration:
-                        pass
-                    else:
-                        input_sources.append((new_listener_proof,))
-                        pondering_processes.append(pondering_process)
-                        yield new_listener_proof
-
-        yield from _inner()
+            # one step on pondering_processes, to produce results (and more input_processes)
+            if len(pondering_processes) > 0:
+                pondering_process = pondering_processes.popleft().__iter__()
+                try:
+                    new_listener_proof: Proof = next(pondering_process)
+                except StopIteration:
+                    pass
+                else:
+                    input_sources.append((new_listener_proof,))
+                    pondering_processes.append(pondering_process)
+                    yield new_listener_proof
 
     def _preprocess_pondering_inputs(self, formulas, ponder_mode) -> Iterable[Iterable[Proof]]:
         if ponder_mode == PonderMode.HYPOTHETICALLY:
@@ -186,3 +175,7 @@ class KnowledgeBase:
     def get_provers_for(self, formula):
         key = make_key(formula)
         yield from self._prover_storage.retrieve(key)
+
+    def is_hypothetical(self) -> bool:
+        # TODO: when hypotheses exist, this must be done
+        return False

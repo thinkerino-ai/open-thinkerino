@@ -1,11 +1,11 @@
 import pytest
 
-from aitools.logic import Variable, Expression, Constant
-from aitools.logic.utils import subst, constants, wrap, VariableSource
+from aitools.logic import Expression
+from aitools.logic.utils import constants, wrap, VariableSource
 from aitools.proofs.builtin_provers import RestrictedModusPonens, ClosedWorldAssumption
 from aitools.proofs.components import HandlerSafety, HandlerArgumentMode
 from aitools.proofs.knowledge_base import KnowledgeBase
-from aitools.proofs.language import Implies, MagicPredicate, Not, And, Or
+from aitools.proofs.language import Implies, MagicPredicate, Not
 from aitools.proofs.provers import Proof, Prover, TruthSubstitutionPremises
 
 
@@ -252,9 +252,8 @@ def test_simple_custom_prover_passing_python_value(test_knowledge_base):
     assert not any(test_knowledge_base.prove(IsEven(3)))
 
 
-def is_multiple_of_4(m: int):
-    from aitools.proofs.context import prove
-    for proof in prove(IsEven(m // 2)):
+def is_multiple_of_4(m: int, kb):
+    for proof in kb.prove(IsEven(m // 2)):
         yield TruthSubstitutionPremises(True, proof.substitution, proof)
 
 
@@ -267,7 +266,8 @@ def test_custom_prover_chain(test_knowledge_base):
     )
     multiple_of_4_prover = Prover(
         listened_formula=IsMultipleOf4(v.m), handler=is_multiple_of_4,
-        argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED, pass_substitution_as=..., pure=True,
+        argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED, pass_substitution_as=...,
+        pass_knowledge_base_as='kb', pure=True,
         safety=HandlerSafety.SAFE
     )
 

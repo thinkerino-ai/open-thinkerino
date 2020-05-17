@@ -6,7 +6,6 @@ from typing import Iterable, Union, Collection, Any
 from aitools.logic import Substitution, Expression, LogicObject
 from aitools.logic.utils import normalize_variables
 from aitools.proofs.components import Component, HandlerSafety
-from aitools.proofs import context
 from aitools.proofs.exceptions import UnsafeOperationException
 
 
@@ -24,8 +23,8 @@ class TruthSubstitutionPremises:
 
 
 class Prover(Component):
-    def prove(self, formula: LogicObject, *, previous_substitution: Substitution) -> Iterable[Proof]:
-        if context.is_hypothetical_scenario() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
+    def prove(self, formula: LogicObject, *, previous_substitution: Substitution, knowledge_base) -> Iterable[Proof]:
+        if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
             raise UnsafeOperationException("Unsafe listener cannot be used in hypothetical scenarios")
 
         normalized_listened_formula, normalization_mapping = normalize_variables(self.listened_formula)
@@ -35,7 +34,9 @@ class Prover(Component):
             return
 
         try:
-            args_by_name = self._extract_args_by_name(formula, unifier, normalization_mapping=normalization_mapping)
+            args_by_name = self._extract_args_by_name(formula=formula, unifier=unifier,
+                                                      knowledge_base=knowledge_base,
+                                                      normalization_mapping=normalization_mapping)
         except ValueError:
             return
 
