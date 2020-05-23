@@ -88,7 +88,7 @@ class TrieIndex(Generic[T], ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_all_subindices(self):
+    def _get_all_subindices(self) -> Iterable[TrieIndex[T]]:
         raise NotImplementedError()
 
     def _traverse_next_key_element(self, key, level, found_key, use_wildcard):

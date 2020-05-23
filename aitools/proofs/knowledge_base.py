@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import typing
 from collections import deque
@@ -12,6 +13,7 @@ from aitools.proofs.provers import Proof, Prover
 from aitools.storage.base import LogicObjectStorage
 from aitools.storage.implementations.dummy import DummyAbstruseIndex
 from aitools.storage.index import AbstruseIndex, make_key
+from aitools.utils import asynctools
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +26,8 @@ class KnowledgeBase:
 
         self._prover_storage: AbstruseIndex[Prover] = DummyAbstruseIndex()
         self._listener_storage: AbstruseIndex[Listener] = DummyAbstruseIndex()
+
+        self._scheduler: asynctools.Scheduler = asynctools.Scheduler()
 
         self.knowledge_retriever: Prover = self.__make_knowledge_retriever()
 
@@ -42,8 +46,8 @@ class KnowledgeBase:
         self._storage.rollback()
 
     def __make_knowledge_retriever(self):
-        def retrieve_knowledge(formula, substitution):
-            for substitution in self._retrieve(formula, previous_substitution=substitution):
+        async def retrieve_knowledge(formula, substitution):
+            async for substitution in self._retrieve(formula, previous_substitution=substitution):
                 yield substitution
 
         # this is impure to ensure it is always called during proof verification
@@ -52,8 +56,8 @@ class KnowledgeBase:
             pass_substitution_as=..., pure=False, safety=HandlerSafety.SAFE
         )
 
-    def _retrieve(self, formula: Expression, *,
-                  previous_substitution: Substitution = None) -> Iterable[Substitution]:
+    async def _retrieve(self, formula: Expression, *,
+                  previous_substitution: Substitution = None) -> typing.AsyncIterable[Substitution]:
         """Retrieves all formula from the KnowledgeBase which are unifiable with the given one.
         No proofs are searched, so either a formula is **IN** the KB, or nothing will be returned."""
         # TODO here I am performing unification twice! I need to optimize this
@@ -85,13 +89,23 @@ class KnowledgeBase:
     def __len__(self):
         return len(self._storage)
 
+    async def __async_prove(self, proof_process: typing.AsyncIterable):
+        async for proof in proof_process:
+            yield proof
+
+    def __sync_prove(self, proof_process: typing.AsyncIterable):
+        for proof in self._scheduler.schedule_generator(
+                proof_process, buffer_size=0
+        ):
+            yield proof
+
     def prove(self, formula: LogicObject, *, retrieve_only: bool = False,
               previous_substitution: typing.Optional[Substitution] = None):
         logger.info("Trying to prove %s with previous substitution %s", formula, previous_substitution)
 
         previous_substitution = previous_substitution or Substitution()
 
-        proof_sources: typing.Deque[Iterable[Proof]] = deque()
+        proof_sources: typing.Deque[typing.AsyncIterable[Proof]] = deque()
         proof_sources.append(
             self.knowledge_retriever.prove(formula, previous_substitution=previous_substitution, knowledge_base=self)
         )
@@ -102,15 +116,13 @@ class KnowledgeBase:
                 for prover in self.get_provers_for(formula)
             )
 
-        while any(proof_sources):
-            source = proof_sources.popleft().__iter__()
-            try:
-                new_proof = next(source)
-            except StopIteration:
-                pass
-            else:
-                proof_sources.append(source)
-                yield new_proof
+        # TODO I'm really unsure... should I make an "async_prove" and require it to be called from tasks?
+        # TODO make buffer_size configurable
+        proof_process = asynctools.multiplex(*proof_sources, buffer_size=1)
+        if asynctools.is_inside_task():
+            return self.__async_prove(proof_process)
+        else:
+            return self.__sync_prove(proof_process)
 
     def ponder(self, *formulas: Iterable[LogicObject], ponder_mode: PonderMode):
         input_sources: deque[Iterable[Proof]] = deque(

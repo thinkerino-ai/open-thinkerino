@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Union, Collection, Any
+from typing import Iterable, Union, Collection, Any, AsyncIterable
+
+import typing
 
 from aitools.logic import Substitution, Expression, LogicObject
 from aitools.logic.utils import normalize_variables
 from aitools.proofs.components import Component, HandlerSafety
 from aitools.proofs.exceptions import UnsafeOperationException
+from aitools.utils import asynctools
 
 
 @dataclass
@@ -23,7 +26,10 @@ class TruthSubstitutionPremises:
 
 
 class Prover(Component):
-    def prove(self, formula: LogicObject, *, previous_substitution: Substitution, knowledge_base) -> Iterable[Proof]:
+    async def prove(
+            self, formula: LogicObject, *,
+            previous_substitution: Substitution, knowledge_base
+    ) -> AsyncIterable[Proof]:
         if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
             raise UnsafeOperationException("Unsafe listener cannot be used in hypothetical scenarios")
 
@@ -42,6 +48,9 @@ class Prover(Component):
 
         result = self.handler(**args_by_name)
 
+        if isinstance(result, typing.Coroutine):
+            result = await result
+
         if result is None:
             return
 
@@ -55,9 +64,9 @@ class Prover(Component):
                         not all(isinstance(x, Substitution) for x in result)
                 )
         ):
-            result = (result,)
+            result = asynctools.wrap_item(result)
 
-        for item in result:
+        async for item in result:
             if isinstance(item, tuple):
                 if len(item) == 2:
                     truth, substitution = item

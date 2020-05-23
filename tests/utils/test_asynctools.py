@@ -14,7 +14,7 @@ async def _generate_integers(name: str, max_value: int) -> AsyncIterable[Tuple[s
 async def _generate_many(*, buffer_size, **generators: int) -> AsyncIterable[Tuple[str, int]]:
     _generators = {arg: _generate_integers(arg, val) for arg, val in generators.items()}
 
-    async for res in asynctools.multiplex(**_generators, buffer_size=buffer_size):
+    async for res in asynctools.multiplex(*_generators.values(), buffer_size=buffer_size):
         yield res
 
 

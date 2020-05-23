@@ -9,15 +9,15 @@ from aitools.proofs.provers import TruthSubstitutionPremises, Prover, TruthSubst
 logger = logging.getLogger(__name__)
 
 
-def restricted_modus_ponens(formula, substitution, kb):
+async def restricted_modus_ponens(formula, substitution, kb):
     """Restricted backward version of modus ponens, which won't perform recursive proof of implications"""
     v = VariableSource()
     if not (isinstance(formula, Expression) and formula.children[0] == Implies):
         rule_pattern = Implies(v.premise, formula)
 
-        for rule_proof in kb.prove(rule_pattern, previous_substitution=substitution):
+        async for rule_proof in kb.prove(rule_pattern, previous_substitution=substitution):
             premise = rule_proof.substitution.get_bound_object_for(v.premise)
-            for premise_proof in kb.prove(premise, previous_substitution=rule_proof.substitution):
+            async for premise_proof in kb.prove(premise, previous_substitution=rule_proof.substitution):
                 yield TruthSubstitutionPremises(truth=True, substitution=premise_proof.substitution,
                                                 premises=(rule_proof, premise_proof))
 
@@ -28,13 +28,13 @@ RestrictedModusPonens = Prover(
 )
 
 
-def closed_world_assumption(formula, substitution, kb):
+async def closed_world_assumption(formula, substitution, kb):
     v = VariableSource()
     match = Substitution.unify(formula, Not(v.P))
     if match is not None:
         try:
-            next(kb.prove(match.get_bound_object_for(v.P)))
-        except StopIteration:
+            await kb.prove(match.get_bound_object_for(v.P)).__anext__()
+        except StopAsyncIteration:
             return TruthSubstitution(True, substitution)
 
 

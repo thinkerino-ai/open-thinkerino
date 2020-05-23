@@ -252,8 +252,8 @@ def test_simple_custom_prover_passing_python_value(test_knowledge_base):
     assert not any(test_knowledge_base.prove(IsEven(3)))
 
 
-def is_multiple_of_4(m: int, kb):
-    for proof in kb.prove(IsEven(m // 2)):
+async def is_multiple_of_4(m: int, kb):
+    async for proof in kb.prove(IsEven(m // 2)):
         yield TruthSubstitutionPremises(True, proof.substitution, proof)
 
 
