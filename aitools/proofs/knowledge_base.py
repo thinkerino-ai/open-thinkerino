@@ -89,20 +89,38 @@ class KnowledgeBase:
     def __len__(self):
         return len(self._storage)
 
-    async def __async_prove(self, proof_process: typing.AsyncIterable):
-        async for proof in proof_process:
-            yield proof
+    def prove(self, formula: LogicObject, *, retrieve_only: bool = False,
+              previous_substitution: typing.Optional[Substitution] = None) -> typing.Generator[Proof, None, None]:
+        logger.info("Trying to prove %s with previous substitution %s", formula, previous_substitution)
+        if asynctools.is_inside_task():
+            raise RuntimeError(f"{KnowledgeBase.__name__}.{KnowledgeBase.prove.__name__} cannot be used "
+                               f"inside tasks")
 
-    def __sync_prove(self, proof_process: typing.AsyncIterable):
+        proof_process = self._prepare_proof_sources(formula=formula, retrieve_only=retrieve_only,
+                                                    previous_substitution=previous_substitution)
+
         for proof in self._scheduler.schedule_generator(
                 proof_process, buffer_size=0
         ):
             yield proof
 
-    def prove(self, formula: LogicObject, *, retrieve_only: bool = False,
-              previous_substitution: typing.Optional[Substitution] = None):
-        logger.info("Trying to prove %s with previous substitution %s", formula, previous_substitution)
+    async def async_prove(
+            self, formula: LogicObject, *, retrieve_only: bool = False,
+            previous_substitution: typing.Optional[Substitution] = None
+    ) -> typing.AsyncGenerator[Proof, None]:
+        logger.info("Trying to asynchronously prove %s with previous substitution %s", formula, previous_substitution)
 
+        if not asynctools.is_inside_task():
+            raise RuntimeError(f"{KnowledgeBase.__name__}.{KnowledgeBase.async_prove.__name__} cannot be used "
+                               f"outside tasks")
+
+        proof_process = self._prepare_proof_sources(formula=formula, retrieve_only=retrieve_only,
+                                                    previous_substitution=previous_substitution)
+
+        async for proof in proof_process:
+            yield proof
+
+    def _prepare_proof_sources(self, *, formula, retrieve_only, previous_substitution):
         previous_substitution = previous_substitution or Substitution()
 
         proof_sources: typing.Deque[typing.AsyncIterable[Proof]] = deque()
@@ -116,13 +134,10 @@ class KnowledgeBase:
                 for prover in self.get_provers_for(formula)
             )
 
-        # TODO I'm really unsure... should I make an "async_prove" and require it to be called from tasks?
         # TODO make buffer_size configurable
         proof_process = asynctools.multiplex(*proof_sources, buffer_size=1)
-        if asynctools.is_inside_task():
-            return self.__async_prove(proof_process)
-        else:
-            return self.__sync_prove(proof_process)
+
+        return proof_process
 
     def ponder(self, *formulas: Iterable[LogicObject], ponder_mode: PonderMode):
         input_sources: deque[Iterable[Proof]] = deque(

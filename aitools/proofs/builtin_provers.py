@@ -1,23 +1,24 @@
 import logging
 
-from aitools.logic import Expression, Variable, Substitution
+from aitools.logic import Expression, Variable, Substitution, LogicObject
 from aitools.logic.utils import VariableSource
 from aitools.proofs.components import HandlerArgumentMode, HandlerSafety
+from aitools.proofs.knowledge_base import KnowledgeBase
 from aitools.proofs.language import Implies, Not
 from aitools.proofs.provers import TruthSubstitutionPremises, Prover, TruthSubstitution
 
 logger = logging.getLogger(__name__)
 
 
-async def restricted_modus_ponens(formula, substitution, kb):
+async def restricted_modus_ponens(formula: LogicObject, substitution: Substitution, kb: KnowledgeBase):
     """Restricted backward version of modus ponens, which won't perform recursive proof of implications"""
     v = VariableSource()
     if not (isinstance(formula, Expression) and formula.children[0] == Implies):
         rule_pattern = Implies(v.premise, formula)
 
-        async for rule_proof in kb.prove(rule_pattern, previous_substitution=substitution):
+        async for rule_proof in kb.async_prove(rule_pattern, previous_substitution=substitution):
             premise = rule_proof.substitution.get_bound_object_for(v.premise)
-            async for premise_proof in kb.prove(premise, previous_substitution=rule_proof.substitution):
+            async for premise_proof in kb.async_prove(premise, previous_substitution=rule_proof.substitution):
                 yield TruthSubstitutionPremises(truth=True, substitution=premise_proof.substitution,
                                                 premises=(rule_proof, premise_proof))
 
@@ -28,12 +29,12 @@ RestrictedModusPonens = Prover(
 )
 
 
-async def closed_world_assumption(formula, substitution, kb):
+async def closed_world_assumption(formula: LogicObject, substitution: Substitution, kb: KnowledgeBase):
     v = VariableSource()
     match = Substitution.unify(formula, Not(v.P))
     if match is not None:
         try:
-            await kb.prove(match.get_bound_object_for(v.P)).__anext__()
+            await kb.async_prove(match.get_bound_object_for(v.P)).__anext__()
         except StopAsyncIteration:
             return TruthSubstitution(True, substitution)
 

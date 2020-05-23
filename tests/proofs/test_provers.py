@@ -236,6 +236,7 @@ def is_even(n: int):
 IsEven = MagicPredicate('IsEven')
 IsMultipleOf4 = MagicPredicate('IsMultipleOf4')
 
+
 def test_simple_custom_prover_passing_python_value(test_knowledge_base):
     v = VariableSource()
 
@@ -253,7 +254,7 @@ def test_simple_custom_prover_passing_python_value(test_knowledge_base):
 
 
 async def is_multiple_of_4(m: int, kb):
-    async for proof in kb.prove(IsEven(m // 2)):
+    async for proof in kb.async_prove(IsEven(m // 2)):
         yield TruthSubstitutionPremises(True, proof.substitution, proof)
 
 
