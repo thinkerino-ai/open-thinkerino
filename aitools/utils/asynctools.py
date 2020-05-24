@@ -29,27 +29,36 @@ async def process_with_loopback(inputs: typing.AsyncIterable, processor):
     start_pill = object()
     poison_pill = object()
 
-    asyncio.create_task(
+    task = asyncio.create_task(
         __process_all_inputs(inputs, processor, queue=queue,
                              start_pill=start_pill, poison_pill=poison_pill)
     )
 
-    async for res in __collect_results_with_loopback(loopback=processor, queue=queue,
-                                                     start_pill=start_pill, poison_pill=poison_pill):
-        yield res
+    try:
+        async for res in __collect_results_with_loopback(loopback=processor, queue=queue,
+                                                         start_pill=start_pill, poison_pill=poison_pill):
+            yield res
+    except Exception:
+        task.cancel()
+        raise
 
 
 # TODO I'm not satisfied with this name
 async def __process_all_inputs(inputs: typing.AsyncIterable, processor, *,
                                queue, start_pill, poison_pill):
     await queue.put(start_pill)
+    tasks = []
     try:
 
         # TODO maybe here I could even gather them so that this task terminates when all of them do
         async for proof in inputs:
             await queue.put(start_pill)
-            asyncio.create_task(processor(proof, queue=queue, poison_pill=poison_pill))
-    finally:
+            tasks.append(asyncio.create_task(processor(proof, queue=queue, poison_pill=poison_pill)))
+    except Exception as e:
+        for task in tasks:
+            task.cancel()
+        await queue.put(e)
+    else:
         await queue.put(poison_pill)
 
 
@@ -64,6 +73,8 @@ async def __collect_results_with_loopback(loopback, queue: asyncio.Queue, start_
             currently_running_count -= 1
             if currently_running_count == 0:
                 break
+        elif isinstance(element, Exception):
+            raise element
         else:
             # we fake a start pill
             currently_running_count += 1
@@ -76,8 +87,13 @@ async def push_each_to_queue(async_generator: typing.AsyncIterable, queue: async
     try:
         async for res in async_generator:
             await queue.put(res)
-    finally:
-        await queue.put(poison_pill)
+    except Exception as e:
+        await queue.put(e)
+    else:
+        try:
+            await queue.put(poison_pill)
+        except Exception as e:
+            pass
 
 
 async def multiplex(*generators: typing.AsyncIterable, buffer_size: int) -> typing.AsyncIterable:
@@ -86,13 +102,19 @@ async def multiplex(*generators: typing.AsyncIterable, buffer_size: int) -> typi
 
     currently_running_count = len(generators)
 
+    tasks = []
+
     pill = object()
     for generator in generators:
-        asyncio.create_task(push_each_to_queue(generator, queue, pill))
+        tasks.append(asyncio.create_task(push_each_to_queue(generator, queue, pill)))
 
     while currently_running_count > 0:
         res = await queue.get()
-        if res is pill:
+        if isinstance(res, Exception):
+            for task in tasks:
+                task.cancel()
+            raise res
+        elif res is pill:
             currently_running_count -= 1
         else:
             yield res
@@ -145,20 +167,20 @@ class Scheduler:
     def schedule_generator(self, generator: typing.AsyncIterable, *, buffer_size: int):
         queue = self.make_queue(buffer_size)
 
-        asyncio.run_coroutine_threadsafe(push_each_to_queue(generator, queue, self.__poison_pill), self.loop)
+        fut = asyncio.run_coroutine_threadsafe(push_each_to_queue(generator, queue, self.__poison_pill), self.loop)
 
         while True:
             try:
                 el = asyncio.run_coroutine_threadsafe(self.__get_from_queue(queue), self.loop).result()
 
                 while True:
-                    if el is self.__poison_pill:
+                    if isinstance(el, Exception):
+                        fut.cancel()
+                        raise el
+                    elif el is self.__poison_pill:
                         return
                     yield el
 
                     el = queue.get_nowait()
             except QueueEmpty:
                 pass
-
-    def run_coroutine_threadsafe(self, coroutine):
-        return asyncio.run_coroutine_threadsafe(coroutine, loop=self.loop)

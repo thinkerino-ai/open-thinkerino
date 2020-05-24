@@ -253,6 +253,32 @@ def test_simple_custom_prover_passing_python_value(test_knowledge_base):
     assert not any(test_knowledge_base.prove(IsEven(3)))
 
 
+def test_failing_custom_prover(test_knowledge_base):
+    class SomeException(Exception):
+        pass
+
+    v = VariableSource()
+
+    Is, cat, dylan = constants('Is, cat, dylan')
+
+    def failing_prover(cat):
+        raise SomeException(f"Oh noes I failed with {cat}")
+
+    listened_formula = Is(v.cat, cat)
+    failing = Prover(listened_formula=listened_formula, handler=failing_prover, argument_mode=HandlerArgumentMode.MAP,
+                     pass_substitution_as=..., pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
+
+    test_knowledge_base.add_prover(failing)
+
+    test_knowledge_base.add_formulas(Is(dylan, cat))
+
+    with pytest.raises(SomeException):
+        try:
+            list(test_knowledge_base.prove(Is(dylan, cat)))
+        except Exception as e:
+            raise e
+
+
 async def is_multiple_of_4(m: int, kb):
     async for proof in kb.async_prove(IsEven(m // 2)):
         yield TruthSubstitutionPremises(True, proof.substitution, proof)
