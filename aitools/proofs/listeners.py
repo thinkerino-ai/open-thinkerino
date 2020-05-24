@@ -5,11 +5,14 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Iterable, Collection, Union
 
+import typing
+
 from aitools.logic import Substitution, LogicObject
 from aitools.logic.utils import normalize_variables
 from aitools.proofs.components import HandlerSafety, Component
 from aitools.proofs.exceptions import UnsafeOperationException
 from aitools.proofs.provers import Proof
+from aitools.utils import asynctools
 
 
 class PonderMode(Enum):
@@ -44,7 +47,7 @@ class Pondering:
 
 class Listener(Component):
 
-    def ponder(self, proof: Proof, knowledge_base) -> Iterable[Proof]:
+    async def ponder(self, proof: Proof, knowledge_base) -> typing.AsyncIterable[Proof]:
         formula = proof.conclusion
 
         if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
@@ -66,6 +69,9 @@ class Listener(Component):
 
         result = self.handler(**args_by_name)
 
+        if isinstance(result, typing.Coroutine):
+            result = await result
+
         if result is None:
             return
 
@@ -79,9 +85,12 @@ class Listener(Component):
                         not all(isinstance(x, LogicObject) for x in result)
                 )
         ):
-            result = (result,)
+            result = asynctools.wrap_item(result)
 
-        for item in result:
+        if isinstance(result, Iterable):
+            result = asynctools.asynchronize(result)
+
+        async for item in result:
             if isinstance(item, tuple):
                 if len(item) == 2:
                     conclusion, substitution = item

@@ -1,7 +1,8 @@
 import asyncio
 from asyncio import QueueEmpty
 from threading import Thread
-from typing import AsyncIterable
+
+import typing
 
 
 def is_inside_task():
@@ -13,12 +14,17 @@ def is_inside_task():
         return True
 
 
+async def asynchronize(iterable: typing.Iterable):
+    for element in iterable:
+        yield element
+
+
 async def wrap_item(item):
     yield item
 
 
-async def collect(async_generator: AsyncIterable, queue: asyncio.Queue, poison_pill: object):
-    """Collects an asynchronous iterable and pushes each element into a queue, finally appending a poison pill."""
+async def push_each_to_queue(async_generator: typing.AsyncIterable, queue: asyncio.Queue, poison_pill: object):
+    """Pushes each element of an asynchronous iterable into a queue, finally appending a poison pill."""
     try:
         async for res in async_generator:
             await queue.put(res)
@@ -27,7 +33,7 @@ async def collect(async_generator: AsyncIterable, queue: asyncio.Queue, poison_p
         await queue.put(poison_pill)
 
 
-async def multiplex(*generators: AsyncIterable, buffer_size: int) -> AsyncIterable:
+async def multiplex(*generators: typing.AsyncIterable, buffer_size: int) -> typing.AsyncIterable:
     """Multiplexes several asynchronous iterables into one"""
     queue = asyncio.Queue(maxsize=buffer_size)
 
@@ -35,7 +41,7 @@ async def multiplex(*generators: AsyncIterable, buffer_size: int) -> AsyncIterab
 
     pill = object()
     for generator in generators:
-        asyncio.create_task(collect(generator, queue, pill))
+        asyncio.create_task(push_each_to_queue(generator, queue, pill))
 
     while currently_running_count > 0:
         res = await queue.get()
@@ -77,6 +83,9 @@ class Scheduler:
         self.__thread.start()
         self.__poison_pill = object()
 
+    def make_queue(self, buffer_size):
+        return asyncio.run_coroutine_threadsafe(self.__make_queue(buffer_size), self.loop).result()
+
     async def __make_queue(self, max_size):
         return ThreadSafeishQueue(max_size=max_size, loop=self.loop)
 
@@ -86,10 +95,10 @@ class Scheduler:
     def run(self, coroutine):
         return asyncio.run_coroutine_threadsafe(coroutine, self.loop).result()
 
-    def schedule_generator(self, generator: AsyncIterable, *, buffer_size: int):
-        queue = asyncio.run_coroutine_threadsafe(self.__make_queue(buffer_size), self.loop).result()
+    def schedule_generator(self, generator: typing.AsyncIterable, *, buffer_size: int):
+        queue = self.make_queue(buffer_size)
 
-        asyncio.run_coroutine_threadsafe(collect(generator, queue, self.__poison_pill), self.loop)
+        asyncio.run_coroutine_threadsafe(push_each_to_queue(generator, queue, self.__poison_pill), self.loop)
 
         while True:
             try:
@@ -103,3 +112,6 @@ class Scheduler:
                     el = queue.get_nowait()
             except QueueEmpty:
                 pass
+
+    def run_coroutine_threadsafe(self, coroutine):
+        return asyncio.run_coroutine_threadsafe(coroutine, loop=self.loop)

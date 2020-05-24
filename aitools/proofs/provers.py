@@ -66,6 +66,9 @@ class Prover(Component):
         ):
             result = asynctools.wrap_item(result)
 
+        if isinstance(result, Iterable):
+            result = asynctools.asynchronize(result)
+
         async for item in result:
             if isinstance(item, tuple):
                 if len(item) == 2:

@@ -140,60 +140,92 @@ class KnowledgeBase:
         return proof_process
 
     def ponder(self, *formulas: Iterable[LogicObject], ponder_mode: PonderMode):
-        input_sources: deque[Iterable[Proof]] = deque(
-            self._preprocess_pondering_inputs(formulas, ponder_mode)
+        # TODO make buffer_size configurable
+        queue = self._scheduler.make_queue(buffer_size=1)
+        start_pill = object()
+        poison_pill = object()
+
+        self._scheduler.run_coroutine_threadsafe(
+            self.__preprocess_pondering_inputs(formulas=formulas, ponder_mode=ponder_mode, queue=queue,
+                                               start_pill=start_pill, poison_pill=poison_pill)
         )
 
-        pondering_processes: deque[Iterable[Proof]] = deque()
+        # TODO make buffer_size configurable
+        for proof in self._scheduler.schedule_generator(
+                self.__handle_pondering_results(queue, start_pill, poison_pill),
+                buffer_size=1
+        ):
+            yield proof
 
-        while len(input_sources) > 0 or len(pondering_processes) > 0:
-            # one step on input_processes, to produce more pondering_processes (if necessary)
-            if len(input_sources) > 0:
-                first_source_iterable = input_sources.popleft()
-                input_source = first_source_iterable.__iter__()
-                try:
-                    new_input: Proof = next(input_source)
-                except StopIteration:
-                    pass
-                else:
-                    for listener in self.get_listeners_for(new_input.conclusion):
-                        trigger_premise = Proof(
-                            inference_rule=TriggeringFormula(),
-                            conclusion=new_input.substitution.apply_to(new_input.conclusion),
-                            substitution=new_input.substitution,
-                            premises=(new_input,)
-                        )
-                        pondering_processes.append(listener.ponder(trigger_premise, knowledge_base=self))
-                    input_sources.append(input_source)
+    async def __preprocess_pondering_inputs(self, formulas, ponder_mode, queue, start_pill, poison_pill):
+        await queue.put(start_pill)
+        try:
+            proving_process = self.__make_proving_process(formulas, ponder_mode)
 
-            # one step on pondering_processes, to produce results (and more input_processes)
-            if len(pondering_processes) > 0:
-                pondering_process = pondering_processes.popleft().__iter__()
-                try:
-                    new_listener_proof: Proof = next(pondering_process)
-                except StopIteration:
-                    pass
-                else:
-                    input_sources.append((new_listener_proof,))
-                    pondering_processes.append(pondering_process)
-                    yield new_listener_proof
+            # TODO maybe here I could even gather them so that this task terminates when all of them do
+            async for proof in proving_process:
+                await queue.put(start_pill)
+                asyncio.create_task(self.__ponder_single_proof(proof, queue=queue, poison_pill=poison_pill))
+        finally:
+            await queue.put(poison_pill)
 
-    def _preprocess_pondering_inputs(self, formulas, ponder_mode) -> Iterable[Iterable[Proof]]:
+    def __make_proving_process(self, formulas, ponder_mode):
         if ponder_mode == PonderMode.HYPOTHETICALLY:
             raise NotImplementedError("This case requires hypotheses to be implemented :P")
         elif ponder_mode == PonderMode.KNOWN:
-            input_sources = (
-                (lambda f: self.prove(f, retrieve_only=True))(formula)
-                for formula in formulas
+            # TODO make buffer_size configurable
+            proving_process = asynctools.multiplex(
+                *(self.async_prove(f, retrieve_only=True) for f in formulas),
+                buffer_size=1
             )
         elif ponder_mode == PonderMode.PROVE:
-            input_sources = (
-                (lambda f: self.prove(f))(formula)
-                for formula in formulas
+            # TODO make buffer_size configurable
+            proving_process = asynctools.multiplex(
+                *(self.async_prove(f, retrieve_only=False) for f in formulas),
+                buffer_size=1
             )
         else:
             raise NotImplementedError(f"Unknown ponder mode: {ponder_mode}")
-        return input_sources
+        return proving_process
+
+    async def __ponder_single_proof(self, proof: Proof, *, queue: asyncio.Queue, poison_pill):
+        pondering_sources = []
+        for listener in self.get_listeners_for(proof.conclusion):
+            trigger_premise = Proof(
+                inference_rule=TriggeringFormula(),
+                conclusion=proof.substitution.apply_to(proof.conclusion),
+                substitution=proof.substitution,
+                premises=(proof,)
+            )
+            pondering_sources.append(listener.ponder(trigger_premise, knowledge_base=self))
+
+        # TODO make buffer_size configurable
+        pondering_process = asynctools.multiplex(
+            *pondering_sources,
+            buffer_size=1
+        )
+
+        async for proof in pondering_process:
+            await queue.put(proof)
+
+        await queue.put(poison_pill)
+
+    async def __handle_pondering_results(self, queue: asyncio.Queue, start_pill, poison_pill):
+        currently_running_count = 0
+
+        while True:
+            element = await queue.get()
+            if element is start_pill:
+                currently_running_count += 1
+            elif element is poison_pill:
+                currently_running_count -= 1
+                if currently_running_count == 0:
+                    break
+            else:
+                # we fake a start pill
+                currently_running_count += 1
+                asyncio.create_task(self.__ponder_single_proof(element, queue=queue, poison_pill=poison_pill))
+                yield element
 
     def get_listeners_for(self, formula):
         key = make_key(formula)
