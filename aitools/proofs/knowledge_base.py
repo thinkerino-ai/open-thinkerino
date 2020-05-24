@@ -14,6 +14,7 @@ from aitools.storage.base import LogicObjectStorage
 from aitools.storage.implementations.dummy import DummyAbstruseIndex
 from aitools.storage.index import AbstruseIndex, make_key
 from aitools.utils import asynctools
+from aitools.utils.asynctools import process_with_loopback
 
 logger = logging.getLogger(__name__)
 
@@ -140,34 +141,14 @@ class KnowledgeBase:
         return proof_process
 
     def ponder(self, *formulas: Iterable[LogicObject], ponder_mode: PonderMode):
-        # TODO make buffer_size configurable
-        queue = self._scheduler.make_queue(buffer_size=1)
-        start_pill = object()
-        poison_pill = object()
-
-        self._scheduler.run_coroutine_threadsafe(
-            self.__preprocess_pondering_inputs(formulas=formulas, ponder_mode=ponder_mode, queue=queue,
-                                               start_pill=start_pill, poison_pill=poison_pill)
-        )
+        proving_process = self.__make_proving_process(formulas, ponder_mode)
 
         # TODO make buffer_size configurable
         for proof in self._scheduler.schedule_generator(
-                self.__handle_pondering_results(queue, start_pill, poison_pill),
+                process_with_loopback(inputs=proving_process, processor=self.__ponder_single_proof),
                 buffer_size=1
         ):
             yield proof
-
-    async def __preprocess_pondering_inputs(self, formulas, ponder_mode, queue, start_pill, poison_pill):
-        await queue.put(start_pill)
-        try:
-            proving_process = self.__make_proving_process(formulas, ponder_mode)
-
-            # TODO maybe here I could even gather them so that this task terminates when all of them do
-            async for proof in proving_process:
-                await queue.put(start_pill)
-                asyncio.create_task(self.__ponder_single_proof(proof, queue=queue, poison_pill=poison_pill))
-        finally:
-            await queue.put(poison_pill)
 
     def __make_proving_process(self, formulas, ponder_mode):
         if ponder_mode == PonderMode.HYPOTHETICALLY:
@@ -210,23 +191,6 @@ class KnowledgeBase:
 
         await queue.put(poison_pill)
 
-    async def __handle_pondering_results(self, queue: asyncio.Queue, start_pill, poison_pill):
-        currently_running_count = 0
-
-        while True:
-            element = await queue.get()
-            if element is start_pill:
-                currently_running_count += 1
-            elif element is poison_pill:
-                currently_running_count -= 1
-                if currently_running_count == 0:
-                    break
-            else:
-                # we fake a start pill
-                currently_running_count += 1
-                asyncio.create_task(self.__ponder_single_proof(element, queue=queue, poison_pill=poison_pill))
-                yield element
-
     def get_listeners_for(self, formula):
         key = make_key(formula)
         yield from self._listener_storage.retrieve(key)
@@ -238,3 +202,6 @@ class KnowledgeBase:
     def is_hypothetical(self) -> bool:
         # TODO: when hypotheses exist, this must be done
         return False
+
+
+

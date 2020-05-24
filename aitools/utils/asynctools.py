@@ -23,6 +23,53 @@ async def wrap_item(item):
     yield item
 
 
+async def process_with_loopback(inputs: typing.AsyncIterable, processor):
+    # TODO make buffer_size configurable
+    queue = asyncio.Queue(maxsize=1)
+    start_pill = object()
+    poison_pill = object()
+
+    asyncio.create_task(
+        __preprocess_pondering_inputs(inputs, processor, queue=queue,
+                                      start_pill=start_pill, poison_pill=poison_pill)
+    )
+
+    async for res in __collect_results_with_loopback(loopback=processor, queue=queue,
+                                                     start_pill=start_pill, poison_pill=poison_pill):
+        yield res
+
+
+async def __preprocess_pondering_inputs(inputs: typing.AsyncIterable, processor, *,
+                                        queue, start_pill, poison_pill):
+    await queue.put(start_pill)
+    try:
+
+        # TODO maybe here I could even gather them so that this task terminates when all of them do
+        async for proof in inputs:
+            await queue.put(start_pill)
+            asyncio.create_task(processor(proof, queue=queue, poison_pill=poison_pill))
+    finally:
+        await queue.put(poison_pill)
+
+
+async def __collect_results_with_loopback(loopback, queue: asyncio.Queue, start_pill, poison_pill):
+    currently_running_count = 0
+
+    while True:
+        element = await queue.get()
+        if element is start_pill:
+            currently_running_count += 1
+        elif element is poison_pill:
+            currently_running_count -= 1
+            if currently_running_count == 0:
+                break
+        else:
+            # we fake a start pill
+            currently_running_count += 1
+            asyncio.create_task(loopback(element, queue=queue, poison_pill=poison_pill))
+            yield element
+
+
 async def push_each_to_queue(async_generator: typing.AsyncIterable, queue: asyncio.Queue, poison_pill: object):
     """Pushes each element of an asynchronous iterable into a queue, finally appending a poison pill."""
     try:
