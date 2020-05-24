@@ -30,8 +30,8 @@ async def process_with_loopback(inputs: typing.AsyncIterable, processor):
     poison_pill = object()
 
     asyncio.create_task(
-        __preprocess_pondering_inputs(inputs, processor, queue=queue,
-                                      start_pill=start_pill, poison_pill=poison_pill)
+        __process_all_inputs(inputs, processor, queue=queue,
+                             start_pill=start_pill, poison_pill=poison_pill)
     )
 
     async for res in __collect_results_with_loopback(loopback=processor, queue=queue,
@@ -39,8 +39,9 @@ async def process_with_loopback(inputs: typing.AsyncIterable, processor):
         yield res
 
 
-async def __preprocess_pondering_inputs(inputs: typing.AsyncIterable, processor, *,
-                                        queue, start_pill, poison_pill):
+# TODO I'm not satisfied with this name
+async def __process_all_inputs(inputs: typing.AsyncIterable, processor, *,
+                               queue, start_pill, poison_pill):
     await queue.put(start_pill)
     try:
 
@@ -75,7 +76,6 @@ async def push_each_to_queue(async_generator: typing.AsyncIterable, queue: async
     try:
         async for res in async_generator:
             await queue.put(res)
-
     finally:
         await queue.put(poison_pill)
 
