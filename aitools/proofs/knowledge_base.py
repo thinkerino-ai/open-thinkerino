@@ -186,10 +186,7 @@ class KnowledgeBase:
             buffer_size=1
         )
 
-        async for proof in pondering_process:
-            await queue.put(proof)
-
-        await queue.put(poison_pill)
+        await asynctools.push_each_to_queue(pondering_process, queue=queue, poison_pill=poison_pill)
 
     def get_listeners_for(self, formula):
         key = make_key(formula)
