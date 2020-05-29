@@ -145,7 +145,7 @@ class KnowledgeBase:
 
         # TODO make buffer_size configurable
         for proof in self._scheduler.schedule_generator(
-                process_with_loopback(inputs=proving_process, processor=self.__ponder_single_proof),
+                process_with_loopback(input_sequence=proving_process, processor=self.__ponder_single_proof),
                 buffer_size=1
         ):
             yield proof
