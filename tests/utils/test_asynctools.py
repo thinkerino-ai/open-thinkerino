@@ -1,5 +1,5 @@
 from typing import Tuple, AsyncIterable
-
+import asyncio
 import pytest
 
 from aitools.utils import asynctools
@@ -96,8 +96,6 @@ def test_multiplex_cancellation(scheduler):
 
     assert len(scheduler.all_tasks()) == 0
 
-    raise NotImplementedError("This is flaky")
-
 
 def foobar(x, queue, poison_pill):
     return asynctools.put_forever(x, queue)
@@ -122,8 +120,6 @@ def test_process_with_loopback(scheduler, inputs):
         scheduler.run(asynctools.noop())
 
     assert len(scheduler.all_tasks()) == 0
-
-    raise NotImplementedError("This is flaky")
 
 
 class SomeException(Exception):

@@ -37,7 +37,7 @@ async def wrap_item(item):
     yield item
 
 
-async def process_with_loopback(input_sequence: typing.AsyncIterable, processor):
+async def process_with_loopback(input_sequence: typing.AsyncGenerator, processor):
     # TODO make buffer_size configurable
     queue = asyncio.Queue(maxsize=1)
     start_pill = object()
@@ -48,22 +48,23 @@ async def process_with_loopback(input_sequence: typing.AsyncIterable, processor)
                              start_pill=start_pill, poison_pill=poison_pill)
     )
 
+    collection_process = __collect_results_with_loopback(loopback=processor, queue=queue, start_pill=start_pill,
+                                                         poison_pill=poison_pill)
     try:
 
-        async for res in __collect_results_with_loopback(loopback=processor, queue=queue,
-                                                         start_pill=start_pill, poison_pill=poison_pill):
+        async for res in collection_process:
             yield res
-        # TODO experimental
-        await task
     except BaseException:
-        task.cancel()
         raise
     finally:
+        if not task.done():
+            task.cancel()
+        await collection_process.aclose()
         await asyncio.wait([task], return_when=asyncio.ALL_COMPLETED)
 
 
 # TODO I'm not satisfied with this name
-async def __process_all_inputs(input_sequence: typing.AsyncIterable, processor, *,
+async def __process_all_inputs(input_sequence: typing.AsyncGenerator, processor, *,
                                queue, start_pill, poison_pill):
     tasks = []
     try:
@@ -75,11 +76,18 @@ async def __process_all_inputs(input_sequence: typing.AsyncIterable, processor, 
     except BaseException as e:
         # TODO so I don't put the poison pill here?
         for task in tasks:
-            task.cancel()
+            if not task.done():
+                task.cancel()
         if isinstance(e, Exception):
             await queue.put(e)
-        raise e
+        else: # TODO is this else right?
+            raise e
     finally:
+        # TODO this here being commented is the reason a test fails, but uncommenting makes other tests hang T_T
+        # for task in further_tasks:
+        #     if not task.done():
+        #         task.cancel()
+        await input_sequence.aclose()
         if len(tasks) > 0:
             await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
 
@@ -105,16 +113,15 @@ async def __collect_results_with_loopback(loopback, queue: asyncio.Queue, start_
                 currently_running_count += 1
                 further_tasks.append(asyncio.create_task(loopback(element, queue=queue, poison_pill=poison_pill)))
                 yield element
-    except BaseException:
-        for task in further_tasks:
-            task.cancel()
-        raise
     finally:
+        for task in further_tasks:
+            if not task.done():
+                task.cancel()
         if len(further_tasks) > 0:
             await asyncio.wait(further_tasks, return_when=asyncio.ALL_COMPLETED)
 
 
-async def push_each_to_queue(async_generator: typing.AsyncIterable, queue: asyncio.Queue, poison_pill: object):
+async def push_each_to_queue(async_generator: typing.AsyncGenerator, queue: asyncio.Queue, poison_pill: object):
     """Pushes each element of an asynchronous iterable into a queue, finally appending a poison pill."""
     try:
         async for res in async_generator:
@@ -122,12 +129,13 @@ async def push_each_to_queue(async_generator: typing.AsyncIterable, queue: async
     except Exception as e:
         await queue.put(e)
         # TODO is this right? T_T I'm too sleepy T_T
-        raise e
+        #raise e
     else:
         await queue.put(poison_pill)
+    finally:
+        await async_generator.aclose()
 
-
-async def multiplex(*generators: typing.AsyncIterable, buffer_size: int) -> typing.AsyncIterable:
+async def multiplex(*generators: typing.AsyncGenerator, buffer_size: int) -> typing.AsyncGenerator:
     """Multiplexes several asynchronous iterables into one"""
     queue = asyncio.Queue(maxsize=buffer_size)
 
@@ -148,11 +156,11 @@ async def multiplex(*generators: typing.AsyncIterable, buffer_size: int) -> typi
                 currently_running_count -= 1
             else:
                 yield res
-    except BaseException:
-        for task in tasks:
-            task.cancel()
-        raise
     finally:
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+
         if len(tasks) > 0:
             await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
 
@@ -205,7 +213,7 @@ class Scheduler:
     def run(self, coroutine: typing.Coroutine):
         return asyncio.run_coroutine_threadsafe(coroutine, self.loop).result()
 
-    def schedule_generator(self, generator: typing.AsyncIterable, *, buffer_size: int):
+    def schedule_generator(self, generator: typing.AsyncGenerator, *, buffer_size: int):
         queue = self.make_queue(buffer_size)
 
         fut = asyncio.run_coroutine_threadsafe(push_each_to_queue(generator, queue, self.__poison_pill), self.loop)
@@ -216,7 +224,6 @@ class Scheduler:
 
                     while True:
                         if isinstance(el, Exception):
-                            fut.cancel()
                             raise el
                         elif el is self.__poison_pill:
                             return
@@ -226,8 +233,14 @@ class Scheduler:
                 except QueueEmpty:
                     pass
                 except GeneratorExit:
-                    fut.cancel()
                     raise
         finally:
-            # TODO synchronize?
-            pass
+            if not fut.done():
+                fut.cancel()
+            asyncio.run_coroutine_threadsafe(_wait_for_future(fut, self.loop), loop=self.loop).result()
+
+
+# TODO remove this or consolidate it
+async def _wait_for_future(fut, loop):
+    wrapped = asyncio.wrap_future(fut, loop=loop)
+    await asyncio.wait([wrapped], return_when=asyncio.ALL_COMPLETED)
