@@ -55,11 +55,11 @@ async def process_with_loopback(input_sequence: typing.AsyncIterable, processor)
             yield res
         # TODO experimental
         await task
-    except (Exception, GeneratorExit):
+    except BaseException:
         task.cancel()
         raise
-    # else:
-    #     await task
+    finally:
+        await asyncio.wait([task], return_when=asyncio.ALL_COMPLETED)
 
 
 # TODO I'm not satisfied with this name
@@ -72,18 +72,16 @@ async def __process_all_inputs(input_sequence: typing.AsyncIterable, processor, 
             await queue.put(start_pill)
             tasks.append(asyncio.create_task(processor(element, queue=queue, poison_pill=poison_pill)))
         await queue.put(poison_pill)
-        # TODO experimental
-        await asyncio.gather(*tasks)
-    except (Exception, asyncio.CancelledError) as e:
+    except BaseException as e:
+        # TODO so I don't put the poison pill here?
         for task in tasks:
             task.cancel()
-        if isinstance(e, asyncio.CancelledError):
-            raise e
-        await queue.put(e)
-        # TODO is this right? T_T I'm too sleepy T_T
+        if isinstance(e, Exception):
+            await queue.put(e)
         raise e
-    # else:
-    #     await asyncio.gather(*tasks)
+    finally:
+        if len(tasks) > 0:
+            await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
 
 
 async def __collect_results_with_loopback(loopback, queue: asyncio.Queue, start_pill, poison_pill):
@@ -107,12 +105,13 @@ async def __collect_results_with_loopback(loopback, queue: asyncio.Queue, start_
                 currently_running_count += 1
                 further_tasks.append(asyncio.create_task(loopback(element, queue=queue, poison_pill=poison_pill)))
                 yield element
-        # TODO experimental
-        await asyncio.gather(*further_tasks)
-    except GeneratorExit:
+    except BaseException:
         for task in further_tasks:
             task.cancel()
         raise
+    finally:
+        if len(further_tasks) > 0:
+            await asyncio.wait(further_tasks, return_when=asyncio.ALL_COMPLETED)
 
 
 async def push_each_to_queue(async_generator: typing.AsyncIterable, queue: asyncio.Queue, poison_pill: object):
@@ -144,19 +143,18 @@ async def multiplex(*generators: typing.AsyncIterable, buffer_size: int) -> typi
         while currently_running_count > 0:
             res = await queue.get()
             if isinstance(res, Exception):
-                for task in tasks:
-                    task.cancel()
                 raise res
             elif res is pill:
                 currently_running_count -= 1
             else:
                 yield res
-        # TODO experimental
-        await asyncio.gather(*tasks)
-    except GeneratorExit:
+    except BaseException:
         for task in tasks:
             task.cancel()
         raise
+    finally:
+        if len(tasks) > 0:
+            await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
 
 
 class ThreadSafeishQueue(asyncio.Queue):
