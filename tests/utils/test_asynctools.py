@@ -1,16 +1,15 @@
-from typing import Tuple, AsyncIterable
 import asyncio
 import pytest
 
 from aitools.utils import asynctools
 
 
-async def _generate_integers(name: str, max_value: int) -> AsyncIterable[Tuple[str, int]]:
+async def _generate_integers(name: str, max_value: int):
     for i in range(max_value):
         yield name, i
 
 
-async def _generate_many(*, buffer_size, **generators: int) -> AsyncIterable[Tuple[str, int]]:
+async def _generate_many(*, buffer_size, **generators: int):
     _generators = {arg: _generate_integers(arg, val) for arg, val in generators.items()}
 
     async for res in asynctools.multiplex(*_generators.values(), buffer_size=buffer_size):
@@ -59,7 +58,7 @@ def test_tasks_are_cleared(scheduler, buffer_size):
     _ = list(scheduler.schedule_generator(_generate_integers('a', 3), buffer_size=buffer_size))
 
     # is this safe?
-    assert len(scheduler.all_tasks()) == 0
+    assert scheduler.all_tasks() == set()
 
 
 def test_schedule_generator_cancellation(scheduler):
@@ -73,7 +72,7 @@ def test_schedule_generator_cancellation(scheduler):
     for _ in range(2):
         scheduler.run(asynctools.noop())
 
-    assert len(scheduler.all_tasks()) == 0
+    assert scheduler.all_tasks() == set()
 
 
 def test_multiplex_cancellation(scheduler):
@@ -94,7 +93,7 @@ def test_multiplex_cancellation(scheduler):
     for _ in range(2):
         scheduler.run(asynctools.noop())
 
-    assert len(scheduler.all_tasks()) == 0
+    assert scheduler.all_tasks() == set()
 
 
 def foobar(x, queue, poison_pill):
@@ -119,7 +118,7 @@ def test_process_with_loopback(scheduler, inputs):
     for _ in range(3):
         scheduler.run(asynctools.noop())
 
-    assert len(scheduler.all_tasks()) == 0
+    assert scheduler.all_tasks() == set()
 
 
 class SomeException(Exception):
@@ -153,4 +152,4 @@ def test_process_with_loopback_and_failing_input(scheduler, n):
     for _ in range(2):
         scheduler.run(asynctools.noop())
 
-    assert len(scheduler.all_tasks()) == 0
+    assert scheduler.all_tasks() == set()

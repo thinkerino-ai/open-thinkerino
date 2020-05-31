@@ -73,20 +73,20 @@ async def __process_all_inputs(input_sequence: typing.AsyncGenerator, processor,
             await queue.put(start_pill)
             tasks.append(asyncio.create_task(processor(element, queue=queue, poison_pill=poison_pill)))
         await queue.put(poison_pill)
+        if len(tasks) > 0:
+            await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
     except BaseException as e:
-        # TODO so I don't put the poison pill here?
         for task in tasks:
             if not task.done():
                 task.cancel()
         if isinstance(e, Exception):
             await queue.put(e)
-        else: # TODO is this else right?
+        else:
             raise e
     finally:
-        # TODO this here being commented is the reason a test fails, but uncommenting makes other tests hang T_T
-        # for task in further_tasks:
-        #     if not task.done():
-        #         task.cancel()
+        for task in tasks:
+            if not task.done():
+                task.cancel()
         await input_sequence.aclose()
         if len(tasks) > 0:
             await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
@@ -126,12 +126,11 @@ async def push_each_to_queue(async_generator: typing.AsyncGenerator, queue: asyn
     try:
         async for res in async_generator:
             await queue.put(res)
+        await queue.put(poison_pill)
     except Exception as e:
         await queue.put(e)
         # TODO is this right? T_T I'm too sleepy T_T
         #raise e
-    else:
-        await queue.put(poison_pill)
     finally:
         await async_generator.aclose()
 
@@ -234,6 +233,8 @@ class Scheduler:
                     pass
                 except GeneratorExit:
                     raise
+        except BaseException as e:
+            raise e
         finally:
             if not fut.done():
                 fut.cancel()
@@ -244,3 +245,4 @@ class Scheduler:
 async def _wait_for_future(fut, loop):
     wrapped = asyncio.wrap_future(fut, loop=loop)
     await asyncio.wait([wrapped], return_when=asyncio.ALL_COMPLETED)
+    print("done!")

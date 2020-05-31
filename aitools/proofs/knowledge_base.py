@@ -186,11 +186,7 @@ class KnowledgeBase:
             buffer_size=1
         )
 
-        try:
-            await asynctools.push_each_to_queue(pondering_process, queue=queue, poison_pill=poison_pill)
-        except BaseException:
-            await pondering_process.aclose()
-            raise
+        await asynctools.push_each_to_queue(pondering_process, queue=queue, poison_pill=poison_pill)
 
     def get_listeners_for(self, formula):
         key = make_key(formula)
