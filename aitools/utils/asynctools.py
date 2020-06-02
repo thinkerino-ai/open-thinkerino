@@ -51,15 +51,15 @@ async def process_with_loopback(input_sequence: typing.AsyncGenerator, processor
     collection_process = __collect_results_with_loopback(loopback=processor, queue=queue, start_pill=start_pill,
                                                          poison_pill=poison_pill)
     try:
+        try:
+            async for res in collection_process:
+                yield res
 
-        async for res in collection_process:
-            yield res
-    except BaseException:
-        raise
+        finally:
+            await collection_process.aclose()
     finally:
         if not task.done():
             task.cancel()
-        await collection_process.aclose()
         await asyncio.wait([task], return_when=asyncio.ALL_COMPLETED)
 
 
@@ -129,10 +129,9 @@ async def push_each_to_queue(async_generator: typing.AsyncGenerator, queue: asyn
         await queue.put(poison_pill)
     except Exception as e:
         await queue.put(e)
-        # TODO is this right? T_T I'm too sleepy T_T
-        #raise e
     finally:
         await async_generator.aclose()
+
 
 async def multiplex(*generators: typing.AsyncGenerator, buffer_size: int) -> typing.AsyncGenerator:
     """Multiplexes several asynchronous iterables into one"""

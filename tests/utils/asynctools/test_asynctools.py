@@ -1,24 +1,7 @@
-import asyncio
 import pytest
 
 from aitools.utils import asynctools
-
-
-async def _generate_integers(name: str, max_value: int):
-    for i in range(max_value):
-        yield name, i
-
-
-async def _generate_many(*, buffer_size, **generators: int):
-    _generators = {arg: _generate_integers(arg, val) for arg, val in generators.items()}
-
-    async for res in asynctools.multiplex(*_generators.values(), buffer_size=buffer_size):
-        yield res
-
-
-@pytest.fixture
-def scheduler():
-    return asynctools.Scheduler(debug=True)
+from .utils import _generate_integers, _generate_many, SomeException, yield_then_fail, push_result_to_queue
 
 
 @pytest.mark.parametrize('buffer_size', [0, 1, 2, 10])
@@ -96,16 +79,12 @@ def test_multiplex_cancellation(scheduler):
     assert scheduler.all_tasks() == set()
 
 
-def foobar(x, queue, poison_pill):
-    return asynctools.put_forever(x, queue)
-
-
 @pytest.mark.parametrize(argnames='inputs', argvalues=[['a_single_input'], range(100)])
 def test_process_with_loopback(scheduler, inputs):
     gen = scheduler.schedule_generator(
         asynctools.process_with_loopback(
             asynctools.asynchronize(inputs),
-            processor=foobar
+            processor=lambda x, queue, poison_pill: asynctools.put_forever(x, queue)
         ),
         buffer_size=1
     )
@@ -119,21 +98,6 @@ def test_process_with_loopback(scheduler, inputs):
         scheduler.run(asynctools.noop())
 
     assert scheduler.all_tasks() == set()
-
-
-class SomeException(Exception):
-    pass
-
-
-async def yield_then_fail(result, n):
-    for i in range(n):
-        yield f"{result}-{i}"
-
-    raise SomeException()
-
-
-async def push_result_to_queue(res, queue, poison_pill):
-    await asynctools.push_each_to_queue(asynctools.asynchronize([res]), queue=queue, poison_pill=poison_pill)
 
 
 @pytest.mark.parametrize('n', [1, 2, 10])
@@ -153,3 +117,7 @@ def test_process_with_loopback_and_failing_input(scheduler, n):
         scheduler.run(asynctools.noop())
 
     assert scheduler.all_tasks() == set()
+
+
+def test_all_other_functions():
+    pytest.fail("Implement all other unit tests!")
