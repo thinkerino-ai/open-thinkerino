@@ -15,7 +15,7 @@ def is_inside_task():
 
 
 async def noop():
-    pass
+    await asyncio.sleep(0)
 
 
 async def put_forever(element, queue: asyncio.Queue):
@@ -44,12 +44,12 @@ async def process_with_loopback(input_sequence: typing.AsyncGenerator, processor
     poison_pill = object()
 
     task = asyncio.create_task(
-        __process_all_inputs(input_sequence, processor, queue=queue,
-                             start_pill=start_pill, poison_pill=poison_pill)
+        _process_all_inputs(input_sequence, processor, queue=queue,
+                            start_pill=start_pill, poison_pill=poison_pill)
     )
 
-    collection_process = __collect_results_with_loopback(loopback=processor, queue=queue, start_pill=start_pill,
-                                                         poison_pill=poison_pill)
+    collection_process = _collect_results_with_loopback(loopback=processor, queue=queue, start_pill=start_pill,
+                                                        poison_pill=poison_pill)
     try:
         try:
             async for res in collection_process:
@@ -64,8 +64,8 @@ async def process_with_loopback(input_sequence: typing.AsyncGenerator, processor
 
 
 # TODO I'm not satisfied with this name
-async def __process_all_inputs(input_sequence: typing.AsyncGenerator, processor, *,
-                               queue, start_pill, poison_pill):
+async def _process_all_inputs(input_sequence: typing.AsyncGenerator, processor, *,
+                              queue, start_pill, poison_pill):
     tasks = []
     try:
         await queue.put(start_pill)
@@ -92,7 +92,7 @@ async def __process_all_inputs(input_sequence: typing.AsyncGenerator, processor,
             await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
 
 
-async def __collect_results_with_loopback(loopback, queue: asyncio.Queue, start_pill, poison_pill):
+async def _collect_results_with_loopback(loopback, queue: asyncio.Queue, start_pill, poison_pill):
     currently_running_count = 0
 
     further_tasks = []
@@ -148,6 +148,7 @@ async def multiplex(*generators: typing.AsyncGenerator, buffer_size: int) -> typ
     try:
         while currently_running_count > 0:
             res = await queue.get()
+
             if isinstance(res, Exception):
                 raise res
             elif res is pill:
@@ -159,8 +160,7 @@ async def multiplex(*generators: typing.AsyncGenerator, buffer_size: int) -> typ
             if not task.done():
                 task.cancel()
 
-        if len(tasks) > 0:
-            await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+        await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
 
 
 class ThreadSafeishQueue(asyncio.Queue):
