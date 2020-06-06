@@ -7,9 +7,11 @@ Implemented cases:
     cancelled_on_get
         processes some of the input, then cancels the process while it is waiting for the next result on the queue
         uses various buffer sizes
+    cancelled_on_yield
+        processes some of the input, then cancels the process right after it yielded a result
+        uses various buffer sizes
 
 TODO cases:
-    cancelled_on_yield
     cancelled_on_wait
     failing_input
 
@@ -184,6 +186,76 @@ def test__cancelled_on_get(mock_wait, mock_create_task, buffer_size):
 
     # run it to then next await, then cancel it
     gen.send(None)
+    with pytest.raises(asyncio.CancelledError):
+        gen.throw(asyncio.CancelledError)
+
+    # we have reached the end of the function
+    with pytest.raises(StopAsyncIteration):
+        gen = multiplexer.asend(None)
+        gen.send(None)
+
+    # completed tasks are not cancelled, all others are
+    for task in mock_tasks[:completed_tasks_count]:
+        task.cancel.assert_not_called()
+    for task in mock_tasks[completed_tasks_count:]:
+        task.cancel.assert_called_once()
+
+    mock_wait.assert_called_once_with(mock_tasks, return_when=asyncio.ALL_COMPLETED)
+
+
+@pytest.mark.parametrize(argnames='buffer_size', argvalues=[0, 1, 10])
+@unittest.mock.patch('aitools.utils.asynctools.asyncio.create_task')
+@unittest.mock.patch('aitools.utils.asynctools.asyncio.wait')
+def test__cancelled_on_yield(mock_wait, mock_create_task, buffer_size):
+    source_count = 5
+    result_count = 10
+    mock_tasks = [create_mock_task() for _ in range(source_count)]
+
+    mock_create_task.side_effect = mock_tasks
+
+    sources = [asynctools.yield_forever(i) for i in range(source_count)]
+
+    multiplexer = asynctools.multiplex(
+        *sources,
+        buffer_size=buffer_size # TODO make more cases or parametrize this
+    )
+
+    gen = _run_to_first_await(multiplexer)
+
+    internal_queue, poison_pill = _get_and_validate_queue_and_pill(mock_create_task)
+
+    # process some results
+    for i in range(result_count):
+        internal_queue.put_nowait(i)
+        try:
+            gen.send(None)
+        except StopIteration as e:
+            assert e.value == i
+        gen = multiplexer.asend(None)
+
+    # put and process some poison pills
+    completed_tasks_count = source_count // 2
+    for _ in range(completed_tasks_count):
+        internal_queue.put_nowait(poison_pill)
+        try:
+            gen.send(None)
+        except StopIteration as e:
+            assert e.value is None
+
+    # process some more results
+    for i in range(result_count):
+        internal_queue.put_nowait(i)
+        try:
+            gen.send(None)
+        except StopIteration as e:
+            assert e.value == i
+        gen = multiplexer.asend(None)
+
+    # some tasks were completed
+    for task in mock_tasks[:completed_tasks_count]:
+        complete_mock_task(task)
+
+    # cancel the generator at the current "yield"
     with pytest.raises(asyncio.CancelledError):
         gen.throw(asyncio.CancelledError)
 
