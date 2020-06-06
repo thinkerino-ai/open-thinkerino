@@ -162,11 +162,8 @@ async def multiplex(*generators: typing.AsyncGenerator, buffer_size: int) -> typ
 
         if len(tasks) > 0:
             try:
-                try:
-                    await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
-                except BaseException as e:
-                    raise
-            except asyncio.CancelledError:
+                await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+            except (asyncio.CancelledError, GeneratorExit):
                 # force wait
                 await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
                 raise

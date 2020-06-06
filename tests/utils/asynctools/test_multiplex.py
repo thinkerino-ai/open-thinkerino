@@ -18,7 +18,7 @@ TODO cases:
     failing_input
 
 TODO some coroutines are never awaited since I'm handling them manually,
-  which leads to RuntimeWarning about it, I should include tests on this
+  which leads to RuntimeWarning, I should include tests on this
 """
 import asyncio
 import unittest.mock
@@ -63,7 +63,81 @@ def _get_and_validate_queue_and_pill(mock_create_task):
 @pytest.mark.parametrize(argnames='buffer_size', argvalues=[0, 1, 10])
 @unittest.mock.patch('aitools.utils.asynctools.asyncio.create_task')
 @unittest.mock.patch('aitools.utils.asynctools.asyncio.wait')
-def test__cancelled_on_get(mock_wait, mock_create_task, buffer_size):
+def test__completion(mock_wait, mock_create_task, buffer_size):
+    source_count = 5
+    result_count = 10
+    mock_tasks = [create_mock_task() for _ in range(source_count)]
+
+    mock_create_task.side_effect = mock_tasks
+
+    sources = [asynctools.yield_forever(i) for i in range(source_count)]
+
+    multiplexer = asynctools.multiplex(
+        *sources,
+        buffer_size=buffer_size
+    )
+
+    gen = _run_to_first_await(multiplexer)
+
+    internal_queue, poison_pill = _get_and_validate_queue_and_pill(mock_create_task)
+
+    # process some results
+    for i in range(result_count):
+        internal_queue.put_nowait(i)
+        try:
+            gen.send(None)
+        except StopIteration as e:
+            assert e.value == i
+        gen = multiplexer.asend(None)
+
+    # put and process some poison pills
+    for _ in range(source_count // 2):
+        internal_queue.put_nowait(poison_pill)
+        try:
+            gen.send(None)
+        except StopIteration as e:
+            assert e.value is None
+
+    # process some more results
+    for i in range(result_count):
+        internal_queue.put_nowait(i)
+        try:
+            gen.send(None)
+        except StopIteration as e:
+            assert e.value == i
+        gen = multiplexer.asend(None)
+
+    # put and process the remaining poison pills
+    for _ in range(source_count // 2):
+        internal_queue.put_nowait(poison_pill)
+        try:
+            gen.send(None)
+        except StopIteration as e:
+            assert e.value is None
+
+    # put the last pill by hand
+    internal_queue.put_nowait(poison_pill)
+
+    # all tasks are complete now
+    for task in mock_tasks:
+        complete_mock_task(task)
+
+    # we have reached the end of the function
+    with pytest.raises(StopAsyncIteration):
+        gen.send(None)
+
+    # no task was cancelled since they were all done
+    for task in mock_tasks:
+        task.cancel.assert_not_called()
+
+    mock_wait.assert_called_once_with(mock_tasks, return_when=asyncio.ALL_COMPLETED)
+
+
+@pytest.mark.parametrize(argnames='buffer_size', argvalues=[0, 1, 10])
+@pytest.mark.parametrize(argnames='cancellation_exception_type', argvalues=[asyncio.CancelledError, GeneratorExit])
+@unittest.mock.patch('aitools.utils.asynctools.asyncio.create_task')
+@unittest.mock.patch('aitools.utils.asynctools.asyncio.wait')
+def test__cancelled_on_get(mock_wait, mock_create_task, buffer_size, cancellation_exception_type):
     source_count = 5
     result_count = 10
     mock_tasks = [create_mock_task() for _ in range(source_count)]
@@ -114,8 +188,8 @@ def test__cancelled_on_get(mock_wait, mock_create_task, buffer_size):
 
     # run it to then next await, then cancel it
     gen.send(None)
-    with pytest.raises(asyncio.CancelledError):
-        gen.throw(asyncio.CancelledError)
+    with pytest.raises(cancellation_exception_type):
+        gen.throw(cancellation_exception_type)
 
     # we have reached the end of the function
     with pytest.raises(StopAsyncIteration):
@@ -132,9 +206,10 @@ def test__cancelled_on_get(mock_wait, mock_create_task, buffer_size):
 
 
 @pytest.mark.parametrize(argnames='buffer_size', argvalues=[0, 1, 10])
+@pytest.mark.parametrize(argnames='cancellation_exception_type', argvalues=[asyncio.CancelledError, GeneratorExit])
 @unittest.mock.patch('aitools.utils.asynctools.asyncio.create_task')
 @unittest.mock.patch('aitools.utils.asynctools.asyncio.wait')
-def test__cancelled_on_yield(mock_wait, mock_create_task, buffer_size):
+def test__cancelled_on_yield(mock_wait, mock_create_task, buffer_size, cancellation_exception_type):
     source_count = 5
     result_count = 10
     mock_tasks = [create_mock_task() for _ in range(source_count)]
@@ -184,8 +259,8 @@ def test__cancelled_on_yield(mock_wait, mock_create_task, buffer_size):
         complete_mock_task(task)
 
     # cancel the generator at the current "yield"
-    with pytest.raises(asyncio.CancelledError):
-        gen.throw(asyncio.CancelledError)
+    with pytest.raises(cancellation_exception_type):
+        gen.throw(cancellation_exception_type)
 
     # we have reached the end of the function
     with pytest.raises(StopAsyncIteration):
@@ -202,8 +277,9 @@ def test__cancelled_on_yield(mock_wait, mock_create_task, buffer_size):
 
 
 @pytest.mark.parametrize(argnames='buffer_size', argvalues=[0, 1, 10])
+@pytest.mark.parametrize(argnames='cancellation_exception_type', argvalues=[asyncio.CancelledError, GeneratorExit])
 @unittest.mock.patch('aitools.utils.asynctools.asyncio.create_task')
-def test__cancelled_on_wait(mock_create_task, buffer_size):
+def test__cancelled_on_wait(mock_create_task, buffer_size, cancellation_exception_type):
     mock_wait_calls = []
 
     async def mock_wait(tasks, return_when):
@@ -275,10 +351,10 @@ def test__cancelled_on_wait(mock_create_task, buffer_size):
         gen.send(None)
 
         # cancel it
-        gen.throw(asyncio.CancelledError)
+        gen.throw(cancellation_exception_type)
 
         # since the wait is forced, we need to perform another step
-        with pytest.raises(asyncio.CancelledError):
+        with pytest.raises(cancellation_exception_type):
             gen.send(None)
 
         # we have reached the end of the function
