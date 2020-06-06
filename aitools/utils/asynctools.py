@@ -160,7 +160,8 @@ async def multiplex(*generators: typing.AsyncGenerator, buffer_size: int) -> typ
             if not task.done():
                 task.cancel()
 
-        await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+        if len(tasks) > 0:
+            await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
 
 
 class ThreadSafeishQueue(asyncio.Queue):
