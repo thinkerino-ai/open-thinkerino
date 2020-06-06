@@ -13,9 +13,9 @@ Implemented cases:
     cancelled_on_wait
         processes all of the input, then cancels the process while it is waiting for task exit
         uses various buffer sizes
-
-TODO cases:
     failing_input
+        processes some inputs, then an Exception is put on the queue, which interrupts the process
+        uses various buffer sizes
 
 TODO some coroutines are never awaited since I'm handling them manually,
   which leads to RuntimeWarning, I should include tests on this
@@ -371,3 +371,66 @@ def test__cancelled_on_wait(mock_create_task, buffer_size, cancellation_exceptio
             dict(tasks=mock_tasks, return_when=asyncio.ALL_COMPLETED),
             dict(tasks=mock_tasks, return_when=asyncio.ALL_COMPLETED),
         ]
+
+@pytest.mark.parametrize(argnames='buffer_size', argvalues=[0, 1, 10])
+@unittest.mock.patch('aitools.utils.asynctools.asyncio.create_task')
+@unittest.mock.patch('aitools.utils.asynctools.asyncio.wait')
+def test__failing_input(mock_wait, mock_create_task, buffer_size):
+    source_count = 5
+    result_count = 10
+    mock_tasks = [create_mock_task() for _ in range(source_count)]
+
+    mock_create_task.side_effect = mock_tasks
+
+    sources = [asynctools.yield_forever(i) for i in range(source_count)]
+
+    multiplexer = asynctools.multiplex(
+        *sources,
+        buffer_size=buffer_size
+    )
+
+    gen = _run_to_first_await(multiplexer)
+
+    internal_queue, poison_pill = _get_and_validate_queue_and_pill(mock_create_task)
+
+    # process some results
+    for i in range(result_count):
+        internal_queue.put_nowait(i)
+        try:
+            gen.send(None)
+        except StopIteration as e:
+            assert e.value == i
+        gen = multiplexer.asend(None)
+
+    # put and process some poison pills
+    completed_tasks_count = source_count // 2
+    for _ in range(completed_tasks_count):
+        internal_queue.put_nowait(poison_pill)
+        try:
+            gen.send(None)
+        except StopIteration as e:
+            assert e.value is None
+
+    # all tasks are complete now
+    for task in mock_tasks[:completed_tasks_count]:
+        complete_mock_task(task)
+
+    # put an exception on the queue
+    internal_queue.put_nowait(Exception("oh noes!"))
+
+    with pytest.raises(Exception, match="oh noes!"):
+        gen.send(None)
+
+    gen = multiplexer.asend(None)
+
+    # we have reached the end of the function
+    with pytest.raises(StopAsyncIteration):
+        gen.send(None)
+
+    # completed tasks are not cancelled, all others are
+    for task in mock_tasks[:completed_tasks_count]:
+        task.cancel.assert_not_called()
+    for task in mock_tasks[completed_tasks_count:]:
+        task.cancel.assert_called_once()
+
+    mock_wait.assert_called_once_with(mock_tasks, return_when=asyncio.ALL_COMPLETED)
