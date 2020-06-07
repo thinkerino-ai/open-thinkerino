@@ -52,9 +52,6 @@ def test_schedule_generator_cancellation(scheduler):
 
     gen.close()
 
-    for _ in range(2):
-        scheduler.run(asynctools.noop())
-
     assert scheduler.all_tasks() == set()
 
 
@@ -72,9 +69,6 @@ def test_multiplex_cancellation(scheduler):
     assert len(scheduler.all_tasks()) > 0
 
     gen.close()
-
-    for _ in range(2):
-        scheduler.run(asynctools.noop())
 
     assert scheduler.all_tasks() == set()
 
@@ -94,9 +88,6 @@ def test_process_with_loopback(scheduler, inputs):
 
     gen.close()
 
-    for _ in range(3):
-        scheduler.run(asynctools.noop())
-
     assert scheduler.all_tasks() == set()
 
 
@@ -112,9 +103,6 @@ def test_process_with_loopback_and_failing_input(scheduler, n):
     with pytest.raises(SomeException):
         for _ in gen:
             pass
-
-    for _ in range(2):
-        scheduler.run(asynctools.noop())
 
     assert scheduler.all_tasks() == set()
 

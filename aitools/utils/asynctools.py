@@ -1,4 +1,5 @@
 import asyncio
+import concurrent.futures
 from threading import Thread
 
 import typing
@@ -224,10 +225,6 @@ class Scheduler:
         finally:
             if not fut.done():
                 fut.cancel()
-            asyncio.run_coroutine_threadsafe(_wait_for_future(fut, self.loop), loop=self.loop).result()
-
-
-# TODO remove this or consolidate it
-async def _wait_for_future(fut, loop):
-    wrapped = asyncio.wrap_future(fut, loop=loop)
-    await asyncio.wait([wrapped], return_when=asyncio.ALL_COMPLETED)
+            self.loop.call_soon_threadsafe(dual_queue.close)
+            asyncio.run_coroutine_threadsafe(dual_queue.wait_closed(), self.loop).result()
+            concurrent.futures.wait([fut])
