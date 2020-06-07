@@ -16,9 +16,6 @@ Implemented cases:
     failing_input
         processes some inputs, then an Exception is put on the queue, which interrupts the process
         uses various buffer sizes
-
-TODO some coroutines are never awaited since I'm handling them manually,
-  which leads to RuntimeWarning, I should include tests on this
 """
 import asyncio
 import unittest.mock
@@ -60,6 +57,18 @@ def _get_and_validate_queue_and_pill(mock_create_task):
     return internal_queue, poison_pill
 
 
+def _fake_await_passed_coroutines(mock_create_task):
+    # this prevents a warning about the coroutines never being awaited
+    for call in mock_create_task.call_args_list:
+        coro = call.args[0]
+
+        try:
+            coro.throw(asyncio.CancelledError)
+        except asyncio.CancelledError:
+            pass
+
+
+
 @pytest.mark.parametrize(argnames='buffer_size', argvalues=[0, 1, 10])
 @unittest.mock.patch('aitools.utils.asynctools.asyncio.create_task')
 @unittest.mock.patch('aitools.utils.asynctools.asyncio.wait')
@@ -80,6 +89,7 @@ def test__completion(mock_wait, mock_create_task, buffer_size):
     gen = _run_to_first_await(multiplexer)
 
     internal_queue, poison_pill = _get_and_validate_queue_and_pill(mock_create_task)
+    _fake_await_passed_coroutines(mock_create_task)
 
     # process some results
     for i in range(result_count):
@@ -154,6 +164,7 @@ def test__cancelled_on_get(mock_wait, mock_create_task, buffer_size, cancellatio
     gen = _run_to_first_await(multiplexer)
 
     internal_queue, poison_pill = _get_and_validate_queue_and_pill(mock_create_task)
+    _fake_await_passed_coroutines(mock_create_task)
 
     # process some results
     for i in range(result_count):
@@ -226,6 +237,7 @@ def test__cancelled_on_yield(mock_wait, mock_create_task, buffer_size, cancellat
     gen = _run_to_first_await(multiplexer)
 
     internal_queue, poison_pill = _get_and_validate_queue_and_pill(mock_create_task)
+    _fake_await_passed_coroutines(mock_create_task)
 
     # process some results
     for i in range(result_count):
@@ -305,6 +317,7 @@ def test__cancelled_on_wait(mock_create_task, buffer_size, cancellation_exceptio
         gen = _run_to_first_await(multiplexer)
 
         internal_queue, poison_pill = _get_and_validate_queue_and_pill(mock_create_task)
+        _fake_await_passed_coroutines(mock_create_task)
 
         # process some results
         for i in range(result_count):
@@ -392,6 +405,7 @@ def test__failing_input(mock_wait, mock_create_task, buffer_size):
     gen = _run_to_first_await(multiplexer)
 
     internal_queue, poison_pill = _get_and_validate_queue_and_pill(mock_create_task)
+    _fake_await_passed_coroutines(mock_create_task)
 
     # process some results
     for i in range(result_count):

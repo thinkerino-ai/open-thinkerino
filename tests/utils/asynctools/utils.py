@@ -1,5 +1,4 @@
 import asyncio
-import collections
 
 from aitools.utils import asynctools
 
