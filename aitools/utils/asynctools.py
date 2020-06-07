@@ -1,8 +1,9 @@
 import asyncio
-from asyncio import QueueEmpty
 from threading import Thread
 
 import typing
+
+import janus
 
 
 def is_inside_task():
@@ -121,7 +122,7 @@ async def _collect_results_with_loopback(loopback, queue: asyncio.Queue, start_p
             await asyncio.wait(further_tasks, return_when=asyncio.ALL_COMPLETED)
 
 
-async def push_each_to_queue(async_generator: typing.AsyncGenerator, queue: asyncio.Queue, poison_pill: object):
+async def push_each_to_queue(async_generator: typing.AsyncGenerator, queue, poison_pill: object):
     """Pushes each element of an asynchronous iterable into a queue, finally appending a poison pill."""
     try:
         async for res in async_generator:
@@ -169,31 +170,6 @@ async def multiplex(*generators: typing.AsyncGenerator, buffer_size: int) -> typ
                 raise
 
 
-class ThreadSafeishQueue(asyncio.Queue):
-    """A partially thread-safe version of an asyncio.Queue.
-
-    It should be safe as long as only one thread writes and only one thread reads.
-    """
-    # TODO this is the quickest fix I could find but I'm pretty sure it's not actually safe :P
-    def __init__(self, *, max_size, loop):
-        super().__init__(maxsize=max_size)
-        self.loop = loop
-
-    async def __set_result_for_future(self, fut: asyncio.Future, res):
-        if not fut.cancelled():
-            fut.set_result(res)
-
-    def _wakeup_next(self, waiters):
-        # TODO yeah I mean, the original was right below a comment stating "End of the overridable methods" :P
-        #  what could go wrong?
-        # Wake up the next waiter (if any) that isn't cancelled.
-        while waiters:
-            waiter = waiters.popleft()
-            if not waiter.done():
-                asyncio.run_coroutine_threadsafe(self.__set_result_for_future(waiter, None), loop=self.loop)
-                break
-
-
 class Scheduler:
     def __init__(self, *, debug=False):
         self.loop = asyncio.new_event_loop()
@@ -202,11 +178,11 @@ class Scheduler:
         self.__thread.start()
         self.__poison_pill = object()
 
-    def make_queue(self, buffer_size):
+    def make_queue(self, buffer_size) -> janus.Queue:
         return asyncio.run_coroutine_threadsafe(self.__make_queue(buffer_size), self.loop).result()
 
     async def __make_queue(self, max_size):
-        return ThreadSafeishQueue(max_size=max_size, loop=self.loop)
+        return janus.Queue(maxsize=max_size)
 
     async def __get_from_queue(self, queue: asyncio.Queue):
         return await queue.get()
@@ -218,28 +194,23 @@ class Scheduler:
         return asyncio.run_coroutine_threadsafe(coroutine, self.loop).result()
 
     def schedule_generator(self, generator: typing.AsyncGenerator, *, buffer_size: int):
-        queue = self.make_queue(buffer_size)
+        dual_queue = self.make_queue(buffer_size)
 
-        fut = asyncio.run_coroutine_threadsafe(push_each_to_queue(generator, queue, self.__poison_pill), self.loop)
+        fut = asyncio.run_coroutine_threadsafe(
+            coro=push_each_to_queue(generator, dual_queue.async_q, self.__poison_pill),
+            loop=self.loop
+        )
+
+        queue = dual_queue.sync_q
         try:
             while True:
-                try:
-                    el = asyncio.run_coroutine_threadsafe(self.__get_from_queue(queue), self.loop).result()
+                el = queue.get()
 
-                    while True:
-                        if isinstance(el, Exception):
-                            raise el
-                        elif el is self.__poison_pill:
-                            return
-                        yield el
-
-                        el = queue.get_nowait()
-                except QueueEmpty:
-                    pass
-                except GeneratorExit:
-                    raise
-        except BaseException as e:
-            raise e
+                if isinstance(el, Exception):
+                    raise el
+                elif el is self.__poison_pill:
+                    return
+                yield el
         finally:
             if not fut.done():
                 fut.cancel()
@@ -250,4 +221,3 @@ class Scheduler:
 async def _wait_for_future(fut, loop):
     wrapped = asyncio.wrap_future(fut, loop=loop)
     await asyncio.wait([wrapped], return_when=asyncio.ALL_COMPLETED)
-    print("done!")
