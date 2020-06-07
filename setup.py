@@ -22,7 +22,7 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "License :: OSI Approved :: MIT License",
     ],
-    requires=[
+    install_requires=[
         "janus==0.5.0"
     ]
 )
