@@ -85,7 +85,7 @@ class Listener(Component):
                         not all(isinstance(x, LogicObject) for x in result)
                 )
         ):
-            result = asynctools.wrap_item(result)
+            result = asynctools.wrap_item_in_async_generator(result)
 
         if isinstance(result, Iterable):
             result = asynctools.asynchronize(result)

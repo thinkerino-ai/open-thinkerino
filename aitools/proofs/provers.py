@@ -64,7 +64,7 @@ class Prover(Component):
                         not all(isinstance(x, Substitution) for x in result)
                 )
         ):
-            result = asynctools.wrap_item(result)
+            result = asynctools.wrap_item_in_async_generator(result)
 
         if isinstance(result, Iterable):
             result = asynctools.asynchronize(result)

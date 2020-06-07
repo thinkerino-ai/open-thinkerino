@@ -34,7 +34,7 @@ async def asynchronize(iterable: typing.Iterable):
         yield element
 
 
-async def wrap_item(item):
+async def wrap_item_in_async_generator(item):
     yield item
 
 
@@ -61,8 +61,12 @@ async def process_with_loopback(input_sequence: typing.AsyncGenerator, processor
     finally:
         if not task.done():
             task.cancel()
-        await asyncio.wait([task], return_when=asyncio.ALL_COMPLETED)
-
+        try:
+            await asyncio.wait([task], return_when=asyncio.ALL_COMPLETED)
+        except (asyncio.CancelledError, GeneratorExit):
+            # force wait
+            await asyncio.wait([task], return_when=asyncio.ALL_COMPLETED)
+            raise
 
 # TODO I'm not satisfied with this name
 async def _process_all_inputs(input_sequence: typing.AsyncGenerator, processor, *,
@@ -76,22 +80,22 @@ async def _process_all_inputs(input_sequence: typing.AsyncGenerator, processor, 
         await queue.put(poison_pill)
         if len(tasks) > 0:
             await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
-    except BaseException as e:
-        for task in tasks:
-            if not task.done():
-                task.cancel()
-        if isinstance(e, Exception):
-            await queue.put(e)
-        else:
-            raise e
+    except Exception as e:
+        await queue.put(e)
     finally:
-        for task in tasks:
-            if not task.done():
-                task.cancel()
-        await input_sequence.aclose()
-        if len(tasks) > 0:
-            await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
-
+        try:
+            await input_sequence.aclose()
+        finally:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            if len(tasks) > 0:
+                try:
+                    await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+                except (asyncio.CancelledError, GeneratorExit):
+                    # force wait
+                    await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+                    raise
 
 async def _collect_results_with_loopback(loopback, queue: asyncio.Queue, start_pill, poison_pill):
     currently_running_count = 0
@@ -118,8 +122,14 @@ async def _collect_results_with_loopback(loopback, queue: asyncio.Queue, start_p
         for task in further_tasks:
             if not task.done():
                 task.cancel()
+
         if len(further_tasks) > 0:
-            await asyncio.wait(further_tasks, return_when=asyncio.ALL_COMPLETED)
+            try:
+                await asyncio.wait(further_tasks, return_when=asyncio.ALL_COMPLETED)
+            except (asyncio.CancelledError, GeneratorExit):
+                # force wait
+                await asyncio.wait(further_tasks, return_when=asyncio.ALL_COMPLETED)
+                raise
 
 
 async def push_each_to_queue(async_generator: typing.AsyncGenerator, queue, poison_pill: object):
