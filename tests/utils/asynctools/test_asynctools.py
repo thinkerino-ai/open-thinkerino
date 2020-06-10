@@ -108,4 +108,8 @@ def test_process_with_loopback_and_failing_input(scheduler, n):
 
 
 def test_all_other_functions():
-    pytest.xfail("Implement all other unit tests!")
+    # TODO unit tests for process_with_loopback (and related functions)
+    # TODO test that closing the scheduler shuts down everything properly, including the scheduler's thread
+    # TODO test async APIs for kb.prove and kb.ponder
+    # TODO ensure that it's hard to make mistakes, like... I don't know, sync/async tomfoolery
+    pytest.xfail("Test many more cases")

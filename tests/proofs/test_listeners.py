@@ -1018,6 +1018,18 @@ def test_homonymous_variables_are_forbidden_in_map_mode(argument_mode):
                  safety=HandlerSafety.TOTALLY_UNSAFE)
 
 
+@pytest.mark.xfail(reason="me == lazy")
+def test_result_order():
+    # TODO this test should use "complex" chains and show that results are generated breadth-first-ish
+    raise NotImplementedError()
+
+
+@pytest.mark.xfail(reason="me == lazy")
+def test_handler_result_types():
+    # TODO this should actually be several tests that check every possible type returned by a handler (sync and async)
+    raise NotImplementedError()
+
+
 # TODO multi-listener
 # TODO dynamic data-based listeners
 # TODO dynamic set-up listeners

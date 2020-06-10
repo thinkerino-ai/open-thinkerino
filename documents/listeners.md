@@ -92,6 +92,12 @@ Besides performing arbitrary actions, a handler can return a variety of values, 
     
 For all non-`None` values, an iterable of them is allowed (including tuples, since no ambiguity is possible).
     
+Handlers can be either synchronous or asynchronous (i.e. `async def` functions), with the following rules:
+
+- `KnowledgeBase.prove` and `KnowledgeBase.ponder` cannot be called from any handler, if recursive proofs are required, the handler must be asynchronous and call `KnowledgeBase.async_prove`, and currently there is no equivalent for `ponder`
+- as usual, asynchronous code requires quick sections of code to be interleaved with `await` instructions in order to guarantee concurrency, if long-running operations are required, use `asyncio`'s `run_in_executor` or something like that
+- handlers that start tasks should also make sure to handle their cancellation if the handler itself is cancelled
+    
 ## Pondering Process
 
 The `KnowledgeBase.ponder(formulas, ponder_mode)` method starts a "pondering" process, which proceeds as follows for each of the formulas:
@@ -102,7 +108,7 @@ The `KnowledgeBase.ponder(formulas, ponder_mode)` method starts a "pondering" pr
 4. each formula returned by the handler, with its substitution and premises (if any) is then packed in a `Proof` and yielded to the caller
 5. each returned proof by the listener is also further used for step 2
 
-The process terminates if no more formulas are available, so it can be infinite, but is lazily-generated, so unless a single step takes forever this should be of little consequence.
+The process terminates if no more formulas are available, so it can be infinite, but is asynchronous (with `async` and `await`) and lazily-generated, so unless a handler is not `asyncio`-frienly it should still easily return results.
 
 The `ponder_mode` is an enumerative value of type `PonderMode` with the following options:
 

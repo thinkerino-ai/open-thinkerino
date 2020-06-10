@@ -411,6 +411,18 @@ def test_closed_world_assumption(test_knowledge_base):
     assert any(test_knowledge_base.prove(Not(IsPrime(4))))
 
 
+@pytest.mark.xfail(reason="me == lazy")
+def test_result_order():
+    # TODO this test should use "complex" chains and show that results are generated breadth-first-ish
+    raise NotImplementedError()
+
+
+@pytest.mark.xfail(reason="me == lazy")
+def test_handler_result_types():
+    # TODO this should actually be several tests that check every possible type returned by a handler (sync and async)
+    raise NotImplementedError()
+
+
 @pytest.mark.xfail(reason="Come on, we can bring coverage up :P")
 def test_many_more_cases():
     raise NotImplementedError("Implement all possible input modes")
