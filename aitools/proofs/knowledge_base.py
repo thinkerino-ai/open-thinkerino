@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import typing
-from collections import deque
 from contextlib import contextmanager
 from typing import Iterable
 
@@ -124,10 +123,9 @@ class KnowledgeBase:
     def _prepare_proof_sources(self, *, formula, retrieve_only, previous_substitution):
         previous_substitution = previous_substitution or Substitution()
 
-        proof_sources: typing.Deque[typing.AsyncIterable[Proof]] = deque()
-        proof_sources.append(
+        proof_sources: typing.List[typing.AsyncIterable[Proof]] = [
             self.knowledge_retriever.prove(formula, previous_substitution=previous_substitution, knowledge_base=self)
-        )
+        ]
 
         if not retrieve_only:
             proof_sources.extend(
