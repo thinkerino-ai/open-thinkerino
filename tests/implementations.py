@@ -34,7 +34,7 @@ def in_memory_sqlalchemy_engine():
 @contextmanager
 def in_memory_sqlite3_connection():
     db_str = ":memory:"
-    connection = sqlite3.connect(db_str)
+    connection = sqlite3.connect(db_str, check_same_thread=False)
     try:
         yield connection
         connection.commit()
@@ -45,7 +45,7 @@ def in_memory_sqlite3_connection():
 @contextmanager
 def tempfile_sqlite_connection():
     handle, filename = tempfile.mkstemp(suffix=".db", prefix="sqlite")
-    connection = sqlite3.connect(filename)
+    connection = sqlite3.connect(filename, check_same_thread=False)
     try:
         yield connection
         connection.commit()

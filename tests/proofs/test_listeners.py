@@ -222,8 +222,8 @@ def test_single_result_substitution_single_premise_triple(test_knowledge_base):
     v = VariableSource()
     Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
 
-    def deduce_meow_and_purr(_x, kb):
-        proofs = list(kb.prove(SomeDumbTruth))
+    async def deduce_meow_and_purr(_x, kb):
+        proofs = [p async for p in kb.async_prove(SomeDumbTruth)]
         return Meows(_x), proofs[0].substitution, proofs[0]
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
@@ -252,9 +252,9 @@ def test_multiple_results_substitution_multiple_premises_triple(test_knowledge_b
         'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
     )
 
-    def deduce_meow_and_purr(_x, kb):
-        for proof in kb.prove(SomeDumbTruth):
-            for other_proof in kb.prove(SomeOtherDumbTruth):
+    async def deduce_meow_and_purr(_x, kb):
+        async for proof in kb.async_prove(SomeDumbTruth):
+            async for other_proof in kb.async_prove(SomeOtherDumbTruth):
                 yield Meows(_x), other_proof.substitution, (proof, other_proof)
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
@@ -339,8 +339,8 @@ def test_single_formula_substitution_premises_dataclass(test_knowledge_base):
     v = VariableSource()
     Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
 
-    def deduce_meow_and_purr(_x, kb):
-        proofs = list(kb.prove(SomeDumbTruth))
+    async def deduce_meow_and_purr(_x, kb):
+        proofs = [p async for p in kb.async_prove(SomeDumbTruth)]
         return FormulaSubstitutionPremises(formula=Meows(_x), substitution=proofs[0].substitution, premises=proofs[0])
 
     listener = Listener(listened_formula=Is(v._x, cat), handler=deduce_meow_and_purr,
@@ -369,9 +369,9 @@ def test_multiple_results_substitution_multiple_premises_dataclass(test_knowledg
         'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
     )
 
-    def deduce_meow_and_purr(_x, kb):
-        for proof in kb.prove(SomeDumbTruth):
-            for other_proof in kb.prove(SomeOtherDumbTruth):
+    async def deduce_meow_and_purr(_x, kb):
+        async for proof in kb.async_prove(SomeDumbTruth):
+            async for other_proof in kb.async_prove(SomeOtherDumbTruth):
                 yield FormulaSubstitutionPremises(
                     formula=Meows(_x),
                     substitution=other_proof.substitution,
@@ -1016,6 +1016,18 @@ def test_homonymous_variables_are_forbidden_in_map_mode(argument_mode):
         Listener(listened_formula=SomePredicate(v1.x, v2.x), handler=lambda x: ...,
                  argument_mode=argument_mode, pass_substitution_as=..., pure=True,
                  safety=HandlerSafety.TOTALLY_UNSAFE)
+
+
+@pytest.mark.xfail(reason="me == lazy")
+def test_result_order():
+    # TODO this test should use "complex" chains and show that results are generated breadth-first-ish
+    raise NotImplementedError()
+
+
+@pytest.mark.xfail(reason="me == lazy")
+def test_handler_result_types():
+    # TODO this should actually be several tests that check every possible type returned by a handler (sync and async)
+    raise NotImplementedError()
 
 
 # TODO multi-listener

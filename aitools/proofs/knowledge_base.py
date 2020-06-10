@@ -1,6 +1,6 @@
+import asyncio
 import logging
 import typing
-from collections import deque
 from contextlib import contextmanager
 from typing import Iterable
 
@@ -12,6 +12,8 @@ from aitools.proofs.provers import Proof, Prover
 from aitools.storage.base import LogicObjectStorage
 from aitools.storage.implementations.dummy import DummyAbstruseIndex
 from aitools.storage.index import AbstruseIndex, make_key
+from aitools.utils import asynctools
+from aitools.utils.asynctools import process_with_loopback
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +26,8 @@ class KnowledgeBase:
 
         self._prover_storage: AbstruseIndex[Prover] = DummyAbstruseIndex()
         self._listener_storage: AbstruseIndex[Listener] = DummyAbstruseIndex()
+
+        self._scheduler: asynctools.Scheduler = asynctools.Scheduler()
 
         self.knowledge_retriever: Prover = self.__make_knowledge_retriever()
 
@@ -42,8 +46,8 @@ class KnowledgeBase:
         self._storage.rollback()
 
     def __make_knowledge_retriever(self):
-        def retrieve_knowledge(formula, substitution):
-            for substitution in self._retrieve(formula, previous_substitution=substitution):
+        async def retrieve_knowledge(formula, substitution):
+            async for substitution in self._retrieve(formula, previous_substitution=substitution):
                 yield substitution
 
         # this is impure to ensure it is always called during proof verification
@@ -52,8 +56,8 @@ class KnowledgeBase:
             pass_substitution_as=..., pure=False, safety=HandlerSafety.SAFE
         )
 
-    def _retrieve(self, formula: Expression, *,
-                  previous_substitution: Substitution = None) -> Iterable[Substitution]:
+    async def _retrieve(self, formula: Expression, *,
+                  previous_substitution: Substitution = None) -> typing.AsyncIterable[Substitution]:
         """Retrieves all formula from the KnowledgeBase which are unifiable with the given one.
         No proofs are searched, so either a formula is **IN** the KB, or nothing will be returned."""
         # TODO here I am performing unification twice! I need to optimize this
@@ -86,15 +90,42 @@ class KnowledgeBase:
         return len(self._storage)
 
     def prove(self, formula: LogicObject, *, retrieve_only: bool = False,
-              previous_substitution: typing.Optional[Substitution] = None):
+              previous_substitution: typing.Optional[Substitution] = None) -> typing.Generator[Proof, None, None]:
         logger.info("Trying to prove %s with previous substitution %s", formula, previous_substitution)
+        if asynctools.is_inside_task():
+            raise RuntimeError(f"{KnowledgeBase.__name__}.{KnowledgeBase.prove.__name__} cannot be used "
+                               f"inside tasks")
 
+        proof_process = self._prepare_proof_sources(formula=formula, retrieve_only=retrieve_only,
+                                                    previous_substitution=previous_substitution)
+
+        for proof in self._scheduler.schedule_generator(
+                proof_process, buffer_size=0
+        ):
+            yield proof
+
+    async def async_prove(
+            self, formula: LogicObject, *, retrieve_only: bool = False,
+            previous_substitution: typing.Optional[Substitution] = None
+    ) -> typing.AsyncGenerator[Proof, None]:
+        logger.info("Trying to asynchronously prove %s with previous substitution %s", formula, previous_substitution)
+
+        if not asynctools.is_inside_task():
+            raise RuntimeError(f"{KnowledgeBase.__name__}.{KnowledgeBase.async_prove.__name__} cannot be used "
+                               f"outside tasks")
+
+        proof_process = self._prepare_proof_sources(formula=formula, retrieve_only=retrieve_only,
+                                                    previous_substitution=previous_substitution)
+
+        async for proof in proof_process:
+            yield proof
+
+    def _prepare_proof_sources(self, *, formula, retrieve_only, previous_substitution):
         previous_substitution = previous_substitution or Substitution()
 
-        proof_sources: typing.Deque[Iterable[Proof]] = deque()
-        proof_sources.append(
+        proof_sources: typing.List[typing.AsyncIterable[Proof]] = [
             self.knowledge_retriever.prove(formula, previous_substitution=previous_substitution, knowledge_base=self)
-        )
+        ]
 
         if not retrieve_only:
             proof_sources.extend(
@@ -102,71 +133,58 @@ class KnowledgeBase:
                 for prover in self.get_provers_for(formula)
             )
 
-        while any(proof_sources):
-            source = proof_sources.popleft().__iter__()
-            try:
-                new_proof = next(source)
-            except StopIteration:
-                pass
-            else:
-                proof_sources.append(source)
-                yield new_proof
+        # TODO make buffer_size configurable
+        proof_process = asynctools.multiplex(*proof_sources, buffer_size=1)
+
+        return proof_process
 
     def ponder(self, *formulas: Iterable[LogicObject], ponder_mode: PonderMode):
-        input_sources: deque[Iterable[Proof]] = deque(
-            self._preprocess_pondering_inputs(formulas, ponder_mode)
-        )
+        proving_process = self.__make_proving_process(formulas, ponder_mode)
 
-        pondering_processes: deque[Iterable[Proof]] = deque()
+        # TODO make buffer_size configurable
+        for proof in self._scheduler.schedule_generator(
+                process_with_loopback(input_sequence=proving_process, processor=self.__ponder_single_proof),
+                buffer_size=1
+        ):
+            yield proof
 
-        while len(input_sources) > 0 or len(pondering_processes) > 0:
-            # one step on input_processes, to produce more pondering_processes (if necessary)
-            if len(input_sources) > 0:
-                first_source_iterable = input_sources.popleft()
-                input_source = first_source_iterable.__iter__()
-                try:
-                    new_input: Proof = next(input_source)
-                except StopIteration:
-                    pass
-                else:
-                    for listener in self.get_listeners_for(new_input.conclusion):
-                        trigger_premise = Proof(
-                            inference_rule=TriggeringFormula(),
-                            conclusion=new_input.substitution.apply_to(new_input.conclusion),
-                            substitution=new_input.substitution,
-                            premises=(new_input,)
-                        )
-                        pondering_processes.append(listener.ponder(trigger_premise, knowledge_base=self))
-                    input_sources.append(input_source)
-
-            # one step on pondering_processes, to produce results (and more input_processes)
-            if len(pondering_processes) > 0:
-                pondering_process = pondering_processes.popleft().__iter__()
-                try:
-                    new_listener_proof: Proof = next(pondering_process)
-                except StopIteration:
-                    pass
-                else:
-                    input_sources.append((new_listener_proof,))
-                    pondering_processes.append(pondering_process)
-                    yield new_listener_proof
-
-    def _preprocess_pondering_inputs(self, formulas, ponder_mode) -> Iterable[Iterable[Proof]]:
+    def __make_proving_process(self, formulas, ponder_mode):
         if ponder_mode == PonderMode.HYPOTHETICALLY:
             raise NotImplementedError("This case requires hypotheses to be implemented :P")
         elif ponder_mode == PonderMode.KNOWN:
-            input_sources = (
-                (lambda f: self.prove(f, retrieve_only=True))(formula)
-                for formula in formulas
+            # TODO make buffer_size configurable
+            proving_process = asynctools.multiplex(
+                *(self.async_prove(f, retrieve_only=True) for f in formulas),
+                buffer_size=1
             )
         elif ponder_mode == PonderMode.PROVE:
-            input_sources = (
-                (lambda f: self.prove(f))(formula)
-                for formula in formulas
+            # TODO make buffer_size configurable
+            proving_process = asynctools.multiplex(
+                *(self.async_prove(f, retrieve_only=False) for f in formulas),
+                buffer_size=1
             )
         else:
             raise NotImplementedError(f"Unknown ponder mode: {ponder_mode}")
-        return input_sources
+        return proving_process
+
+    async def __ponder_single_proof(self, proof: Proof, *, queue: asyncio.Queue, poison_pill):
+        pondering_sources = []
+        for listener in self.get_listeners_for(proof.conclusion):
+            trigger_premise = Proof(
+                inference_rule=TriggeringFormula(),
+                conclusion=proof.substitution.apply_to(proof.conclusion),
+                substitution=proof.substitution,
+                premises=(proof,)
+            )
+            pondering_sources.append(listener.ponder(trigger_premise, knowledge_base=self))
+
+        # TODO make buffer_size configurable
+        pondering_process = asynctools.multiplex(
+            *pondering_sources,
+            buffer_size=1
+        )
+
+        await asynctools.push_each_to_queue(pondering_process, queue=queue, poison_pill=poison_pill)
 
     def get_listeners_for(self, formula):
         key = make_key(formula)
@@ -179,3 +197,6 @@ class KnowledgeBase:
     def is_hypothetical(self) -> bool:
         # TODO: when hypotheses exist, this must be done
         return False
+
+
+

@@ -13,4 +13,5 @@ logging.getLogger().setLevel(logging.WARNING)
 def test_knowledge_base(request):
     with request.param() as storage:
         kb = KnowledgeBase(storage)
+        kb._scheduler.loop.set_debug(True)
         yield kb

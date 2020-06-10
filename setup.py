@@ -19,7 +19,10 @@ setup(
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 1 - Planning",
-        "Topic :: Scientific/Engineering :: Artificial Intelligence"
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "License :: OSI Approved :: MIT License",
     ],
+    install_requires=[
+        "janus==0.5.0"
+    ]
 )
