@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from typing import Any, Iterable, Union, Dict, Set, Tuple
 
 from aitools.logic.unification import Binding, Substitution
-from aitools.logic import Variable, Constant, Expression, LogicWrapper, LogicObject
+from aitools.logic.core import Variable, Constant, Expression, LogicObject, LogicWrapper
 
 
 def constants(count_or_names: Union[int, str, Iterable[str]], *, clazz=Constant):
@@ -31,24 +31,16 @@ def wrap(obj: Any):
         return LogicWrapper(obj)
 
 
-def expr(*args) -> LogicObject:
+def expr(*args) -> Expression:
     if len(args) == 0:
         raise ValueError("At least one element!")
-    elif len(args) == 1:
-        obj = args[0]
-    else:
-        obj = args
 
-    if isinstance(obj, LogicObject):
-        return obj
-    else:
-        # supports only sequences
-        if isinstance(obj, Sequence) and not isinstance(obj, str):
-            return Expression(*map(expr, obj))
-        else:
-            return LogicWrapper(obj)
-
-
+    return Expression(
+        *map(
+            lambda el: expr(*el) if isinstance(el, Sequence) and not isinstance(el, str) else wrap(el),
+            args
+        )
+    )
 
 
 def binding(head, vars) -> Binding:

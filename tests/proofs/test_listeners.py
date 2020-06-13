@@ -3,7 +3,8 @@ from typing import List
 
 import pytest
 
-from aitools.logic import Substitution, LogicWrapper, LogicObject, Variable, Constant
+from aitools.logic.core import LogicWrapper, LogicObject, Variable, Constant
+from aitools.logic.unification import Substitution
 from aitools.logic.utils import VariableSource, constants, wrap
 from aitools.proofs.builtin_provers import RestrictedModusPonens
 from aitools.proofs.language import Implies, Not

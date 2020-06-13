@@ -1,7 +1,8 @@
 from enum import Enum, auto
 from typing import Callable, Optional, List, Dict, Any, Union
 
-from aitools.logic import LogicObject, Substitution, Variable, LogicWrapper
+from aitools.logic.core import LogicObject, Variable, LogicWrapper
+from aitools.logic.unification import Substitution
 from aitools.logic.utils import map_variables_by_name, VariableSource, normalize_variables
 
 

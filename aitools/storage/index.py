@@ -7,7 +7,7 @@ from collections import deque
 from typing import TypeVar, Generic, Dict, MutableSet, Iterable, Sequence, Protocol, Any, Tuple, Sized, Type, Union, \
     List, Optional
 
-from aitools.logic import Expression, LogicObject, Variable
+from aitools.logic.core import Expression, LogicObject, Variable
 
 logger = logging.getLogger(__name__)
 T = TypeVar('T')

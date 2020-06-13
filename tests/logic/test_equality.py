@@ -1,6 +1,6 @@
 import unittest
 
-from aitools.logic import Constant
+from aitools.logic.core import Constant
 from aitools.logic.utils import constants, expr, binding, variables
 
 

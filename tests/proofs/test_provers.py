@@ -1,6 +1,6 @@
 import pytest
 
-from aitools.logic import Expression
+from aitools.logic.core import Expression
 from aitools.logic.utils import constants, wrap, VariableSource
 from aitools.proofs.builtin_provers import RestrictedModusPonens, ClosedWorldAssumption
 from aitools.proofs.components import HandlerSafety, HandlerArgumentMode

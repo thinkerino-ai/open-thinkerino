@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import Iterable, Tuple
 
-from aitools.logic import LogicObject, Substitution
+from aitools.logic.core import LogicObject
+from aitools.logic.unification import Substitution
 
 
 class LogicObjectStorage(ABC):

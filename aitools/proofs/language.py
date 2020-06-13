@@ -1,7 +1,7 @@
 """Some basic symbols"""
 
 # Logic Operators
-from aitools.logic import LogicObject, LogicWrapper, Constant
+from aitools.logic.core import LogicObject, LogicWrapper, Constant
 from aitools.logic.utils import constants
 
 

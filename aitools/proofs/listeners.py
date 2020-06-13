@@ -7,7 +7,8 @@ from typing import Iterable, Collection, Union
 
 import typing
 
-from aitools.logic import Substitution, LogicObject
+from aitools.logic.core import LogicObject
+from aitools.logic.unification import Substitution
 from aitools.logic.utils import normalize_variables
 from aitools.proofs.components import HandlerSafety, Component
 from aitools.proofs.exceptions import UnsafeOperationException

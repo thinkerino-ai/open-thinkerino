@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import Optional
+
+import abc
+import typing
 
 
 def fail(exception):
@@ -7,65 +9,60 @@ def fail(exception):
 
 
 class LogicObject:
-    """An object with a unique ID"""
-    _lastID = 0
-
-    def __init__(self):
-        self.id = LogicObject._lastID
-        self.name = None
-        LogicObject._lastID = LogicObject._lastID + 1
-        super().__init__()
-
-    def __repr__(self):
-        if self.name:
-            return "{}({}{})".format(type(self).__name__, self.name, self.id)
-        else:
-            return "{}({})".format(type(self).__name__, self.id)
-
-    def __str__(self):
-        return "o{}".format(self.id)
-
-    def __contains__(self, obj):
-        return False
-
-    def __eq__(self, other):
-        return isinstance(other, LogicObject) and other.id == self.id
-
-    def __hash__(self):
-        return hash(self.id)
-
-    def __call__(self, *other_children) -> Expression:
-        return Expression(self, *other_children)
-
-    @property
-    def size(self):
-        return 1
+    pass
+#
+#     def __init__(self):
+#         self.name = None
+#         super().__init__()
+#
+#     def __repr__(self):
+#         if self.name:
+#             return "{}({}{})".format(type(self).__name__, self.name, self.id)
+#         else:
+#             return "{}({})".format(type(self).__name__, self.id)
+#
+#     def __str__(self):
+#         return "o{}".format(self.id)
+#
+#     def __contains__(self, obj):
+#         return False
+#
+#     def __eq__(self, other):
+#         return isinstance(other, LogicObject) and other.id == self.id
+#
+#     def __hash__(self):
+#         return hash(self.id)
+#
+#     def __call__(self, *other_children) -> Expression:
+#         return Expression(self, *other_children)
+#
+#     @property
+#     def size(self):
+#         return 1
 
 
 class LogicWrapper(LogicObject):
     """Wraps an object in a LogicObject"""
 
     def __init__(self, value):
+        if not isinstance(value, typing.Hashable):
+            raise ValueError("A wrapped value must be hashable")
         self.value = value
         super().__init__()
 
     def __repr__(self):
-        return "LogicWrapper({}, {})".format(self.id, repr(self.value))
+        return "LogicWrapper({})".format(repr(self.value))
 
     def __str__(self):
-        return "{}:{}".format(super().__str__(), str(self.value))
+        return "{{{}}}".format(str(self.value))
 
     def __eq__(self, other):
-        return (isinstance(other, LogicObject) and other.id == self.id or
-                isinstance(other, LogicWrapper) and other.value == self.value or
-                not isinstance(other, LogicObject) and self.value == other)
+        return (isinstance(other, LogicWrapper) and other.value == self.value or
+                not isinstance(other, LogicWrapper) and self.value == other)
 
     def __hash__(self):
-        # TODO this is TERRIBLE
-        try:
-            return hash(self.value)
-        except TypeError:
-            return hash(self.id)
+        # TODO something needs to be done if self.value is not hashable!
+        return hash(self.value)
 
     @staticmethod
     def __magic_binary(method, other):
@@ -168,28 +165,36 @@ class LogicWrapper(LogicObject):
         return self.value.__invert__()
 
 
-class Constant(LogicObject):
-    def __init__(self, name: Optional[str] = None):
-        if name is not None and not (isinstance(name, str) and name):
-            raise ValueError("Constant name must be a non-empty string!")
-        super().__init__()
-        self.name = name
+class Symbol(abc.ABC, LogicObject):
+    _lastID = 0
 
+    def __init__(self, name: typing.Optional[str] = None):
+        if name is not None and not (isinstance(name, str) and name):
+            raise ValueError("Symbol name must be a non-empty string!")
+        self.name = name
+        self.id = Symbol._lastID
+        Symbol._lastID = Symbol._lastID + 1
+
+    def __call__(self, *other_children) -> Expression:
+        return Expression(self, *other_children)
+
+    def __eq__(self, other):
+        if not isinstance(other, Symbol):
+            return NotImplemented
+        return other.id == self.id
+
+    def __hash__(self):
+        return hash(self.id)
+
+class Constant(Symbol):
     def __str__(self):
         if self.name is not None:
-            return "{}{}".format(self.name,self.id)
+            return "{}{}".format(self.name, self.id)
         else:
             return "o{}".format(self.id)
 
 
-class Variable(LogicObject):
-
-    def __init__(self, name: str = None):
-        if name is not None and not (isinstance(name, str) and name):
-            raise ValueError("Variable name must be a non-empty string!")
-        super().__init__()
-        self.name = name
-
+class Variable(Symbol):
     def __str__(self):
         if self.name is not None:
             return "?{}{}".format(self.name,self.id)
@@ -212,7 +217,10 @@ class Expression(LogicObject):
         return "({})".format(", ".join(map(str, self.children)))
 
     def __contains__(self, obj):
-        return any(obj == child or obj in child for child in self.children)
+        return any(
+            obj == child or (isinstance(child, Expression) and obj in child)
+            for child in self.children
+        )
 
     def __eq__(self, other):
         if not isinstance(other, Expression) or len(self.children) != len(other.children):
@@ -228,15 +236,7 @@ class Expression(LogicObject):
         # TODO store this so that it is calculated only once
         return hash(self.children)
 
-    # TODO remove __getstate__ and __setstate__ as soon as IDs are removed (there's a GitHub issue about that and
-    #  a canary test I just wrote to make sure I remember about this)
-    def __getstate__(self):
-        return self.children
-
-    def __setstate__(self, state):
-        self.id = -1
-        self.children = state
-
     @property
     def size(self):
-        return 1 + sum(c.size for c in self.children)
+        return 1 + sum(c.size if isinstance(c, Expression) else 1
+                       for c in self.children)

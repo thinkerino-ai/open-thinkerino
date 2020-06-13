@@ -1,6 +1,6 @@
 import pytest
 
-from aitools.logic import Substitution
+from aitools.logic.unification import Substitution
 from aitools.logic.utils import constants, VariableSource, normalize_variables
 from aitools.storage.base import LogicObjectStorage
 from tests import implementations

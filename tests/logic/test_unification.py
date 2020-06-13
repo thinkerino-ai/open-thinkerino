@@ -3,7 +3,8 @@ from typing import Optional
 
 import pytest
 
-from aitools.logic import Substitution, Variable, LogicObject, Binding, UnificationError
+from aitools.logic.core import Variable, LogicObject
+from aitools.logic.unification import Substitution, Binding, UnificationError
 from aitools.logic.utils import constants, expr, variables, subst, binding, wrap
 
 
@@ -216,6 +217,6 @@ class TestUnification(unittest.TestCase):
         e1 = expr("hello", ("yay", c), [d])
         e2 = expr("hello", (v1, c), v2)
 
-        expected_result = subst((wrap("yay"), [v1]), (expr([d]), [v2]))
+        expected_result = subst((wrap("yay"), [v1]), (expr(d), [v2]))
 
         self.assertUnificationResult(e1, e2, expected_result)

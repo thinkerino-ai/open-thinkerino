@@ -5,7 +5,8 @@ from typing import Iterable, Union, Collection, Any, AsyncIterable
 
 import typing
 
-from aitools.logic import Substitution, Expression, LogicObject
+from aitools.logic.core import Expression, LogicObject
+from aitools.logic.unification import Substitution
 from aitools.logic.utils import normalize_variables
 from aitools.proofs.components import Component, HandlerSafety
 from aitools.proofs.exceptions import UnsafeOperationException

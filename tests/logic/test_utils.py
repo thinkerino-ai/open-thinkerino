@@ -1,17 +1,9 @@
 import pytest
 
-from aitools.logic import Substitution, Variable, LogicObject, Constant
+from aitools.logic.core import Variable, LogicObject, Constant
+from aitools.logic.unification import Substitution
 from aitools.logic.utils import expr, constants, subst, VariableSource, normalize_variables, all_unique_variables_in, \
     all_variables_in, map_variables_by_name
-
-
-def test_logic_object_invocation():
-    a, b, c, d = constants('a, b, c, d')
-
-    e1 = expr(a, b, c, d)
-    e2 = a(b, c, d)
-
-    assert e1 == e2
 
 
 def test_variable_source_getattr():

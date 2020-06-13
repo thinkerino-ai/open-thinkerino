@@ -1,6 +1,7 @@
 import logging
 
-from aitools.logic import Expression, Variable, Substitution, LogicObject
+from aitools.logic.core import Expression, Variable, LogicObject
+from aitools.logic.unification import Substitution
 from aitools.logic.utils import VariableSource
 from aitools.proofs.components import HandlerArgumentMode, HandlerSafety
 from aitools.proofs.knowledge_base import KnowledgeBase

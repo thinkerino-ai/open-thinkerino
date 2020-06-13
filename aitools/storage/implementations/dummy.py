@@ -1,9 +1,9 @@
 import pickle
-from abc import abstractmethod
 from contextlib import contextmanager
 from typing import Set, Iterable, Tuple, Dict, Optional
 
-from aitools.logic import LogicObject, Substitution
+from aitools.logic.core import LogicObject
+from aitools.logic.unification import Substitution
 from aitools.storage.base import LogicObjectStorage, NodeStorage
 from aitools.storage.index import make_key, TrieIndex, AbstruseIndex, AbstruseKey, AbstruseKeyElement, WILDCARD
 

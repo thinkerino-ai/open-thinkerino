@@ -4,7 +4,8 @@ import typing
 from contextlib import contextmanager
 from typing import Iterable
 
-from aitools.logic import Expression, Substitution, LogicObject, Variable
+from aitools.logic.core import Expression, LogicObject, Variable
+from aitools.logic.unification import Substitution
 from aitools.logic.utils import normalize_variables, VariableSource
 from aitools.proofs.components import HandlerArgumentMode, HandlerSafety
 from aitools.proofs.listeners import Listener, PonderMode, TriggeringFormula
