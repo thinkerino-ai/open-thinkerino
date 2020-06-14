@@ -2,19 +2,18 @@ from __future__ import annotations
 
 import abc
 import typing
+import uuid
+
+from aitools.logic.language import Language
 
 
 def fail(exception):
     raise exception
 
 
-class LogicObject:
+class LogicObject(abc.ABC):
     pass
-#
-#     def __init__(self):
-#         self.name = None
-#         super().__init__()
-#
+
 #     def __repr__(self):
 #         if self.name:
 #             return "{}({}{})".format(type(self).__name__, self.name, self.id)
@@ -23,22 +22,84 @@ class LogicObject:
 #
 #     def __str__(self):
 #         return "o{}".format(self.id)
-#
-#     def __contains__(self, obj):
-#         return False
-#
-#     def __eq__(self, other):
-#         return isinstance(other, LogicObject) and other.id == self.id
-#
-#     def __hash__(self):
-#         return hash(self.id)
-#
-#     def __call__(self, *other_children) -> Expression:
-#         return Expression(self, *other_children)
-#
-#     @property
-#     def size(self):
-#         return 1
+
+
+Identifier = typing.Tuple[uuid.UUID, int]
+
+class Symbol(LogicObject, abc.ABC):
+
+    def __init__(self, *, name: typing.Optional[str] = None, language: Language):
+        if name is not None and not (isinstance(name, str) and name):
+            raise ValueError("Symbol name must be a non-empty string!")
+        language = Language() if language is None else language
+        self.id = (language, language.get_next())
+        self.name = name
+
+    def __call__(self, *other_children) -> Expression:
+        return Expression(self, *other_children)
+
+    def __eq__(self, other):
+        if not isinstance(other, Symbol):
+            return NotImplemented
+        return other.id == self.id
+
+    def __hash__(self):
+        return hash(self.id)
+
+class Constant(Symbol):
+    def __str__(self):
+        if self.name is not None:
+            return "{}{}".format(self.name, self.id)
+        else:
+            return "o{}".format(self.id)
+
+
+class Variable(Symbol):
+    def __str__(self):
+        if self.name is not None:
+            return "?{}{}".format(self.name,self.id)
+        else:
+            return "?v{}".format(self.id)
+
+
+class Expression(LogicObject):
+    def __init__(self, *children: LogicObject):
+        if len(children) == 0:
+            raise ValueError("There must be at least one child for an expression")
+        self.children = tuple(c if isinstance(c, LogicObject) else fail(ValueError(f"{c} is not a logic object, wrap it if you want to put it in an expression")) for c in children)
+
+        super().__init__()
+
+    def __repr__(self):
+        return "Expression({})".format(self.children)
+
+    def __str__(self):
+        return "({})".format(", ".join(map(str, self.children)))
+
+    def __contains__(self, obj):
+        return any(
+            obj == child or (isinstance(child, Expression) and obj in child)
+            for child in self.children
+        )
+
+    def __eq__(self, other):
+        if not isinstance(other, Expression) or len(self.children) != len(other.children):
+            return False
+
+        for a, b in zip(self.children, other.children):
+            if a != b:
+                return False
+
+        return True
+
+    def __hash__(self):
+        # TODO store this so that it is calculated only once
+        return hash(self.children)
+
+    @property
+    def size(self):
+        return 1 + sum(c.size if isinstance(c, Expression) else 1
+                       for c in self.children)
 
 
 class LogicWrapper(LogicObject):
@@ -164,79 +225,3 @@ class LogicWrapper(LogicObject):
     def __invert__(self, other):
         return self.value.__invert__()
 
-
-class Symbol(abc.ABC, LogicObject):
-    _lastID = 0
-
-    def __init__(self, name: typing.Optional[str] = None):
-        if name is not None and not (isinstance(name, str) and name):
-            raise ValueError("Symbol name must be a non-empty string!")
-        self.name = name
-        self.id = Symbol._lastID
-        Symbol._lastID = Symbol._lastID + 1
-
-    def __call__(self, *other_children) -> Expression:
-        return Expression(self, *other_children)
-
-    def __eq__(self, other):
-        if not isinstance(other, Symbol):
-            return NotImplemented
-        return other.id == self.id
-
-    def __hash__(self):
-        return hash(self.id)
-
-class Constant(Symbol):
-    def __str__(self):
-        if self.name is not None:
-            return "{}{}".format(self.name, self.id)
-        else:
-            return "o{}".format(self.id)
-
-
-class Variable(Symbol):
-    def __str__(self):
-        if self.name is not None:
-            return "?{}{}".format(self.name,self.id)
-        else:
-            return "?v{}".format(self.id)
-
-
-class Expression(LogicObject):
-    def __init__(self, *children: LogicObject):
-        if len(children) == 0:
-            raise ValueError("There must be at least one child for an expression")
-        self.children = tuple(c if isinstance(c, LogicObject) else fail(ValueError(f"{c} is not a logic object, wrap it if you want to put it in an expression")) for c in children)
-
-        super().__init__()
-
-    def __repr__(self):
-        return "Expression({})".format(self.children)
-
-    def __str__(self):
-        return "({})".format(", ".join(map(str, self.children)))
-
-    def __contains__(self, obj):
-        return any(
-            obj == child or (isinstance(child, Expression) and obj in child)
-            for child in self.children
-        )
-
-    def __eq__(self, other):
-        if not isinstance(other, Expression) or len(self.children) != len(other.children):
-            return False
-
-        for a, b in zip(self.children, other.children):
-            if a != b:
-                return False
-
-        return True
-
-    def __hash__(self):
-        # TODO store this so that it is calculated only once
-        return hash(self.children)
-
-    @property
-    def size(self):
-        return 1 + sum(c.size if isinstance(c, Expression) else 1
-                       for c in self.children)

@@ -54,7 +54,8 @@ class Listener(Component):
         if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
             raise UnsafeOperationException("Unsafe listener cannot be used in hypothetical scenarios")
 
-        normalized_listened_formula, normalization_mapping = normalize_variables(self.listened_formula)
+        normalized_listened_formula, normalization_mapping = normalize_variables(self.listened_formula,
+                                                                                 language=self._language)
         unifier = Substitution.unify(formula, normalized_listened_formula,
                                      previous=proof.substitution)
 

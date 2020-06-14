@@ -1,17 +1,19 @@
 import pytest
 
 from aitools.logic.core import Variable, LogicObject, Constant
+from aitools.logic.language import Language
 from aitools.logic.unification import Substitution
 from aitools.logic.utils import expr, constants, subst, VariableSource, normalize_variables, all_unique_variables_in, \
     all_variables_in, map_variables_by_name
 
 
 def test_variable_source_getattr():
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
     assert v.x == v['x']
 
-    a, b, c, d = constants('a, b, c, d')
+    a, b, c, d = constants('a, b, c, d', language=language)
 
     e1 = expr(a, (b, c), (v.x, b, d))
     e2 = expr(a, (v.x, c), (v.y, v.x, d))
@@ -25,10 +27,11 @@ def test_variable_source_getattr():
 
 
 def test_normalize_variables():
-    v = VariableSource()
-    a, b, c = constants('a, b, c')
+    language = Language()
+    v = VariableSource(language=language)
+
     e1 = expr(v.x, v.y, v.x)
-    e2, mapping = normalize_variables(e1)
+    e2, mapping = normalize_variables(e1, language=language)
 
     assert e2.children[0] != e2.children[1]
     assert e2.children[0] == e2.children[2]
@@ -38,11 +41,12 @@ def test_normalize_variables():
 
 
 def test_normalize_variables_preserves_unification():
-    v = VariableSource()
-    a, b, c, d = constants('a, b, c, d')
+    language = Language()
+    v = VariableSource(language=language)
+    a, b, c, d = constants('a, b, c, d', language=language)
 
     e1 = expr(v.x, (v.y, v.z), d)
-    e2, _ = normalize_variables(e1)
+    e2, _ = normalize_variables(e1, language=language)
 
     e3 = expr(a, (b, c), d)
 
@@ -57,8 +61,9 @@ def test_normalize_variables_preserves_unification():
 
 
 def test_normalize_variables_with_source_makes_expressions_equal():
-    v = VariableSource()
-    norm = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
+    norm = VariableSource(language=language)
 
     e1 = expr(v.x, (v.y, v.z))
     e2 = expr(v.z, (v.x, v.y))
@@ -81,8 +86,25 @@ def test_normalize_variables_with_source_makes_expressions_equal():
     assert normalize_variables(e1, variable_source=norm)[1] != normalize_variables(e_diff, variable_source=norm)[1]
 
 
+def test_normalize_variables_rejects_both_variable_source_and_language_being_passed():
+    language = Language()
+    v = VariableSource(language=language)
+
+    with pytest.raises(ValueError):
+        normalize_variables(Constant(language=language), variable_source=v, language=language)
+
+
+def test_normalize_variables_rejects_neither_variable_source_and_language_being_passed():
+    language = Language()
+    v = VariableSource(language=language)
+
+    with pytest.raises(ValueError):
+        normalize_variables(Constant(language=language), variable_source=v, language=language)
+
+
 def test_all_variables_in_single_variable():
-    v = Variable()
+    language = Language()
+    v = Variable(language=language)
     res = list(all_variables_in(v))
 
     assert res == [v]
@@ -96,8 +118,9 @@ def test_all_variables_in_logic_object_is_empty():
 
 
 def test_all_variables_in_expression():
-    v = VariableSource()
-    a = Constant()
+    language = Language()
+    v = VariableSource(language=language)
+    a = Constant(language=language)
     e1 = expr(v.x, (v.y, v.z), (a, v.x))
 
     res = list(all_variables_in(e1))
@@ -106,8 +129,9 @@ def test_all_variables_in_expression():
 
 
 def test_all_unique_variables_in_expression():
-    v = VariableSource()
-    a = Constant()
+    language = Language()
+    v = VariableSource(language=language)
+    a = Constant(language=language)
     e1 = expr(v.x, (v.y, v.z), (a, v.x))
 
     res = all_unique_variables_in(e1)
@@ -116,8 +140,9 @@ def test_all_unique_variables_in_expression():
 
 
 def test_map_variables_by_name_success():
-    v = VariableSource()
-    a = Constant()
+    language = Language()
+    v = VariableSource(language=language)
+    a = Constant(language=language)
     e1 = expr(v.x, (v.y, v.z), (a, v.x))
 
     res = map_variables_by_name(e1)
@@ -126,9 +151,10 @@ def test_map_variables_by_name_success():
 
 
 def test_map_variables_by_name_homonymous_failure():
-    v1 = VariableSource()
-    v2 = VariableSource()
-    a = Constant()
+    language = Language()
+    v1 = VariableSource(language=language)
+    v2 = VariableSource(language=language)
+    a = Constant(language=language)
     e1 = expr(v1.x, (v1.y, v1.z), (a, v2.x))
 
     with pytest.raises(ValueError):

@@ -1,14 +1,16 @@
 import unittest
 
 from aitools.logic.core import LogicWrapper, Variable, Constant, Expression
+from aitools.logic.language import Language
 from aitools.logic.utils import expr, wrap
 
 
 class TestLogicWrappers(unittest.TestCase):
 
     def testStringConstantInDSL(self):
-        v1 = Variable(name='v1')
-        a = Constant(name='a')
+        language = Language()
+        v1 = Variable(name='v1', language=language)
+        a = Constant(name='a', language=language)
 
         e = expr(v1, a, "hello")
 

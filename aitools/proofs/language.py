@@ -1,8 +1,14 @@
 """Some basic symbols"""
 
 # Logic Operators
+import uuid
+
 from aitools.logic.core import LogicObject, LogicWrapper, Constant
+from aitools.logic.language import Language
 from aitools.logic.utils import constants
+
+# TODO decide what the best approach for this would be, until then, 42 is the answer
+language = Language(language_id=uuid.UUID(int=42), next_id=0)
 
 
 class MagicPredicate(Constant):
@@ -37,12 +43,12 @@ class LogicInfix(LogicOperator):
         return self.function(other)
 
     def __rlshift__(self, other):
-        return LogicInfix(lambda x, self=self, other=other: self.function(other, x))
+        return LogicInfix(lambda x, self=self, other=other: self.function(other, x), language=language)
 
     def __rshift__(self, other):
         return self.function(other)
 
 
-And, Or, Implies, CoImplies = constants('And, Or, Implies, CoImplies', clazz=LogicInfix)
+And, Or, Implies, CoImplies = constants('And, Or, Implies, CoImplies', clazz=LogicInfix, language=language)
 # TODO magic operator ~formula to produce the same as Not(Formula)
-Not = LogicOperator(name='Not')
+Not = LogicOperator(name='Not', language=language)

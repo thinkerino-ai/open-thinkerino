@@ -4,6 +4,7 @@ from typing import List
 import pytest
 
 from aitools.logic.core import LogicWrapper, LogicObject, Variable, Constant
+from aitools.logic.language import Language
 from aitools.logic.unification import Substitution
 from aitools.logic.utils import VariableSource, constants, wrap
 from aitools.proofs.builtin_provers import RestrictedModusPonens
@@ -15,9 +16,10 @@ from aitools.proofs.provers import Proof
 
 
 def test_listener_with_just_side_effects(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan', language=language)
 
     calls = []
 
@@ -40,9 +42,10 @@ def test_listener_with_just_side_effects(test_knowledge_base):
 
 
 def test_listener_single_result(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan', language=language)
 
     def cats_meow(cat):
         return Meows(cat)
@@ -68,9 +71,10 @@ def test_listener_single_result(test_knowledge_base):
 
 
 def test_multiple_listeners_are_used(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Is, Meows, Purrs, cat, dylan = constants('Is, Meows, Purrs, cat, dylan')
+    Is, Meows, Purrs, cat, dylan = constants('Is, Meows, Purrs, cat, dylan', language=language)
 
     def cats_meow(cat):
         return Meows(cat)
@@ -98,9 +102,10 @@ def test_multiple_listeners_are_used(test_knowledge_base):
 
 
 def test_single_listener_added_multiple_times(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan', language=language)
 
     def cats_meow(cat):
         return Meows(cat)
@@ -117,9 +122,10 @@ def test_single_listener_added_multiple_times(test_knowledge_base):
 
 @pytest.mark.parametrize(['mode'], [[PonderMode.KNOWN], [PonderMode.PROVE]])
 def test_listener_multiple_inputs(test_knowledge_base, mode):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Is, Meows, cat, dylan, hugo = constants('Is, Meows, cat, dylan, hugo')
+    Is, Meows, cat, dylan, hugo = constants('Is, Meows, cat, dylan, hugo', language=language)
 
     def cats_meow(cat):
         return Meows(cat)
@@ -145,9 +151,10 @@ def test_listener_multiple_inputs(test_knowledge_base, mode):
 
 
 def test_listener_known_requires_formula_in_kb(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan', language=language)
 
     def cats_meow(cat):
         yield Meows(cat)
@@ -164,8 +171,9 @@ def test_listener_known_requires_formula_in_kb(test_knowledge_base):
 
 
 def test_listener_2_tuple_formulas_returned(test_knowledge_base):
-    v = VariableSource()
-    Is, Meows, Purrs, cat, dylan = constants('Is, Meows, Purrs, cat, dylan')
+    language = Language()
+    v = VariableSource(language=language)
+    Is, Meows, Purrs, cat, dylan = constants('Is, Meows, Purrs, cat, dylan', language=language)
 
     def deduce_meow_and_purr(_x):
         return Meows(_x), Purrs(_x)
@@ -182,9 +190,10 @@ def test_listener_2_tuple_formulas_returned(test_knowledge_base):
 
 
 def test_listener_3_tuple_formulas_returned(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
     # ok, go ahead, tell me my view of cats is stereotyped and offensive, I already know that :P
-    Is, Meows, Purrs, Sleeps, cat, dylan = constants('Is, Meows, Purrs, Sleeps, cat, dylan')
+    Is, Meows, Purrs, Sleeps, cat, dylan = constants('Is, Meows, Purrs, Sleeps, cat, dylan', language=language)
 
     def deduce_meow_and_purr(_x):
         return Meows(_x), Purrs(_x), Sleeps(_x)
@@ -201,8 +210,9 @@ def test_listener_3_tuple_formulas_returned(test_knowledge_base):
 
 
 def test_listener_multiple_formulas_yielded(test_knowledge_base):
-    v = VariableSource()
-    Is, Meows, Purrs, cat, dylan = constants('Is, Meows, Purrs, cat, dylan')
+    language = Language()
+    v = VariableSource(language=language)
+    Is, Meows, Purrs, cat, dylan = constants('Is, Meows, Purrs, cat, dylan', language=language)
 
     def deduce_meow_and_purr(_x):
         yield Meows(_x)
@@ -220,8 +230,9 @@ def test_listener_multiple_formulas_yielded(test_knowledge_base):
 
 
 def test_single_result_substitution_single_premise_triple(test_knowledge_base):
-    v = VariableSource()
-    Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
+    language = Language()
+    v = VariableSource(language=language)
+    Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan', language=language)
 
     async def deduce_meow_and_purr(_x, kb):
         proofs = [p async for p in kb.async_prove(SomeDumbTruth)]
@@ -248,9 +259,10 @@ def test_single_result_substitution_single_premise_triple(test_knowledge_base):
 
 
 def test_multiple_results_substitution_multiple_premises_triple(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
     Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan = constants(
-        'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
+        'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan', language=language
     )
 
     async def deduce_meow_and_purr(_x, kb):
@@ -284,8 +296,9 @@ def test_multiple_results_substitution_multiple_premises_triple(test_knowledge_b
 
 
 def test_single_result_substitution_pair(test_knowledge_base):
-    v = VariableSource()
-    Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
+    language = Language()
+    v = VariableSource(language=language)
+    Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan', language=language)
 
     some_subst = Substitution()
 
@@ -308,9 +321,10 @@ def test_single_result_substitution_pair(test_knowledge_base):
 
 
 def test_multiple_results_substitution_pair(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
     Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan = constants(
-        'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
+        'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan', language=language
     )
 
     some_substitution = Substitution()
@@ -337,8 +351,9 @@ def test_multiple_results_substitution_pair(test_knowledge_base):
 
 
 def test_single_formula_substitution_premises_dataclass(test_knowledge_base):
-    v = VariableSource()
-    Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
+    language = Language()
+    v = VariableSource(language=language)
+    Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan', language=language)
 
     async def deduce_meow_and_purr(_x, kb):
         proofs = [p async for p in kb.async_prove(SomeDumbTruth)]
@@ -365,9 +380,10 @@ def test_single_formula_substitution_premises_dataclass(test_knowledge_base):
 
 
 def test_multiple_results_substitution_multiple_premises_dataclass(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
     Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan = constants(
-        'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
+        'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan', language=language
     )
 
     async def deduce_meow_and_purr(_x, kb):
@@ -405,8 +421,9 @@ def test_multiple_results_substitution_multiple_premises_dataclass(test_knowledg
 
 
 def test_single_result_substitution_dataclass(test_knowledge_base):
-    v = VariableSource()
-    Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan')
+    language = Language()
+    v = VariableSource(language=language)
+    Is, Meows, SomeDumbTruth, cat, dylan = constants('Is, Meows, SomeDumbTruth, cat, dylan', language=language)
 
     some_subst = Substitution()
 
@@ -429,9 +446,10 @@ def test_single_result_substitution_dataclass(test_knowledge_base):
 
 
 def test_multiple_results_substitution_dataclass(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
     Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan = constants(
-        'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan'
+        'Is, Meows, SomeDumbTruth, SomeOtherDumbTruth, cat, dylan', language=language
     )
 
     some_substitution = Substitution()
@@ -458,8 +476,9 @@ def test_multiple_results_substitution_dataclass(test_knowledge_base):
 
 
 def test_listener_chain(test_knowledge_base):
-    v = VariableSource()
-    A, B, C, D, foo = constants('A, B, C, D, foo')
+    language = Language()
+    v = VariableSource(language=language)
+    A, B, C, D, foo = constants('A, B, C, D, foo', language=language)
 
     def deduce_from_a_b(_x):
         return B(_x)
@@ -491,9 +510,10 @@ def test_listener_chain(test_knowledge_base):
 
 
 def test_listener_chain_normalizes_listened_formula(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    IsNatural = Constant(name="IsNatural")
+    IsNatural = Constant(name="IsNatural", language=language)
 
     calls = []
     def countdown(x: int):
@@ -515,9 +535,10 @@ def test_listener_chain_normalizes_listened_formula(test_knowledge_base):
 
 
 def test_trigger_with_open_formula__known(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Is, Meows, cat, kitten, dylan, hugo, kitty = constants('Is, Meows, cat, kitten, dylan, hugo, kitty')
+    Is, Meows, cat, kitten, dylan, hugo, kitty = constants('Is, Meows, cat, kitten, dylan, hugo, kitty', language=language)
 
     def cats_meow(cat):
         yield Meows(cat)
@@ -541,9 +562,10 @@ def test_trigger_with_open_formula__known(test_knowledge_base):
 
 
 def test_trigger_with_open_formula__prove(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Is, Meows, cat, kitten, dylan, hugo, kitty = constants('Is, Meows, cat, kitten, dylan, hugo, kitty')
+    Is, Meows, cat, kitten, dylan, hugo, kitty = constants('Is, Meows, cat, kitten, dylan, hugo, kitty', language=language)
 
     def cats_meow(cat):
         yield Meows(cat)
@@ -575,9 +597,10 @@ def test_listener_exceptions_make_the_whole_thing_fail(test_knowledge_base):
     class SomeException(Exception):
         pass
 
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan', language=language)
 
     def failing_listener(cat):
         raise SomeException(f"Oh noes I failed with {cat}")
@@ -601,9 +624,10 @@ def test_listener_exceptions_make_the_whole_thing_fail(test_knowledge_base):
 
 
 def test_listener_argument_mode_raw(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan', language=language)
 
     call_args = {}
 
@@ -627,10 +651,11 @@ def test_listener_argument_mode_raw(test_knowledge_base):
 
 
 def test_listener_argument_mode_raw_with_open_input(test_knowledge_base):
-    v_listener = VariableSource()
-    v_process = VariableSource()
+    language = Language()
+    v_listener = VariableSource(language=language)
+    v_process = VariableSource(language=language)
 
-    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan', language=language)
 
     call_args = {}
 
@@ -654,9 +679,10 @@ def test_listener_argument_mode_raw_with_open_input(test_knowledge_base):
 
 
 def test_listener_argument_mode_raw_rejects_wrong_argument_names(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan')
+    Is, Meows, cat, dylan = constants('Is, Meows, cat, dylan', language=language)
 
     call_args = {}
 
@@ -670,9 +696,10 @@ def test_listener_argument_mode_raw_rejects_wrong_argument_names(test_knowledge_
 
 
 def test_listener_argument_mode_map_unwrapped(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Are, Meows, cat, dylan = constants('Are, Meows, cat, dylan')
+    Are, Meows, cat, dylan = constants('Are, Meows, cat, dylan', language=language)
 
     call_args = {}
 
@@ -703,9 +730,10 @@ def test_listener_argument_mode_map_unwrapped(test_knowledge_base):
 
 
 def test_listener_argument_mode_map_unwrapped_required_fails_if_input_is_not_wrapped(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Are, Meows, cat, dylan = constants('Are, Meows, cat, dylan')
+    Are, Meows, cat, dylan = constants('Are, Meows, cat, dylan', language=language)
 
     calls = []
 
@@ -731,9 +759,10 @@ def test_listener_argument_mode_map_unwrapped_required_fails_if_input_is_not_wra
 
 
 def test_listener_argument_mode_map_unwrapped_required_succeeds_if_inputs_are_all_wrapped(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Are, Meows, cat = constants('Are, Meows, cat')
+    Are, Meows, cat = constants('Are, Meows, cat', language=language)
 
     call_args = {}
 
@@ -766,9 +795,10 @@ def test_listener_argument_mode_map_unwrapped_required_succeeds_if_inputs_are_al
 
 
 def test_listener_argument_mode_map_no_variables_rejects_variables(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Are, Meows, cat, dylan = constants('Are, Meows, cat, dylan')
+    Are, Meows, cat, dylan = constants('Are, Meows, cat, dylan', language=language)
 
     calls = []
 
@@ -792,9 +822,10 @@ def test_listener_argument_mode_map_no_variables_rejects_variables(test_knowledg
 
 
 def test_listener_argument_mode_map_no_variables_succeeds_when_no_variables_are_passed(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Are, Meows, dylan, hugo, cat = constants('Are, Meows, dylan, hugo, cat')
+    Are, Meows, dylan, hugo, cat = constants('Are, Meows, dylan, hugo, cat', language=language)
 
     call_args = {}
 
@@ -821,9 +852,10 @@ def test_listener_argument_mode_map_no_variables_succeeds_when_no_variables_are_
 
 
 def test_listener_argument_mode_map_unwrapped_no_variables_reject_variables(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Are, Meows, cat, dylan = constants('Are, Meows, cat, dylan')
+    Are, Meows, cat, dylan = constants('Are, Meows, cat, dylan', language=language)
 
     calls = []
 
@@ -847,9 +879,10 @@ def test_listener_argument_mode_map_unwrapped_no_variables_reject_variables(test
 
 
 def test_listener_argument_mode_map_unwrapped_no_variables_works_when_no_variables_are_passed(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Are, Meows, cat, dylan = constants('Are, Meows, cat, dylan')
+    Are, Meows, cat, dylan = constants('Are, Meows, cat, dylan', language=language)
 
     call_args = {}
 
@@ -880,9 +913,10 @@ def test_listener_argument_mode_map_unwrapped_no_variables_works_when_no_variabl
 
 
 def test_listener_argument_mode_map_succeeds_with_variables(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Are, Meows, cat = constants('Are, Meows, cat')
+    Are, Meows, cat = constants('Are, Meows, cat', language=language)
 
     call_args = {}
 
@@ -919,7 +953,8 @@ def test_listener_pass_substitution_as_default_is_ellipsis():
     (HandlerArgumentMode.MAP_NO_VARIABLES, None, lambda: None),
 ])
 def test_listener_pass_substitution_ellipsis_equivalence(argument_mode: HandlerArgumentMode, equivalent_value, handler):
-    listener = Listener(listened_formula=Variable(), handler=handler, argument_mode=argument_mode,
+    language = Language()
+    listener = Listener(listened_formula=Variable(language=language), handler=handler, argument_mode=argument_mode,
                         pass_substitution_as=..., pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
     assert listener.pass_substitution_as == equivalent_value
@@ -936,8 +971,9 @@ def test_listener_pass_substitution_ellipsis_equivalence(argument_mode: HandlerA
 ])
 def test_listener_pass_substitution_string_passes_the_chosen_name(test_knowledge_base,
                                                                   argument_mode: HandlerArgumentMode, handler):
-    v = VariableSource()
-    IsA, cat = constants('IsA, cat')
+    language = Language()
+    v = VariableSource(language=language)
+    IsA, cat = constants('IsA, cat', language=language)
 
     listener = Listener(listened_formula=IsA(v.x, cat), handler=handler, argument_mode=argument_mode,
                         pass_substitution_as='some_substitution', pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
@@ -954,8 +990,9 @@ def test_listener_pass_substitution_string_passes_the_chosen_name(test_knowledge
 
 
 def test_listener_pass_substitution_none_explodes_for_raw():
+    language = Language()
     with pytest.raises(ValueError):
-        Listener(listened_formula=Variable(), handler=lambda formula, substitution: ...,
+        Listener(listened_formula=Variable(language=language), handler=lambda formula, substitution: ...,
                  argument_mode=HandlerArgumentMode.RAW, pass_substitution_as=None, pure=True,
                  safety=HandlerSafety.TOTALLY_UNSAFE)
 
@@ -969,8 +1006,9 @@ def test_listener_pass_substitution_none_explodes_for_raw():
     (HandlerArgumentMode.MAP_NO_VARIABLES, lambda x, some_substitution: ...),
 ])
 def test_argument_validation_map_modes(argument_mode, handler):
-    v = VariableSource()
-    IsA, cat = constants('IsA, cat')
+    language = Language()
+    v = VariableSource(language=language)
+    IsA, cat = constants('IsA, cat', language=language)
     with pytest.raises(ValueError):
         Listener(listened_formula=IsA(v.y, cat), handler=handler, argument_mode=argument_mode,
                  pass_substitution_as='some_substitution', pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
@@ -981,17 +1019,19 @@ def test_argument_validation_map_modes(argument_mode, handler):
     lambda another_name_for_formula, some_substitution: ...
 ])
 def test_argument_validation_raw_mode(handler):
-    v = VariableSource()
-    IsA, cat = constants('IsA, cat')
+    language = Language()
+    v = VariableSource(language=language)
+    IsA, cat = constants('IsA, cat', language=language)
     with pytest.raises(ValueError):
         Listener(listened_formula=IsA(v.y, cat), handler=handler, argument_mode=HandlerArgumentMode.RAW,
                  pass_substitution_as='some_substitution', pure=True, safety=HandlerSafety.TOTALLY_UNSAFE)
 
 
 def test_homonymous_variables_are_allowed_in_raw_mode():
-    v1 = VariableSource()
-    v2 = VariableSource()
-    SomePredicate, = constants('SomePredicate')
+    language = Language()
+    v1 = VariableSource(language=language)
+    v2 = VariableSource(language=language)
+    SomePredicate, = constants('SomePredicate', language=language)
 
     try:
         Listener(listened_formula=SomePredicate(v1.x, v2.x), handler=lambda formula, substitution: ...,
@@ -1009,9 +1049,10 @@ def test_homonymous_variables_are_allowed_in_raw_mode():
     HandlerArgumentMode.MAP_NO_VARIABLES,
 ])
 def test_homonymous_variables_are_forbidden_in_map_mode(argument_mode):
-    v1 = VariableSource()
-    v2 = VariableSource()
-    SomePredicate, = constants('SomePredicate')
+    language = Language()
+    v1 = VariableSource(language=language)
+    v2 = VariableSource(language=language)
+    SomePredicate, = constants('SomePredicate', language=language)
 
     with pytest.raises(ValueError):
         Listener(listened_formula=SomePredicate(v1.x, v2.x), handler=lambda x: ...,
