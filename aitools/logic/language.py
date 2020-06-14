@@ -9,6 +9,7 @@ class Language:
         self._next_id = next_id or 0
 
     def get_next(self) -> int:
+        # TODO can I haz thread safety?
         if self._next_id is not None:
             res = self._next_id
             self._next_id += 1
