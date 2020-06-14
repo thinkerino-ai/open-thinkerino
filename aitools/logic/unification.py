@@ -19,15 +19,15 @@ class Binding:
             raise ValueError("There must be at least one variable")
 
         self.head = head
-        self.variables = variables
+        self.variables: FrozenSet[Variable] = variables
 
         super().__init__()
 
     # TODO: how did this function end up with this name? O_O
     def get_bound_object_for(self):
         # TODO: that 'max' is super inefficient! (but necessary to guarantee order)
-        # TODO I don't like accessing the id as [0] and [1], I should change it ([0] is a Language, [1] is an int)
-        return self.head if self.head is not None else max(self.variables, key=lambda v: (v.id[0]._id.int, v.id[1]))
+        return self.head if self.head is not None else max(self.variables,
+                                                           key=lambda v: (v.id.language._id.int, v.id.sequential_id))
 
     @classmethod
     def join(cls, a: Binding, b: Binding, binding_context=None) -> Binding:

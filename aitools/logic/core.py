@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import dataclasses
 import typing
 import uuid
 
@@ -24,15 +25,20 @@ class LogicObject(abc.ABC):
 #         return "o{}".format(self.id)
 
 
-Identifier = typing.Tuple[uuid.UUID, int]
+@dataclasses.dataclass(frozen=True)
+class Identifier:
+    language: Language
+    sequential_id: int
+
 
 class Symbol(LogicObject, abc.ABC):
 
     def __init__(self, *, name: typing.Optional[str] = None, language: Language):
         if name is not None and not (isinstance(name, str) and name):
             raise ValueError("Symbol name must be a non-empty string!")
+        # TODO remove this, I don't want defaults for the language right now
         language = Language() if language is None else language
-        self.id = (language, language.get_next())
+        self.id: Identifier = Identifier(language=language, sequential_id=language.get_next())
         self.name = name
 
     def __call__(self, *other_children) -> Expression:
