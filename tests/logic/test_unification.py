@@ -83,8 +83,8 @@ def test_unification_with_variables_success_simple():
 
 
 def test_unification_with_variables_across_languages():
-    v1, = variables('v1', language=Language(language_id=uuid.UUID(int=0), next_id=0))
-    a, b, c, d = constants('a, b, c, d', language=Language(language_id=uuid.UUID(int=1), next_id=0))
+    v1, = variables('v1', language=Language(_language_id=uuid.UUID(int=0), _next_id=0))
+    a, b, c, d = constants('a, b, c, d', language=Language(_language_id=uuid.UUID(int=1), _next_id=0))
 
     expr_d = expr([d])
     e1 = expr(a, (b, c), expr_d)

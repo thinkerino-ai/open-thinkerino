@@ -26,8 +26,8 @@ def test_expression_equality_failure():
 
 
 def test_different_language_equality_failure():
-    language_1 = Language(language_id=uuid.UUID(int=1), next_id=0)
-    language_2 = Language(language_id=uuid.UUID(int=2), next_id=0)
+    language_1 = Language(_language_id=uuid.UUID(int=1), _next_id=0)
+    language_2 = Language(_language_id=uuid.UUID(int=2), _next_id=0)
 
     a_1 = Constant(name="a", language=language_1)
     a_2 = Constant(name="a", language=language_2)

@@ -8,7 +8,7 @@ from aitools.logic.language import Language
 from aitools.logic.utils import constants
 
 # TODO decide what the best approach for this would be, until then, 42 is the answer
-language = Language(language_id=uuid.UUID(int=42), next_id=0)
+language = Language(_language_id=uuid.UUID(int=42), _next_id=0)
 
 
 class MagicPredicate(Constant):

@@ -15,15 +15,6 @@ def fail(exception):
 class LogicObject(abc.ABC):
     pass
 
-#     def __repr__(self):
-#         if self.name:
-#             return "{}({}{})".format(type(self).__name__, self.name, self.id)
-#         else:
-#             return "{}({})".format(type(self).__name__, self.id)
-#
-#     def __str__(self):
-#         return "o{}".format(self.id)
-
 
 @dataclasses.dataclass(frozen=True)
 class Identifier:
@@ -51,20 +42,26 @@ class Symbol(LogicObject, abc.ABC):
     def __hash__(self):
         return hash(self.id)
 
+    def __repr__(self):
+        fake_lang = Language(_language_id=self.id.language._id, _next_id=None)
+        fake_identifier = Identifier(language=fake_lang, sequential_id=self.id.sequential_id)
+        return f"{self.__class__.__name__}(name={repr(self.name)}, id={repr(fake_identifier)})"
+
+
 class Constant(Symbol):
     def __str__(self):
         if self.name is not None:
-            return "{}{}".format(self.name, self.id)
+            return "{}{}".format(self.name, self.id.sequential_id)
         else:
-            return "o{}".format(self.id)
+            return "o{}".format(self.id.sequential_id)
 
 
 class Variable(Symbol):
     def __str__(self):
         if self.name is not None:
-            return "?{}{}".format(self.name,self.id)
+            return "?{}{}".format(self.name, self.id.sequential_id)
         else:
-            return "?v{}".format(self.id)
+            return "?v{}".format(self.id.sequential_id)
 
 
 class Expression(LogicObject):
