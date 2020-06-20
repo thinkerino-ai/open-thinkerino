@@ -7,7 +7,8 @@ from typing import Iterable, Collection, Union
 
 import typing
 
-from aitools.logic import Substitution, LogicObject
+from aitools.logic.core import LogicObject
+from aitools.logic.unification import Substitution
 from aitools.logic.utils import normalize_variables
 from aitools.proofs.components import HandlerSafety, Component
 from aitools.proofs.exceptions import UnsafeOperationException
@@ -53,7 +54,8 @@ class Listener(Component):
         if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
             raise UnsafeOperationException("Unsafe listener cannot be used in hypothetical scenarios")
 
-        normalized_listened_formula, normalization_mapping = normalize_variables(self.listened_formula)
+        normalized_listened_formula, normalization_mapping = normalize_variables(self.listened_formula,
+                                                                                 language=self._language)
         unifier = Substitution.unify(formula, normalized_listened_formula,
                                      previous=proof.substitution)
 

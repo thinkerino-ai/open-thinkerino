@@ -13,20 +13,21 @@ class Binding:
         if head is None:
             if var_count < 2:
                 raise ValueError("If no head is specified there must be at least two variables")
-        elif any(v for v in variables if v in head):  # TODO this will be quite slow! how do I solve it?
+        elif isinstance(head, Expression) and any(True for v in variables if v in head):  # TODO this will be quite slow! how do I solve it?
             raise ValueError("The head of a binding cannot contain its variables")
         if var_count < 1:
             raise ValueError("There must be at least one variable")
 
         self.head = head
-        self.variables = variables
+        self.variables: FrozenSet[Variable] = variables
 
         super().__init__()
 
     # TODO: how did this function end up with this name? O_O
     def get_bound_object_for(self):
         # TODO: that 'max' is super inefficient! (but necessary to guarantee order)
-        return self.head if self.head is not None else max(self.variables, key=lambda v: v.id)
+        return self.head if self.head is not None else max(self.variables,
+                                                           key=lambda v: (v.id.language._id.int, v.id.sequential_id))
 
     @classmethod
     def join(cls, a: Binding, b: Binding, binding_context=None) -> Binding:
@@ -133,9 +134,9 @@ class Substitution:
             return subst
         elif isinstance(a, Variable) and isinstance(b, Variable):
             return subst.with_bindings(Binding(frozenset([a, b])))
-        elif isinstance(a, Variable) and a not in b:
+        elif isinstance(a, Variable) and not (isinstance(b, Expression) and a in b):
             return subst.with_bindings(Binding(frozenset([a]), head=b))
-        elif isinstance(b, Variable) and b not in a:
+        elif isinstance(b, Variable) and not (isinstance(a, Expression) and b in a):
             return subst.with_bindings(Binding(frozenset([b]), head=a))
         elif isinstance(a, Expression) and isinstance(b, Expression) and len(a.children) == len(b.children):
             child_unifier = None

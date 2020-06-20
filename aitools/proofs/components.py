@@ -1,7 +1,9 @@
 from enum import Enum, auto
 from typing import Callable, Optional, List, Dict, Any, Union
 
-from aitools.logic import LogicObject, Substitution, Variable, LogicWrapper
+from aitools.logic.core import LogicObject, Variable, LogicWrapper
+from aitools.logic.language import Language
+from aitools.logic.unification import Substitution
 from aitools.logic.utils import map_variables_by_name, VariableSource, normalize_variables
 
 
@@ -26,10 +28,10 @@ class Component:
                  listened_formula: LogicObject, handler: Callable,
                  argument_mode: HandlerArgumentMode, pass_substitution_as=..., pass_knowledge_base_as=...,
                  pure: bool, safety: HandlerSafety):
-        self._normalization_variable_source = VariableSource()
+        self._language = Language()
 
         self.handler = handler
-        listened_formula, _ = normalize_variables(listened_formula)
+        listened_formula, _ = normalize_variables(listened_formula, language=self._language)
         self.listened_formula = listened_formula
         self.argument_mode = argument_mode
         self.pure = pure

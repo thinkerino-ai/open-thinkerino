@@ -2,7 +2,8 @@ import pickle
 from contextlib import contextmanager
 from typing import Iterable, Tuple
 
-from aitools.logic import LogicObject, Substitution, Expression, Variable
+from aitools.logic.core import LogicObject, Expression, Variable
+from aitools.logic.unification import Substitution
 from aitools.storage.base import LogicObjectStorage, NodeStorage
 from aitools.storage.implementations.node_index import NodeStoringAbstruseIndex
 from aitools.storage.index import AbstruseIndex, AbstruseKey, WILDCARD

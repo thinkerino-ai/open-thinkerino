@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable, Tuple, Optional
 
-from aitools.logic import LogicObject
+from aitools.logic.core import LogicObject
 from aitools.storage.base import NodeStorage
 from aitools.storage.index import TrieIndex, AbstruseIndex, AbstruseKeyElement
 

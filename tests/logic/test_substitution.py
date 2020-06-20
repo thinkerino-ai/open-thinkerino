@@ -1,14 +1,16 @@
 import unittest
 
-from aitools.logic import Variable, Constant
+from aitools.logic.core import Variable, Constant
+from aitools.logic.language import Language
 from aitools.logic.utils import variables, constants, subst, expr
 
 
 class TestSubstitution(unittest.TestCase):
 
     def testComplexSubstitution(self):
-        x, y, z = variables('x, y, z')
-        a, b, c, d = constants('a, b, c, d')
+        language = Language()
+        x, y, z = variables('x, y, z', language=language)
+        a, b, c, d = constants('a, b, c, d', language=language)
 
         e = expr(x, a)
 
@@ -22,12 +24,14 @@ class TestSubstitution(unittest.TestCase):
         self.assertEqual(s.apply_to(e), expected_result)
 
     def testInfiniteSubstitution(self):
-        x = Variable(name='x')
-        a = Constant(name='a')
+        language = Language()
+        x = Variable(name='x', language=language)
+        a = Constant(name='a', language=language)
 
         e = expr(x, a)
 
         try:
+            # TODO pytest.raises :P
             s = subst((e, [x]))
             s.apply_to(e)
         except ValueError:
@@ -36,9 +40,10 @@ class TestSubstitution(unittest.TestCase):
             self.fail("Infinite substitution happened")
 
     def testGetBoundObject(self):
-        x, y = variables('x, y')
+        language = Language()
+        x, y = variables('x, y', language=language)
 
-        a, b, c, d = constants('a, b, c, d')
+        a, b, c, d = constants('a, b, c, d', language=language)
 
         e = expr(a, (b, c), d)
 
@@ -48,7 +53,8 @@ class TestSubstitution(unittest.TestCase):
         self.assertEqual(e, s.get_bound_object_for(y))
 
     def testGetBoundVariable(self):
-        x, y = variables(2)
+        language = Language()
+        x, y = variables(2, language=language)
 
         s = subst((None, [x, y]))
 
@@ -57,8 +63,9 @@ class TestSubstitution(unittest.TestCase):
         self.assertTrue(s.get_bound_object_for(y) in [x, y])
 
     def test_tricky_substitution(self):
-        x, y, z = variables('x, y, z')
-        a, b, c = constants('a, b, c ')
+        language = Language()
+        x, y, z = variables('x, y, z', language=language)
+        a, b, c = constants('a, b, c ', language=language)
 
         s = subst((b, [y]), (a(y), [x]))
 

@@ -1,6 +1,7 @@
 import pytest
 
-from aitools.logic import Substitution
+from aitools.logic.language import Language
+from aitools.logic.unification import Substitution
 from aitools.logic.utils import constants, VariableSource, normalize_variables
 from aitools.storage.base import LogicObjectStorage
 from tests import implementations
@@ -13,7 +14,8 @@ def test_storage(request) -> LogicObjectStorage:
 
 
 def test_retrieve_known_formula(test_storage):
-    IsA, dylan, cat = constants('IsA, dylan, cat')
+    language = Language()
+    IsA, dylan, cat = constants('IsA, dylan, cat', language=language)
 
     formula = IsA(dylan, cat)
     test_storage.add(formula)
@@ -29,9 +31,10 @@ def test_retrieve_known_formula(test_storage):
 
 
 def test_retrieve_known_open_formula(test_storage):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    IsA, dylan, cat, hugo = constants('IsA, dylan, cat, hugo')
+    IsA, dylan, cat, hugo = constants('IsA, dylan, cat, hugo', language=language)
 
     test_storage.add(
         IsA(dylan, cat),
@@ -43,12 +46,15 @@ def test_retrieve_known_open_formula(test_storage):
 
 
 def test_normalized_formulas_added_only_once(test_storage):
-    v = VariableSource()
-    Foo, a, b = constants('Foo, a, b')
+    language = Language()
+    v = VariableSource(language=language)
+    Foo, a, b = constants('Foo, a, b', language=language)
 
-    normalizer = VariableSource()
-    normalized_formulas = (normalize_variables(x, variable_source=normalizer) for x in
-          (Foo(a, b), Foo(v.x, v.y), Foo(v.x, v.x), Foo(v.w, v.z)))
+    normalizer = VariableSource(language=language)
+    normalized_formulas = (
+        normalize_variables(x, variable_source=normalizer)
+        for x in (Foo(a, b), Foo(v.x, v.y), Foo(v.x, v.x), Foo(v.w, v.z))
+    )
     test_storage.add(*(formula for formula, mapping in normalized_formulas))
 
     assert len(test_storage) == 3
@@ -58,7 +64,9 @@ def test_retrieve_known_formula_transactional(test_storage):
     if not test_storage.supports_transactions():
         pytest.skip("Storage doesn't support transactions")
 
-    IsA, dylan, cat = constants('IsA, dylan, cat')
+    language = Language()
+
+    IsA, dylan, cat = constants('IsA, dylan, cat', language=language)
     formula = IsA(dylan, cat)
 
     with test_storage.transaction():
@@ -77,8 +85,8 @@ def test_retrieve_known_formula_transactional(test_storage):
 def test_retrieve_known_formula_rollback(test_storage):
     if not test_storage.supports_transactions():
         pytest.skip("Storage doesn't support transactions")
-
-    IsA, dylan, cat = constants('IsA, dylan, cat')
+    language = Language()
+    IsA, dylan, cat = constants('IsA, dylan, cat', language=language)
     formula = IsA(dylan, cat)
 
     class VeryCustomException(Exception):

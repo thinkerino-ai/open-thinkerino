@@ -5,7 +5,8 @@ from typing import Iterable, Union, Collection, Any, AsyncIterable
 
 import typing
 
-from aitools.logic import Substitution, Expression, LogicObject
+from aitools.logic.core import Expression, LogicObject
+from aitools.logic.unification import Substitution
 from aitools.logic.utils import normalize_variables
 from aitools.proofs.components import Component, HandlerSafety
 from aitools.proofs.exceptions import UnsafeOperationException
@@ -33,7 +34,8 @@ class Prover(Component):
         if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
             raise UnsafeOperationException("Unsafe listener cannot be used in hypothetical scenarios")
 
-        normalized_listened_formula, normalization_mapping = normalize_variables(self.listened_formula)
+        normalized_listened_formula, normalization_mapping = normalize_variables(self.listened_formula,
+                                                                                 language=self._language)
         unifier = Substitution.unify(formula, normalized_listened_formula, previous=previous_substitution)
 
         if unifier is None:

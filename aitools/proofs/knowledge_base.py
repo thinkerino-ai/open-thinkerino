@@ -4,7 +4,9 @@ import typing
 from contextlib import contextmanager
 from typing import Iterable
 
-from aitools.logic import Expression, Substitution, LogicObject, Variable
+from aitools.logic.core import Expression, LogicObject, Variable
+from aitools.logic.language import Language
+from aitools.logic.unification import Substitution
 from aitools.logic.utils import normalize_variables, VariableSource
 from aitools.proofs.components import HandlerArgumentMode, HandlerSafety
 from aitools.proofs.listeners import Listener, PonderMode, TriggeringFormula
@@ -22,7 +24,8 @@ class KnowledgeBase:
 
     def __init__(self, storage: LogicObjectStorage):
         self._storage = storage
-        self._variable_source = VariableSource()
+        self._language = Language()
+        self._variable_source = VariableSource(language=self._language)
 
         self._prover_storage: AbstruseIndex[Prover] = DummyAbstruseIndex()
         self._listener_storage: AbstruseIndex[Listener] = DummyAbstruseIndex()
@@ -52,8 +55,8 @@ class KnowledgeBase:
 
         # this is impure to ensure it is always called during proof verification
         return Prover(
-            listened_formula=Variable(), handler=retrieve_knowledge, argument_mode=HandlerArgumentMode.RAW,
-            pass_substitution_as=..., pure=False, safety=HandlerSafety.SAFE
+            listened_formula=Variable(language=self._language), handler=retrieve_knowledge,
+            argument_mode=HandlerArgumentMode.RAW, pass_substitution_as=..., pure=False, safety=HandlerSafety.SAFE
         )
 
     async def _retrieve(self, formula: Expression, *,
@@ -62,7 +65,7 @@ class KnowledgeBase:
         No proofs are searched, so either a formula is **IN** the KB, or nothing will be returned."""
         # TODO here I am performing unification twice! I need to optimize this
         for expr, _ in self._storage.search_unifiable(other=formula):
-            normalized_expr, _ = normalize_variables(expr)
+            normalized_expr, _ = normalize_variables(expr, language=self._language)
             subst = Substitution.unify(
                 normalized_expr, formula,
                 previous=previous_substitution
@@ -73,7 +76,8 @@ class KnowledgeBase:
 
     def add_formulas(self, *formulas: Expression):
         """Adds all of the given formulas to the currently known formulas."""
-        normalized_formulas = (normalize_variables(f, variable_source=self._variable_source) for f in formulas)
+        normalized_formulas = (normalize_variables(f, variable_source=self._variable_source)
+                               for f in formulas)
         formulas = tuple(res for res, _ in normalized_formulas)
 
         self._storage.add(*formulas)

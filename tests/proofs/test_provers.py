@@ -1,6 +1,7 @@
 import pytest
 
-from aitools.logic import Expression
+from aitools.logic.core import Expression
+from aitools.logic.language import Language
 from aitools.logic.utils import constants, wrap, VariableSource
 from aitools.proofs.builtin_provers import RestrictedModusPonens, ClosedWorldAssumption
 from aitools.proofs.components import HandlerSafety, HandlerArgumentMode
@@ -8,11 +9,13 @@ from aitools.proofs.knowledge_base import KnowledgeBase
 from aitools.proofs.language import Implies, MagicPredicate, Not
 from aitools.proofs.provers import Proof, Prover, TruthSubstitutionPremises
 
+test_language = Language()
+
 
 def test_retrieve_known_formula(test_knowledge_base):
     # TODO this now is more or less duplicated in test_storage, I need to decide what to do with it
-
-    IsA, dylan, cat = constants('IsA, dylan, cat')
+    language = Language()
+    IsA, dylan, cat = constants('IsA, dylan, cat', language=language)
     test_knowledge_base.add_formulas(IsA(dylan, cat))
     # we can retrieve it because we already know it
     proofs = list(test_knowledge_base.prove(IsA(dylan, cat), retrieve_only=True))
@@ -25,8 +28,8 @@ def test_retrieve_known_formula(test_knowledge_base):
 def test_retrieve_known_formula_transactional(test_knowledge_base):
     if not test_knowledge_base.supports_transactions():
         pytest.skip("KB implementation doesn't support transactions")
-
-    IsA, dylan, cat = constants('IsA, dylan, cat')
+    language = Language()
+    IsA, dylan, cat = constants('IsA, dylan, cat', language=language)
 
     with test_knowledge_base.transaction():
         test_knowledge_base.add_formulas(IsA(dylan, cat))
@@ -43,7 +46,8 @@ def test_retrieve_known_formula_rollback(test_knowledge_base):
     class VeryCustomException(Exception):
         pass
 
-    IsA, dylan, cat = constants('IsA, dylan, cat')
+    language = Language()
+    IsA, dylan, cat = constants('IsA, dylan, cat', language=language)
 
     with pytest.raises(VeryCustomException):
         with test_knowledge_base.transaction():
@@ -56,9 +60,10 @@ def test_retrieve_known_formula_rollback(test_knowledge_base):
 
 def test_retrieve_known_open_formula(test_knowledge_base):
     # TODO this now is more or less duplicated in test_storage, I need to decide what to do with it
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    IsA, dylan, cat, hugo = constants('IsA, dylan, cat, hugo')
+    IsA, dylan, cat, hugo = constants('IsA, dylan, cat, hugo', language=language)
 
     test_knowledge_base.add_formulas(
         IsA(dylan, cat),
@@ -76,9 +81,10 @@ def test_retrieve_known_open_formula(test_knowledge_base):
 
 def test_open_formulas_added_only_once(test_knowledge_base):
     # TODO this now is more or less duplicated in test_storage, I need to decide what to do with it
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Foo, a, b = constants('Foo, a, b')
+    Foo, a, b = constants('Foo, a, b', language=language)
 
     test_knowledge_base.add_formulas(Foo(a, b), Foo(v.x, v.y), Foo(v.x, v.x), Foo(v.w, v.z))
 
@@ -86,9 +92,10 @@ def test_open_formulas_added_only_once(test_knowledge_base):
 
 
 def test_formulas_are_be_normalized(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    Foo, Bar, Baz, a, b = constants('Foo, Bar, Baz, a, b')
+    Foo, Bar, Baz, a, b = constants('Foo, Bar, Baz, a, b', language=language)
 
     test_knowledge_base.add_prover(RestrictedModusPonens)
 
@@ -103,9 +110,10 @@ def test_formulas_are_be_normalized(test_knowledge_base):
 
 
 def test_open_formulas_can_be_used_more_than_once(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    IsNatural, successor = constants('IsNatural, successor')
+    IsNatural, successor = constants('IsNatural, successor', language=language)
 
     test_knowledge_base.add_prover(RestrictedModusPonens)
 
@@ -129,7 +137,8 @@ def _is_known_formula_proof_of(proof: Proof, formula: Expression, kb: KnowledgeB
 
 
 def test_proof_known_formula(test_knowledge_base):
-    IsA, dylan, cat = constants('IsA, dylan, cat')
+    language = Language()
+    IsA, dylan, cat = constants('IsA, dylan, cat', language=language)
 
     test_knowledge_base.add_formulas(IsA(dylan, cat))
 
@@ -142,9 +151,10 @@ def test_proof_known_formula(test_knowledge_base):
 
 
 def test_proof_known_open_formula(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    IsA, dylan, hugo, cat = constants('IsA, dylan, hugo, cat')
+    IsA, dylan, hugo, cat = constants('IsA, dylan, hugo, cat', language=language)
 
     test_knowledge_base.add_formulas(
         IsA(dylan, cat),
@@ -161,15 +171,17 @@ def test_proof_known_open_formula(test_knowledge_base):
 
 
 def test_implication_shortcut():
-    v = VariableSource()
-    IsA, cat, animal = constants('IsA, cat, animal')
+    language = Language()
+    v = VariableSource(language=language)
+    IsA, cat, animal = constants('IsA, cat, animal', language=language)
     assert (IsA(v._x, cat) << Implies >> IsA(v._x, animal)) == (Implies(IsA(v._x, cat), IsA(v._x, animal)))
 
 
 def test_simple_deduction(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    IsA, cat, animal, dylan = constants('IsA, cat, animal, dylan')
+    IsA, cat, animal, dylan = constants('IsA, cat, animal, dylan', language=language)
 
     test_knowledge_base.add_prover(RestrictedModusPonens)
 
@@ -186,10 +198,10 @@ def test_simple_deduction(test_knowledge_base):
 
 def test_retrieve_known_formula_does_not_use_deduction(test_knowledge_base):
     # this is the same as the basic retrieve case, but ensures deduction is not used
+    language = Language()
+    v = VariableSource(language=language)
 
-    v = VariableSource()
-
-    IsA, Purrs, dylan, cat = constants('IsA, Purrs, dylan, cat')
+    IsA, Purrs, dylan, cat = constants('IsA, Purrs, dylan, cat', language=language)
     test_knowledge_base.add_formulas(
         IsA(dylan, cat),
         Purrs(dylan)
@@ -207,9 +219,10 @@ def test_retrieve_known_formula_does_not_use_deduction(test_knowledge_base):
 
 
 def test_deduction_chain(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    IsA, cat, mammal, animal, dylan = constants('IsA, cat, mammal, animal, dylan')
+    IsA, cat, mammal, animal, dylan = constants('IsA, cat, mammal, animal, dylan', language=language)
 
     test_knowledge_base.add_prover(RestrictedModusPonens)
 
@@ -233,12 +246,13 @@ def is_even(n: int):
         return False
 
 
-IsEven = MagicPredicate('IsEven')
-IsMultipleOf4 = MagicPredicate('IsMultipleOf4')
+IsEven = MagicPredicate(name='IsEven', language=test_language)
+IsMultipleOf4 = MagicPredicate(name='IsMultipleOf4', language=test_language)
 
 
 def test_simple_custom_prover_passing_python_value(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
     prover = Prover(
         listened_formula=IsEven(v.n), handler=is_even, argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED,
@@ -257,9 +271,11 @@ def test_failing_custom_prover(test_knowledge_base):
     class SomeException(Exception):
         pass
 
-    v = VariableSource()
+    language = Language()
 
-    Is, cat, dylan = constants('Is, cat, dylan')
+    v = VariableSource(language=language)
+
+    Is, cat, dylan = constants('Is, cat, dylan', language=language)
 
     def failing_prover(cat):
         raise SomeException(f"Oh noes I failed with {cat}")
@@ -285,7 +301,8 @@ async def is_multiple_of_4(m: int, kb):
 
 
 def test_custom_prover_chain(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
     even_prover = Prover(
         listened_formula=IsEven(v.n), handler=is_even, argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED,
@@ -306,9 +323,10 @@ def test_custom_prover_chain(test_knowledge_base):
 
 
 def test_custom_prover_in_open_formula(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    IsNice = MagicPredicate()
+    IsNice = MagicPredicate(language=language)
 
     prover = Prover(
         listened_formula=IsEven(v.n), handler=is_even, argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED,
@@ -334,9 +352,10 @@ def is_prime(n: int):
 
 
 def test_custom_prover_incomplete(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    IsPrime = MagicPredicate()
+    IsPrime = MagicPredicate(language=language)
 
     prover = Prover(
         listened_formula=IsPrime(v.n), handler=is_prime, argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED,
@@ -351,8 +370,9 @@ def test_custom_prover_incomplete(test_knowledge_base):
 
 
 def test_multiple_custom_provers_for_the_same_formula(test_knowledge_base):
-    v = VariableSource()
-    IsPrime = MagicPredicate()
+    language = Language()
+    v = VariableSource(language=language)
+    IsPrime = MagicPredicate(language=language)
 
     def prime_prover_012345(n: int):
         if n in (2, 3, 5):
@@ -392,9 +412,10 @@ def test_multiple_custom_provers_for_the_same_formula(test_knowledge_base):
 
 
 def test_closed_world_assumption(test_knowledge_base):
-    v = VariableSource()
+    language = Language()
+    v = VariableSource(language=language)
 
-    IsPrime = MagicPredicate()
+    IsPrime = MagicPredicate(language=language)
 
     prover = Prover(
         listened_formula=IsPrime(v.n), handler=is_prime, argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED,
