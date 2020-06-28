@@ -9,6 +9,8 @@ let rec makeExpr (expression: obj seq) =
     let converter (item: obj) =
         match item with
         | :? Expression as e -> e
+        | :? Variable as v -> Var v
+        | :? Constant as c -> Const c
         | :? seq<obj> as s -> makeExpr s
         | _ -> Wrap item
     expression |> Seq.map converter |> Array.ofSeq |> Expr

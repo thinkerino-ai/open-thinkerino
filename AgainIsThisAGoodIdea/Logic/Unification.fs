@@ -72,7 +72,7 @@ and Substitution(bindings: Binding seq) =
         match expr with
         | Var v ->
             match bindingsByVariable.TryFind(v) with
-            | Some binding -> binding.BoundObject
+            | Some binding -> this.ApplyTo(binding.BoundObject)
             | None -> expr
         | Expr arr -> arr |> Array.map this.ApplyTo |> Expr
         | _ -> expr
