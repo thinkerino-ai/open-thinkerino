@@ -7,7 +7,11 @@ type Language(languageId, enabled) =
     let nextId = ref 0L
 
     member this.LanguageId = languageId
-    member this.GetNext() = if enabled then Interlocked.Increment(nextId) else failwith "nope"
+    member this.GetNext() = if enabled then Interlocked.Increment(nextId) else failwith "Disabled languags cannot generate ids anymore"
+
+    new() = Language(System.Guid.NewGuid(), true)
+
+    override this.ToString() = languageId |> sprintf "Language(%A)"
     
     override this.GetHashCode() = hash languageId
     override this.Equals(other) = 
@@ -15,6 +19,8 @@ type Language(languageId, enabled) =
         | :? Language as l -> languageId = l.LanguageId
         | _ -> false
 
-    override this.ToString() = languageId |> sprintf "Language(%A)"
-
-    new() = Language(System.Guid.NewGuid(), true)
+    interface System.IComparable with
+        member x.CompareTo y = 
+            match y with
+            | :? Language as y -> x.LanguageId.CompareTo(y.LanguageId)
+            | _ -> raise <| System.ArgumentException("Cannot compare instances of different types")
