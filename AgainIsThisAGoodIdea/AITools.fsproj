@@ -6,5 +6,6 @@
     <Compile Include="Logic/Language.fs" />
     <Compile Include="Logic/Core.fs" />
     <Compile Include="Logic/Unification.fs" />
+    <Compile Include="Logic/Utils.fs" />
   </ItemGroup>
 </Project>

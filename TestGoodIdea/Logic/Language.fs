@@ -1,4 +1,4 @@
-module Tests.Language
+module Tests.Logic.Language
 
 open AITools.Logic.Language
 open Xunit

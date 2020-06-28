@@ -22,18 +22,18 @@ type Constant =
 type Expression = 
     | Const of Constant
     | Var of Variable
-    | Wrapper of obj
-    | Complex of Expression array
+    | Wrap of obj
+    | Expr of Expression array
 
     member this.Contains (otherExpr: Expression) = 
         match this with
         | _ when this = otherExpr -> true
-        | Complex arr -> arr |> Array.exists (fun el -> el.Contains(otherExpr))
+        | Expr arr -> arr |> Seq.exists (fun el -> el.Contains(otherExpr))
         | _ -> false
 
     override this.ToString() =
         match this with
         | Const c -> c.ToString()
         | Var v -> v.ToString()
-        | Wrapper o -> sprintf "{%O}" o
-        | Complex arr -> arr |> Array.map string |> String.concat ", " |> sprintf "(%s)"
+        | Wrap o -> sprintf "{%O}" o
+        | Expr arr -> arr |> Seq.map string |> String.concat ", " |> sprintf "(%s)"

@@ -74,7 +74,7 @@ and Substitution(bindings: Binding seq) =
             match bindingsByVariable.TryFind(v) with
             | Some binding -> binding.BoundObject
             | None -> expr
-        | Complex arr -> arr |> Array.map this.ApplyTo |> Complex
+        | Expr arr -> arr |> Array.map this.ApplyTo |> Expr
         | _ -> expr
 
     member this.GetBoundObjectFor(v) = bindingsByVariable.TryFind(v)
@@ -107,7 +107,7 @@ and Substitution(bindings: Binding seq) =
             |> Seq.singleton
             |> previous.WithBindings
             |> Some
-        | Complex aArr, Complex bArr when aArr.Length = bArr.Length ->
+        | Expr aArr, Expr bArr when aArr.Length = bArr.Length ->
             let folder maybeSubst aElem bElem =
                 match maybeSubst with
                 | Some subst -> Substitution.Unify(aElem, bElem, previous = subst)
