@@ -45,6 +45,20 @@ type Binding(variables: Set<Variable>, head: Expression option) =
 
         Binding(newVars, newHead)
 
+    override this.ToString() =
+        let vars =
+            this.Variables
+            |> Set.map string
+            |> Set.toArray
+            |> String.concat ", "
+
+        let head =
+            match this.Head with
+            | Some expr -> expr.ToString()
+            | None -> "_"
+
+        sprintf "{%s -> %s}" vars head
+
 and Substitution(bindings: Binding seq) =
     // TODO I'm using a map here, but I might switch to a Dictionary for performance, who knows :P
     let mutable bindingsByVariable: Map<Variable, Binding> = Map.empty
@@ -116,3 +130,11 @@ and Substitution(bindings: Binding seq) =
             (aArr, bArr)
             ||> Seq.fold2 folder (Some Substitution.Empty)
         | _ -> None
+
+    override this.ToString() =
+        bindingsByVariable
+        |> Map.toSeq
+        |> Seq.map (fun (_, binding) -> binding.ToString())
+        |> Array.ofSeq
+        |> String.concat ","
+        |> sprintf "[%s]"
