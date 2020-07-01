@@ -11,7 +11,7 @@ let ``Named Constant representation works correctly`` () =
 
     let c = makeNamed lang Constant "foo"
 
-    Assert.Equal("foo1", c.ToString())
+    Assert.Equal("foo1", string(c))
 
 [<Fact>]
 let ``Unnamed Constant representation works correctly`` () =
@@ -19,7 +19,7 @@ let ``Unnamed Constant representation works correctly`` () =
 
     let c = make lang Constant
 
-    Assert.Equal("o1", c.ToString())
+    Assert.Equal("o1", string(c))
 
 [<Fact>]
 let ``Named Variable representation works correctly`` () =
@@ -27,7 +27,7 @@ let ``Named Variable representation works correctly`` () =
 
     let v = makeNamed lang Variable "foo"
 
-    Assert.Equal("?foo1", v.ToString())
+    Assert.Equal("?foo1", string(v))
 
 [<Fact>]
 let ``Unnamed Variable representation works correctly`` () =
@@ -35,21 +35,21 @@ let ``Unnamed Variable representation works correctly`` () =
 
     let v = make lang Variable
 
-    Assert.Equal("?v1", v.ToString())
+    Assert.Equal("?v1", string(v))
 
 
 [<Fact>]
 let ``Int wrapper representation works correctly`` () =
     let w = Wrap(33)
 
-    Assert.Equal("{33}", w.ToString())
+    Assert.Equal("{33}", string(w))
 
 
 [<Fact>]
 let ``String wrapper representation works correctly`` () =
     let w = Wrap("wow")
 
-    Assert.Equal("{wow}", w.ToString())
+    Assert.Equal("{wow}", string(w))
 
 
 [<Fact>]
@@ -57,7 +57,7 @@ let ``Simple expression representation works correctly`` () =
     let lang = Language()
     let expr = make lang ConstExpr
 
-    Assert.Equal("o1", expr.ToString())
+    Assert.Equal("o1", string(expr))
 
 [<Fact>]
 let ``Complex expression representation works correctly`` () =
@@ -70,7 +70,7 @@ let ``Complex expression representation works correctly`` () =
 
     let expr = makeExpr [ a; [ b; c ]; x ]
 
-    Assert.Equal("(o1, (o2, o3), ?v4)", expr.ToString())
+    Assert.Equal("(o1, (o2, o3), ?v4)", string(expr))
 
 
 [<Fact>]

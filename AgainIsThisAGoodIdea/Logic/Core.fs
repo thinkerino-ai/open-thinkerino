@@ -33,7 +33,7 @@ type Expression =
 
     override this.ToString() =
         match this with
-        | Const c -> c.ToString()
-        | Var v -> v.ToString()
+        | Const c -> string(c)
+        | Var v -> string(v)
         | Wrap o -> sprintf "{%O}" o
         | Expr arr -> arr |> Seq.map string |> String.concat ", " |> sprintf "(%s)"

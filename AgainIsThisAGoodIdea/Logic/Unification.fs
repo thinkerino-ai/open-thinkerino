@@ -54,7 +54,7 @@ type Binding(variables: Set<Variable>, head: Expression option) =
 
         let head =
             match this.Head with
-            | Some expr -> expr.ToString()
+            | Some expr -> string(expr)
             | None -> "_"
 
         sprintf "{%s -> %s}" vars head
@@ -132,9 +132,8 @@ and Substitution(bindings: Binding seq) =
         | _ -> None
 
     override this.ToString() =
-        bindingsByVariable
-        |> Map.toSeq
-        |> Seq.map (fun (_, binding) -> binding.ToString())
+        bindings
+        |> Seq.map string
         |> Array.ofSeq
-        |> String.concat ","
+        |> String.concat ", "
         |> sprintf "[%s]"
