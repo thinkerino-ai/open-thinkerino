@@ -54,10 +54,17 @@ type Binding(variables: Set<Variable>, head: Expression option) =
 
         let head =
             match this.Head with
-            | Some expr -> string(expr)
+            | Some expr -> string expr
             | None -> "_"
 
         sprintf "{%s -> %s}" vars head
+
+    override this.GetHashCode() = hash (head, variables)
+
+    override this.Equals(other) =
+        match other with
+        | :? Binding as b -> this.Head = b.Head && this.Variables = b.Variables
+        | _ -> false
 
 and Substitution(bindings: Binding seq) =
     // TODO I'm using a map here, but I might switch to a Dictionary for performance, who knows :P
@@ -78,6 +85,7 @@ and Substitution(bindings: Binding seq) =
 
     member this.IsEmpty() = Map.isEmpty bindingsByVariable
 
+    member this.BindingsByVariable = bindingsByVariable
     member this.WithBindings(otherBindings: Binding seq) =
         Seq.concat [ bindings; otherBindings ]
         |> Substitution
@@ -137,3 +145,10 @@ and Substitution(bindings: Binding seq) =
         |> Array.ofSeq
         |> String.concat ", "
         |> sprintf "[%s]"
+
+    override this.GetHashCode() = hash bindingsByVariable
+
+    override this.Equals(other) =
+        match other with
+        | :? Substitution as s -> this.BindingsByVariable = s.BindingsByVariable
+        | _ -> false
