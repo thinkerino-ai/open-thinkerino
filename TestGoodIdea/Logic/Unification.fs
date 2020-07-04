@@ -100,9 +100,9 @@ let ``Equal expressions unify`` () =
     let e1 = makeExpr [ a; [ b; c ]; d ]
     let e2 = makeExpr [ a; [ b; c ]; d ]
 
-    let expected = Some <| Substitution([])
+    let expected = Substitution([])
 
-    Assert.Equal(expected, Substitution.Unify(e1, e2))
+    Assert.Equal(Some expected, Substitution.Unify(e1, e2))
 
 
 
@@ -118,3 +118,57 @@ let ``Different expressions do not unify`` () =
     let e2 = makeExpr [ a; [ b; c ]; a ]
 
     Assert.Equal(None, Substitution.Unify(e1, e2))
+
+
+[<Fact>]
+let ``Complex unifiable expression actually do unify`` () =
+    let language = Language()
+    let v1 = makeNamed language Variable "v1"
+    let v2 = makeNamed language Variable "v2"
+
+    let a = makeNamed language ConstExpr "a"
+    let b = makeNamed language ConstExpr "b"
+    let c = makeNamed language ConstExpr "c"
+    let d = makeNamed language ConstExpr "d"
+
+    let exprD = makeExpr [ d ]
+
+    let e1 = makeExpr [ a; [ b; c ]; exprD ]
+
+    let e2 = makeExpr [ a; [ Var v1; c ]; v2 ]
+
+    let expected =
+        Substitution
+            ([ Binding(set [ v1 ], Some b)
+               Binding(set [ v2 ], Some exprD) ])
+
+    Assert.Equal(Some expected, Substitution.Unify(e1, e2))
+
+[<Fact>]
+let ``Unification fails when the same variable gets unified with incompatible expressions`` () =
+    let language = Language()
+    let v1 = make language Variable
+
+    let a = makeNamed language ConstExpr "a"
+    let b = makeNamed language ConstExpr "b"
+    let c = makeNamed language ConstExpr "c"
+    let d = makeNamed language ConstExpr "d"
+
+    let exprD = makeExpr [ d ]
+
+    let e1 = makeExpr [ a; [ b; c ]; exprD ]
+
+    let e3 = makeExpr [ a; [ Var v1; c ]; v1 ]
+
+    Assert.Equal(None, Substitution.Unify(e1, e3))
+
+// TODO translate from Python test_unification_with_variables_success_equality
+// TODO translate from Python test_unification_with_variables_failure_contained
+// TODO translate from Python test_unification_with_variables_success_same_expression
+// TODO translate from Python test_unification_with_previous_simple_failing
+// TODO translate from Python test_unification_with_previous_success_bound_to_same_expression
+// TODO translate from Python test_unification_with_previous_success_bound_to_unifiable_expressions
+// TODO translate from Python test_unification_with_previous_failure_bound_to_different_expressions
+// TODO translate from Python test_unification_with_previous
+// TODO translate from Python test_unification_with_repeated_constants
+// TODO translate from Python test_unification_weird_failing_case

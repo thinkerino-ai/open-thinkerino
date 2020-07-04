@@ -40,4 +40,4 @@ let ``Language string representation`` () =
     let someLanguage =
         Language(languageId = someGuid, enabled = true)
 
-    Assert.Equal("Language(00000000-0000-0000-0000-000000000042)", someLanguage.ToString())
+    Assert.Equal("Language(00000000-0000-0000-0000-000000000042)", string someLanguage)
