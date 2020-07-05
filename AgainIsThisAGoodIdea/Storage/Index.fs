@@ -16,21 +16,20 @@ type KeyElement<'a> =
         | Literal x -> x.ToString()
 
 type KeySlice<'a> =
-    | KeySlice of KeyElement<'a> ImmutableArray
+    { Elements: KeyElement<'a> ImmutableArray }
 
     override this.ToString() =
-        match this with
-        | KeySlice slice ->
-            slice
-            |> Seq.map string
-            |> String.concat ", "
-            |> sprintf "[%s]"
+        this.Elements
+        |> Seq.map string
+        |> String.concat ", "
+        |> sprintf "[%s]"
 
 type Key<'a> =
-    | Key of KeySlice<'a> ImmutableArray
+    { Slices: KeySlice<'a> ImmutableArray }
     override this.ToString() =
-        match this with
-        | Key slices -> slices |> Seq.map string |> String.concat "\n"
+        this.Slices
+        |> Seq.map string
+        |> String.concat "\n"
 
 
 let makeKey expr =
@@ -51,9 +50,26 @@ let makeKey expr =
 
     inner (expr, 0)
 
-    Key
-    <| ImmutableArray.CreateRange
-        (seq {
-            for slice in tempRes do
-                yield KeySlice <| slice.ToImmutable()
-         })
+    { Slices =
+          ImmutableArray.CreateRange
+              (seq {
+                  for slice in tempRes do
+                      yield { Elements = slice.ToImmutable() }
+               }) }
+
+[<AbstractClass>]
+type TrieIndex<'keyItem, 'item> =
+    member this.Add(key: Key<'keyItem>, obj: 'item, ?level: int) =
+        let level =
+            match level with
+            | None -> 0
+            | Some i -> i
+
+        raise <| System.NotImplementedException()
+
+    abstract MaybeStoreObject: 'item -> unit
+    abstract GetOrCreateSubindex: KeyElement<'keyItem> -> TrieIndex<'keyItem, 'item>
+    abstract GetAllObjects: unit -> seq<'item>
+    abstract GetAllSubindices: unit -> seq<TrieIndex<'keyItem, 'item>>
+    abstract GetAllKeysAndSubindices: unit -> seq<KeyElement<'keyItem> * TrieIndex<'keyItem, 'item>>
+    abstract GetSubindexByKeyElement: KeyElement<'keyItem> -> TrieIndex<'keyItem, 'item> option
