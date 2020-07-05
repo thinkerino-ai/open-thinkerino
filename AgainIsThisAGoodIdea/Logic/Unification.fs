@@ -2,6 +2,7 @@ module AITools.Logic.Unification
 
 open System
 open AITools.Logic.Core
+open System.Collections.Immutable
 
 exception UnificationFailedException of string
 
@@ -96,7 +97,7 @@ and Substitution(bindings: Binding seq) =
             match bindingsByVariable.TryFind(v) with
             | Some binding -> this.ApplyTo(binding.BoundObject)
             | None -> expr
-        | Expr arr -> arr |> Array.map this.ApplyTo |> Expr
+        | Expr arr -> arr |> Seq.map this.ApplyTo |> ImmutableArray.CreateRange |> Expr
         | _ -> expr
 
     member this.GetBoundObjectFor(v) = bindingsByVariable.TryFind(v)

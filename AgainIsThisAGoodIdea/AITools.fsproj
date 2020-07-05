@@ -7,5 +7,9 @@
     <Compile Include="Logic/Core.fs" />
     <Compile Include="Logic/Unification.fs" />
     <Compile Include="Logic/Utils.fs" />
+    <Compile Include="Storage/Index.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Collections.Immutable" Version="1.7.1" />
   </ItemGroup>
 </Project>

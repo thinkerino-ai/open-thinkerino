@@ -1,6 +1,7 @@
 module AITools.Logic.Utils
 
 open AITools.Logic.Core
+open System.Collections.Immutable
 
 let ConstExpr = Constant >> Const
 let VarExpr = Variable >> Var
@@ -21,7 +22,7 @@ let rec makeExpr (expression: obj seq) =
 
     expression
     |> Seq.map converter
-    |> Array.ofSeq
+    |> ImmutableArray.CreateRange
     |> Expr
 
 let make lang symbolType =

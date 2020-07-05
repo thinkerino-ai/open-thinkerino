@@ -1,6 +1,7 @@
 module AITools.Logic.Core
 
 open AITools.Logic.Language
+open System.Collections.Immutable
 
 type Identifier = Identifier of Language * int64
 
@@ -23,7 +24,7 @@ type Expression =
     | Const of Constant
     | Var of Variable
     | Wrap of obj
-    | Expr of Expression array
+    | Expr of Expression ImmutableArray
 
     member this.Contains (otherExpr: Expression) = 
         match this with
