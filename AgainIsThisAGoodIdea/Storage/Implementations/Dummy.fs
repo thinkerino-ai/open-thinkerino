@@ -1,18 +1,19 @@
 module AITools.Storage.Implementations.Dummy
 
 open AITools.Storage.Index
+open System.Collections.Generic
 
-type DummyTrieIndex<'keyItem, 'item when 'keyItem: comparison and 'item: comparison>() =
+type DummyTrieIndex<'keyItem, 'item when 'keyItem: equality>() =
     inherit TrieIndex<'keyItem, 'item>()
 
-    let mutable subindices: Map<KeyElement<'keyItem>, TrieIndex<'keyItem, 'item>> = Map.empty
-    let mutable objects = Set.empty
+    let mutable subindices: Dictionary<KeyElement<'keyItem>, TrieIndex<'keyItem, 'item>> = Dictionary()
+    let objects = HashSet()
 
-    override _.MaybeStoreObject(object) = objects <- objects.Add object
+    override _.MaybeStoreObject(object) = objects.Add(object) |> ignore
 
     override _.GetOrCreateSubindex(keyElement) =
         if not (subindices.ContainsKey(keyElement))
-        then subindices <- subindices.Add(keyElement, DummyTrieIndex<_, _>())
+        then subindices.Add(keyElement, DummyTrieIndex<_, _>())
 
         subindices.[keyElement]
 
@@ -25,23 +26,19 @@ type DummyTrieIndex<'keyItem, 'item when 'keyItem: comparison and 'item: compari
         subindices
         |> Seq.map (fun kvp -> (kvp.Key, kvp.Value))
 
-    override _.GetSubindexByKeyElement(keyElement) = subindices.TryFind(keyElement)
+    override _.GetSubindexByKeyElement(keyElement) = 
+        if subindices.ContainsKey(keyElement) 
+        then Some <| subindices.[keyElement]
+        else None
 
-type DummyAbstruseIndex<'keyItem, 'item when 'keyItem: comparison and 'item: comparison>() =
+type DummyAbstruseIndex<'keyItem, 'item when 'keyItem: equality>() =
     inherit AbstruseIndex<'keyItem, 'item, DummyAbstruseIndex<'keyItem, 'item>>()
 
-    let mutable objects = Set.empty
+    let objects = HashSet()
 
     let subindexTree = DummyTrieIndex<_, _>()
 
     override _.MakeNode() = DummyAbstruseIndex()
     override _.Objects = seq objects
-    override _.MaybeStoreObject(object) = objects <- objects.Add(object)
+    override _.MaybeStoreObject(object) = objects.Add(object) |> ignore
     override _.SubindexTree = upcast subindexTree
-
-
-    interface System.IComparable with
-        member this.CompareTo(other) =
-            match other with
-            | :? DummyAbstruseIndex<'keyItem, 'item> as otherIndex -> compare (hash this) (hash otherIndex)
-            | _ -> failwith "cannot compare an AbstruseIndex with other types"
