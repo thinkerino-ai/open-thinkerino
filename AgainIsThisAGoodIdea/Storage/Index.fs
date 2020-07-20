@@ -89,7 +89,7 @@ let projectKey (previousKey: KeySlice<'a>) (projectionKey: KeySlice<'a>) (curren
             | _ ->
                 res.AddRange
                     (seq {
-                        for i = iCurrent to iCurrent + n do
+                        for i = iCurrent to iCurrent + n - 1 do
                             currentKey.Elements.[i]
                      })
                 iCurrent <- iCurrent + n
@@ -116,7 +116,7 @@ type TrieIndex<'keyItem, 'item>() =
         }
 
     member private this.Add(key, item, level) =
-        if level = 0 then
+        if level = key.Elements.Length then
             this.MaybeStoreObject(item)
         else
             let element = key.Elements.[level]
@@ -204,7 +204,7 @@ type AbstruseIndex<'keyItem, 'item, 'subindexItem when 'subindexItem :> Abstruse
             let furtherAbstrusion =
                 Seq.cache
                 <| this.SubindexTree.Retrieve(Some slice, useWildcard = false)
-
+            // TODO I should not use Seq.isEmpty, since it reads the first element of the sequence (so it would take more time than necessary)
             let destination =
                 if Seq.isEmpty furtherAbstrusion then
                     let dest = this.MakeNode()
