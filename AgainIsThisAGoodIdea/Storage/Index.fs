@@ -70,16 +70,16 @@ let extendKeySlice (slice: KeySlice<'a> option) (element: KeyElement<'a>) =
                    }) }
 
 // TODO rename to projectSlice since it operates on slices
-let projectKey (previousKey: KeySlice<'a>) (projectionKey: KeySlice<'a>) (currentKey: KeySlice<'a>) =
+let projectSlice (previousSlice: KeySlice<'a>) (projectionSlice: KeySlice<'a>) (currentSlice: KeySlice<'a>) =
     let mutable iCurrent = 0
 
     let res = ResizeArray<KeyElement<'a>>()
 
-    projectionKey.Elements
+    projectionSlice.Elements
     |> Seq.iteri (fun i projector ->
         match projector with
         | Further n ->
-            match previousKey.Elements.[i] with
+            match previousSlice.Elements.[i] with
             | Wildcard ->
                 res.AddRange
                     (seq {
@@ -90,15 +90,15 @@ let projectKey (previousKey: KeySlice<'a>) (projectionKey: KeySlice<'a>) (curren
                 res.AddRange
                     (seq {
                         for i = iCurrent to iCurrent + n - 1 do
-                            currentKey.Elements.[i]
+                            currentSlice.Elements.[i]
                      })
                 iCurrent <- iCurrent + n
         | _ -> ())
 
     res.AddRange
         (seq {
-            for i = iCurrent to currentKey.Elements.Length - 1 do
-                currentKey.Elements.[i]
+            for i = iCurrent to currentSlice.Elements.Length - 1 do
+                currentSlice.Elements.[i]
          })
 
     { Elements = res.ToImmutableArray() }
@@ -192,7 +192,7 @@ type TrieIndex<'keyItem, 'item>() =
 [<AbstractClass>]
 type AbstruseIndex<'keyItem, 'item, 'subindexItem when 'subindexItem :> AbstruseIndex<'keyItem, 'item, 'subindexItem>>() =
     member this.Add(key, element) = this.Add(key, element, level = 0)
-    member this.Retrieve(key) = this.Retrieve(key, level = 0, previousKey = None, projectionKey = None)
+    member this.Retrieve(key) = this.Retrieve(key, level = 0, previousSlice = None, projectionSlice = None)
 
     member private this.Add(key, element, level) =
         let slice =
@@ -202,11 +202,12 @@ type AbstruseIndex<'keyItem, 'item, 'subindexItem when 'subindexItem :> Abstruse
         | None -> this.MaybeStoreObject(element)
         | Some slice ->
             let furtherAbstrusion =
-                Seq.cache
+                Array.ofSeq
                 <| this.SubindexTree.Retrieve(Some slice, useWildcard = false)
             // TODO I should not use Seq.isEmpty, since it reads the first element of the sequence (so it would take more time than necessary)
+
             let destination =
-                if Seq.isEmpty furtherAbstrusion then
+                if furtherAbstrusion.Length = 0 then
                     let dest = this.MakeNode()
                     this.SubindexTree.Add(slice, dest)
                     dest
@@ -217,7 +218,7 @@ type AbstruseIndex<'keyItem, 'item, 'subindexItem when 'subindexItem :> Abstruse
 
             destination.Add(key, element, level + 1)
 
-    member private this.Retrieve(fullKey, level, previousKey, projectionKey) =
+    member private this.Retrieve(fullKey, level, previousSlice, projectionSlice) =
         seq {
             let slice =
                 if level < fullKey.Slices.Length then Some fullKey.Slices.[level] else None
@@ -225,23 +226,23 @@ type AbstruseIndex<'keyItem, 'item, 'subindexItem when 'subindexItem :> Abstruse
             yield! this.Objects
 
             match slice with
-            | None -> yield! this.FullSearch(fullKey, previousKey = previousKey, level = level + 1)
+            | None -> yield! this.FullSearch(fullKey, previousSlice = previousSlice, level = level + 1)
             | Some slice ->
                 let slice =
-                    match projectionKey, previousKey with
-                    | Some projectionKey, Some previousKey -> projectKey previousKey projectionKey slice
+                    match projectionSlice, previousSlice with
+                    | Some projectionSlice, Some previousSlice -> projectSlice previousSlice projectionSlice slice
                     | _ -> slice
 
-                for subindex, foundKey in this.SubindexTree.Retrieve(Some slice) do
+                for subindex, foundSlice in this.SubindexTree.Retrieve(Some slice) do
                     yield! subindex.Retrieve
-                               (fullKey = fullKey, level = level + 1, previousKey = Some slice, projectionKey = foundKey)
+                               (fullKey = fullKey, level = level + 1, previousSlice = Some slice, projectionSlice = foundSlice)
         }
 
-    member private this.FullSearch(fullKey, previousKey, level) =
+    member private this.FullSearch(fullKey, previousSlice, level) =
         seq {
-            for subindex, foundKey in this.SubindexTree.Retrieve(None) do
+            for subindex, foundSlice in this.SubindexTree.Retrieve(None) do
                 yield! subindex.Retrieve
-                           (fullKey = fullKey, level = level + 1, previousKey = previousKey, projectionKey = foundKey)
+                           (fullKey = fullKey, level = level + 1, previousSlice = previousSlice, projectionSlice = foundSlice)
         }
 
     abstract SubindexTree: TrieIndex<'keyItem, 'subindexItem>
