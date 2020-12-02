@@ -104,6 +104,7 @@ and Substitution(bindings: Binding seq) =
 
     static member Empty = Substitution([||])
 
+    // TODO why a static member? why not just a function? :P
     static member Unify(a, b, ?previous: Substitution): Substitution option =
         let previous =
             match previous with

@@ -136,3 +136,48 @@ let ``Expression.Contains returns true when the expression contains another Expr
     let expr = makeExpr [ a; [ b; element; c ]; x ]
 
     Assert.True(expr.Contains(element))
+
+// TODO move these to its own test file?
+[<Fact>]
+let ``makeAuto can build a single Variable correctly`` () = 
+    let lang = Language()
+
+    let a = makeAuto lang Variable
+
+    Assert.IsType<Variable> a
+
+[<Fact>]
+let ``makeAuto can build a single VarExpr correctly`` () = 
+    let lang = Language()
+
+    let a = makeAuto lang VarExpr
+
+    Assert.IsAssignableFrom<Expression> a
+
+[<Fact>]
+let ``makeAuto can build multiple Variables correctly`` () = 
+    let lang = Language()
+
+    let a, b, c = makeAuto lang Variable
+
+    let _: Variable = a
+    let _: Variable = b
+    let _: Variable = c
+
+    Assert.IsType<Variable> a
+    Assert.IsType<Variable> b
+    Assert.IsType<Variable> c
+
+[<Fact>]
+let ``makeAuto can build multiple VarExpr correctly`` () = 
+    let lang = Language()
+
+    let a, b, c = makeAuto lang VarExpr
+
+    let _: Expression = a
+    let _: Expression = b
+    let _: Expression = c
+
+    Assert.IsAssignableFrom<Expression> a
+    Assert.IsAssignableFrom<Expression> b
+    Assert.IsAssignableFrom<Expression> c
