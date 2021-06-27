@@ -26,15 +26,33 @@ let rec makeExpr (expression: obj seq) =
     |> ImmutableArray.CreateRange
     |> Expr
 
-let inline makeAuto lang symbolType: ^a = 
+/// Makes an expression from a tuple of expressions/other tuples, using reflection
+let rec makeExpr' expr: Expression =
+    let t = expr.GetType()
+
+    if FSharpType.IsTuple t then
+        expr
+        |> FSharpValue.GetTupleFields
+        |> Array.map makeExpr'
+        |> ImmutableArray.CreateRange
+        |> Expr
+    else
+        (expr) :?> Expression
+
+let make lang symbolType =
+    let identifier = Identifier(lang, lang.GetNext())
+    symbolType (identifier, None)
+
+let makeNamed lang symbolType name =
+    let identifier = Identifier(lang, lang.GetNext())
+    symbolType (identifier, Some name)
+
+let inline makeAuto lang (symbolType: _ -> ^el): ^a = 
+    // TODO I'll probably remove this, since it's all cool and stuff until you use it :P
     // TODO optimize this with memoization of... everything :P
     let t = typeof< ^a>
     let n = max 1 t.GenericTypeArguments.Length
-    let tArr = 
-        if n = 1 then
-            [|t|]
-        else
-            t.GenericTypeArguments
+    let tArr = Array.replicate n typeof< ^el>
     let arr = Array.init n (fun i -> 
         let identifier = Identifier(lang, lang.GetNext())
         (symbolType (identifier, None)) :> obj
@@ -44,13 +62,11 @@ let inline makeAuto lang symbolType: ^a =
     else
         downcast (arr.[0])
 
-let make lang symbolType =
-    let identifier = Identifier(lang, lang.GetNext())
-    symbolType (identifier, None)
+let makeMany lang symbolType n = 
+    List.init n (fun _ -> make lang symbolType)
 
-let makeNamed lang symbolType name =
-    let identifier = Identifier(lang, lang.GetNext())
-    symbolType (identifier, Some name)
+let makeManyNamed lang symbolType names =
+    List.map (makeNamed lang symbolType) names
 
 type Source<'key, 'item when 'key: comparison>(maker) =
     let mutable existing = Map.empty
@@ -120,21 +136,17 @@ let normalizeVariables (variableSource: Source<_,_>) expression=
 
     (inner expression), variableMapping
 
-/// <summary>
 /// Retrieves all variables in an expression.
 /// Multiple occurrences of the same variable will be returned multiple times
-/// </summary>
 let rec allVariablesIn expression =
     match expression with
     | Var v -> seq {v}
     | Expr children -> Seq.collect allVariablesIn children
     | _ -> Seq.empty
 
-/// <summary>
 /// Maps all variables in a formula using their names as the key
 /// Homonymous variables are not allowed, but the same variable can be repeated.
 /// Anonymous variables are not allowed.
-/// </summary>
 let mapVariablesByName expression =
     let mutable result = Map.empty
 

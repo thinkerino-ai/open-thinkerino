@@ -34,11 +34,11 @@ type Key<'a> =
 
 let makeKey expr =
     let tempRes =
-        ResizeArray<ImmutableArray.Builder<Expression KeyElement>>()
+        ResizeArray<ImmutableArray<_>.Builder>()
 
     let rec inner (expr, level) =
         if tempRes.Count = level
-        then tempRes.Add(ImmutableArray.CreateBuilder<Expression KeyElement>())
+        then tempRes.Add(ImmutableArray.CreateBuilder())
 
         match expr with
         | Expr children ->

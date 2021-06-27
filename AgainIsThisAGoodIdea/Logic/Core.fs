@@ -10,15 +10,15 @@ type Variable =
     
     override this.ToString() =
         match this with
-        | Variable(Identifier(_, seqId), Some name) -> sprintf "?%s%i" name seqId
-        | Variable(Identifier(_, seqId), None) -> sprintf "?v%i" seqId
+        | Variable(Identifier(l, seqId), Some name) -> sprintf "?%s.%i-%s" name seqId (l.LanguageId.ToString().[..2])
+        | Variable(Identifier(l, seqId), None) -> sprintf "?v%i-%s" seqId (l.LanguageId.ToString().[..2])
 type Constant = 
     | Constant of Identifier * name: string option
 
     override this.ToString() =
         match this with
-        | Constant(Identifier(_, seqId), Some name) -> sprintf "%s%i" name seqId
-        | Constant(Identifier(_, seqId), None) -> sprintf "o%i" seqId
+        | Constant(Identifier(l, seqId), Some name) -> sprintf "%s.%i-%s" name seqId (l.LanguageId.ToString().[..2])
+        | Constant(Identifier(l, seqId), None) -> sprintf "o%i-%s" seqId (l.LanguageId.ToString().[..2])
 
 type Expression = 
     | Const of Constant

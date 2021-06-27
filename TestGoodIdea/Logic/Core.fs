@@ -1,4 +1,5 @@
 module Tests.Logic.Core
+#nowarn "25"
 
 open AITools.Logic.Core
 open AITools.Logic.Language
@@ -63,12 +64,10 @@ let ``Simple expression representation works correctly`` () =
 let ``Complex expression representation works correctly`` () =
     let lang = Language()
 
-    let a = make lang ConstExpr
-    let b = make lang ConstExpr
-    let c = make lang ConstExpr
+    let [a; b; c] = makeMany lang ConstExpr 3
     let x = make lang VarExpr
 
-    let expr = makeExpr [ a; [ b; c ]; x ]
+    let expr = makeExpr' (a, (b,c), x)
 
     Assert.Equal("(o1, (o2, o3), ?v4)", string expr)
 
@@ -78,12 +77,10 @@ let ``Expression.Contains returns true when the expression contains a Variable``
     let lang = Language()
     let element = make lang VarExpr
 
-    let a = make lang ConstExpr
-    let b = make lang ConstExpr
-    let c = make lang ConstExpr
+    let [a; b; c] = makeMany lang ConstExpr 3
     let x = make lang VarExpr
 
-    let expr = makeExpr [ a; [ b; element; c ]; x ]
+    let expr = makeExpr' (a, (b, element, c), x)
 
     Assert.True(expr.Contains(element))
 
@@ -94,12 +91,10 @@ let ``Expression.Contains returns true when the expression contains a Constant``
 
     let element = make lang ConstExpr
 
-    let a = make lang ConstExpr
-    let b = make lang ConstExpr
-    let c = make lang ConstExpr
+    let [a; b; c] = makeMany lang ConstExpr 3
     let x = make lang VarExpr
 
-    let expr = makeExpr [ a; [ b; element; c ]; x ]
+    let expr = makeExpr' (a, (b, element, c), x)
 
     Assert.True(expr.Contains(element))
 
@@ -109,12 +104,10 @@ let ``Expression.Contains returns true when the expression contains a Wrapper`` 
     let lang = Language()
     let element = Wrap "foo"
 
-    let a = make lang ConstExpr
-    let b = make lang ConstExpr
-    let c = make lang ConstExpr
+    let [a; b; c] = makeMany lang ConstExpr 3
     let x = make lang VarExpr
 
-    let expr = makeExpr [ a; [ b; element; c ]; x ]
+    let expr = makeExpr' (a, (b, element, c), x)
 
     Assert.True(expr.Contains(element))
 
@@ -123,17 +116,13 @@ let ``Expression.Contains returns true when the expression contains a Wrapper`` 
 let ``Expression.Contains returns true when the expression contains another Expression`` () =
     let lang = Language()
 
-    let a' = make lang ConstExpr
-    let b' = make lang ConstExpr
+    let [a'; b'] = makeMany lang ConstExpr 2
     let element = makeExpr [a'; b']
 
-
-    let a = make lang ConstExpr
-    let b = make lang ConstExpr
-    let c = make lang ConstExpr
+    let [a; b; c] = makeMany lang ConstExpr 3
     let x = make lang VarExpr
 
-    let expr = makeExpr [ a; [ b; element; c ]; x ]
+    let expr = makeExpr' (a, (b, (a', b'), c), x)
 
     Assert.True(expr.Contains(element))
 
@@ -164,9 +153,9 @@ let ``makeAuto can build multiple Variables correctly`` () =
     let _: Variable = b
     let _: Variable = c
 
-    Assert.IsType<Variable> a
-    Assert.IsType<Variable> b
-    Assert.IsType<Variable> c
+    ignore <| Assert.IsType<Variable> a
+    ignore <| Assert.IsType<Variable> b
+    ignore <| Assert.IsType<Variable> c
 
 [<Fact>]
 let ``makeAuto can build multiple VarExpr correctly`` () = 
@@ -178,6 +167,6 @@ let ``makeAuto can build multiple VarExpr correctly`` () =
     let _: Expression = b
     let _: Expression = c
 
-    Assert.IsAssignableFrom<Expression> a
-    Assert.IsAssignableFrom<Expression> b
-    Assert.IsAssignableFrom<Expression> c
+    ignore <| Assert.IsAssignableFrom<Expression> a
+    ignore <| Assert.IsAssignableFrom<Expression> b
+    ignore <| Assert.IsAssignableFrom<Expression> c

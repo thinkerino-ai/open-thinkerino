@@ -3,14 +3,21 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Utils/AsyncChannel.fs" />
+    <Compile Include="Utils/AsyncTools.fs" />
+    <Compile Include="Utils/Logger.fs" />
     <Compile Include="Logic/Language.fs" />
     <Compile Include="Logic/Core.fs" />
     <Compile Include="Logic/Unification.fs" />
     <Compile Include="Logic/Utils.fs" />
     <Compile Include="Storage/Index.fs" />
     <Compile Include="Storage/Implementations/Dummy.fs" />
+    <Compile Include="Proofs/Components.fs" />
+    <Compile Include="Proofs/Provers.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" Version="1.7.1" />
+    <!-- <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" /> -->
+    <PackageReference Include="FSharpx.Async" Version="1.14.1" />
+    <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
   </ItemGroup>
 </Project>
