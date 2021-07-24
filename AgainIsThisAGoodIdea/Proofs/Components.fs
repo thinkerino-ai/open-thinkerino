@@ -23,20 +23,20 @@ type BaseHandlerDescriptor<'handler> =
 
 type RawHandlerExtraArguments =
     { PassSubstitutionAs: string
-      PassKnowledgeBaseAs: string option }
+      PassContextAs: string option }
 
 type MappedHandlerExtraArguments =
     { PassSubstitutionAs: string option
-      PassKnowledgeBaseAs: string option }
+      PassContextAs: string option }
 
-let makeMappedHandlerDescriptor ctor (expression, handler, passSubstitutionAs, passKnowledgeBaseAs, isPure, safety) =
+let makeMappedHandlerDescriptor ctor (expression, handler, passSubstitutionAs, passContextAs, isPure, safety) =
     ctor
     <| ({ Handler = handler
           Expression = expression
           IsPure = isPure
           Safety = safety },
         { PassSubstitutionAs = passSubstitutionAs
-          PassKnowledgeBaseAs = passKnowledgeBaseAs })
+          PassContextAs = passContextAs })
 // TODO clean this, like... let's make it readable
 type HandlerDescriptor<'handler> =
     | Raw of BaseHandlerDescriptor<'handler> * RawHandlerExtraArguments
@@ -47,71 +47,71 @@ type HandlerDescriptor<'handler> =
     | MapNoVariables of BaseHandlerDescriptor<'handler> * MappedHandlerExtraArguments
 
     // TODO these are fun and all but I don't really like how they came out
-    static member MakeRaw(expression, handler: 'handler, isPure, safety, ?passSubstitutionAs, ?passKnowledgeBaseAs) =
+    static member MakeRaw(expression, handler: 'handler, isPure, safety, ?passSubstitutionAs, ?passContextAs) =
         Raw
         <| ({ Handler = handler
               Expression = expression
               IsPure = Option.defaultValue true isPure
               Safety = safety },
             { PassSubstitutionAs = Option.defaultValue "substitution" passSubstitutionAs
-              PassKnowledgeBaseAs = passKnowledgeBaseAs })
+              PassContextAs = passContextAs })
 
-    static member MakeMap(expression, handler: 'handler, isPure, safety, ?passSubstitutionAs, ?passKnowledgeBaseAs) =
-        makeMappedHandlerDescriptor Map (expression, handler, passSubstitutionAs, passKnowledgeBaseAs, isPure, safety)
+    static member MakeMap(expression, handler: 'handler, isPure, safety, ?passSubstitutionAs, ?passContextAs) =
+        makeMappedHandlerDescriptor Map (expression, handler, passSubstitutionAs, passContextAs, isPure, safety)
 
     static member MakeMapUnwrapped(expression,
                                    handler: 'handler,
                                    isPure,
                                    safety,
                                    ?passSubstitutionAs,
-                                   ?passKnowledgeBaseAs) =
+                                   ?passContextAs) =
         makeMappedHandlerDescriptor
             MapUnwrapped
-            (expression, handler, passSubstitutionAs, passKnowledgeBaseAs, isPure, safety)
+            (expression, handler, passSubstitutionAs, passContextAs, isPure, safety)
 
     static member MakeMapUnwrappedRequired(expression,
                                            handler: 'handler,
                                            isPure,
                                            safety,
                                            ?passSubstitutionAs,
-                                           ?passKnowledgeBaseAs) =
+                                           ?passContextAs) =
         makeMappedHandlerDescriptor
             MapUnwrappedRequired
-            (expression, handler, passSubstitutionAs, passKnowledgeBaseAs, isPure, safety)
+            (expression, handler, passSubstitutionAs, passContextAs, isPure, safety)
 
     static member MakeMapUnwrappedNoVariables(expression,
                                               handler: 'handler,
                                               isPure,
                                               safety,
                                               ?passSubstitutionAs,
-                                              ?passKnowledgeBaseAs) =
+                                              ?passContextAs) =
         makeMappedHandlerDescriptor
             MapUnwrappedNoVariables
-            (expression, handler, passSubstitutionAs, passKnowledgeBaseAs, isPure, safety)
+            (expression, handler, passSubstitutionAs, passContextAs, isPure, safety)
 
     static member MakeMapNoVariables(expression,
                                      handler: 'handler,
                                      isPure,
                                      safety,
                                      ?passSubstitutionAs,
-                                     ?passKnowledgeBaseAs) =
+                                     ?passContextAs) =
         makeMappedHandlerDescriptor
             MapNoVariables
-            (expression, handler, passSubstitutionAs, passKnowledgeBaseAs, isPure, safety)
+            (expression, handler, passSubstitutionAs, passContextAs, isPure, safety)
 
-// TODO rename and remove 'kb arg
-type ArgumentExtractor =
-    Expression * Substitution * obj * Map<Variable, Variable> * option<Map<string, Variable>> * seq<string> * option<string> * option<string> -> Map<string, obj>
 
-type Component<'handler> =
-    { ExtractArgsByName: ArgumentExtractor
+type ArgumentExtractor<'context> =
+    Expression * Substitution * 'context * Map<Variable, Variable> * option<Map<string, Variable>> * seq<string> * option<string> * option<string> -> Map<string, obj>
+
+type Component<'handler, 'context> =
+    { ExtractArgsByName: ArgumentExtractor<'context>
       Language: Language
       ListenedExpression: Expression
       Handler: 'handler
       InputArgs: string seq
       VariablesByName: Map<string, Variable> option
       PassSubstitutionAs: string option
-      PassKnowledgeBaseAs: string option
+      PassContextAs: string option
       IsPure: bool
       Safety: HandlerSafety }
 
@@ -144,22 +144,22 @@ let makeRecordHandler (handlerFunc: 'input -> 'output) =
       HandlerArguments = inputArgs }
 
 
-let prepareVariablesByName (expression, passSubstitutionAs: string option, passKnowledgeBaseAs: string option) =
+let prepareVariablesByName (expression, passSubstitutionAs: string option, passContextAs: string option) =
     let result = (mapVariablesByName expression)
     if passSubstitutionAs.IsSome
        && result.ContainsKey passSubstitutionAs.Value then
         failwithf
             "Argument passSubstitutionAs conflicts with variable name \"%s\", they cannot be equal"
             passSubstitutionAs.Value
-    elif passKnowledgeBaseAs.IsSome
-         && result.ContainsKey passKnowledgeBaseAs.Value then
+    elif passContextAs.IsSome
+         && result.ContainsKey passContextAs.Value then
         failwithf
-            "Argument passKnowledgeBaseAs conflicts with variable name \"%s\", they cannot be equal"
-            passKnowledgeBaseAs.Value
+            "Argument passContextAs conflicts with variable name \"%s\", they cannot be equal"
+            passContextAs.Value
     else
         result
 
-let validateRawArgumentNames (inputArgs, passSubstitutionAs, passKnowledgeBaseAs) =
+let validateRawArgumentNames (inputArgs, passSubstitutionAs, passContextAs) =
     // the handler must accept a expression, a substitution and, possibly a kb
     if not
         (Array.contains
@@ -168,10 +168,10 @@ let validateRawArgumentNames (inputArgs, passSubstitutionAs, passKnowledgeBaseAs
                       Some passSubstitutionAs ]
                 set [ Some "expression"
                       Some passSubstitutionAs
-                      passKnowledgeBaseAs ] |]) then
+                      passContextAs ] |]) then
         failwithf "The handler has the wrong argument names %A!" inputArgs
 
-let validateMappedArgumentNames (inputArgs, variablesByName, passSubstitutionAs, passKnowledgeBaseAs) =
+let validateMappedArgumentNames (inputArgs, variablesByName, passSubstitutionAs, passContextAs) =
     let unlistenedArgNames =
         Array.filter (fun name ->
             not (Map.containsKey name variablesByName)
@@ -179,7 +179,7 @@ let validateMappedArgumentNames (inputArgs, variablesByName, passSubstitutionAs,
                 (Array.contains
                     (Some name)
                      [| passSubstitutionAs
-                        passKnowledgeBaseAs |])) inputArgs
+                        passContextAs |])) inputArgs
 
     if not (Array.isEmpty unlistenedArgNames) then
         failwithf
@@ -214,12 +214,12 @@ let mapSubstitutionToFunctionArgs (variablesByName: Map<_, _> option,
 let extractArgsByName argumentMode
                       (expression,
                        unifier,
-                       knowledgeBase,
+                       context,
                        normalizationMapping,
                        variablesByName,
                        handlerArgs,
                        passSubstitutionAs,
-                       passKnowledgeBaseAs)
+                       passContextAs)
                       =
     debug <| sprintf "extraArgsByName"
     let argsByName =
@@ -262,12 +262,12 @@ let extractArgsByName argumentMode
         | None -> baseArgs
         | Some name -> Map.add name (unifier :> obj) baseArgs
 
-    let argsWithMaybeKnowledgeBase =
-        match passKnowledgeBaseAs with
+    let argsWithMaybeContext =
+        match passContextAs with
         | None -> argsWithMaybeSubstitution
-        | Some name -> Map.add name (knowledgeBase :> obj) argsWithMaybeSubstitution
+        | Some name -> Map.add name (context :> obj) argsWithMaybeSubstitution
 
-    argsWithMaybeKnowledgeBase
+    argsWithMaybeContext
 
 
 let prepareHandler (wrapHandler: 'a -> RecordHandler<'b>) handlerArgs =
@@ -283,7 +283,7 @@ let prepareHandler (wrapHandler: 'a -> RecordHandler<'b>) handlerArgs =
              |> Array.map Some
              |> set)
 
-        validateRawArgumentNames (argSet, extraArgs.PassSubstitutionAs, extraArgs.PassKnowledgeBaseAs)
+        validateRawArgumentNames (argSet, extraArgs.PassSubstitutionAs, extraArgs.PassContextAs)
 
         { ExtractArgsByName = extractArgsByName handlerArgs
           Language = lang
@@ -292,7 +292,7 @@ let prepareHandler (wrapHandler: 'a -> RecordHandler<'b>) handlerArgs =
           InputArgs = preparedHandler.HandlerArguments
           VariablesByName = None
           PassSubstitutionAs = Some extraArgs.PassSubstitutionAs
-          PassKnowledgeBaseAs = extraArgs.PassKnowledgeBaseAs
+          PassContextAs = extraArgs.PassContextAs
           IsPure = args.IsPure
           Safety = args.Safety }
     | Map (args, extraArgs)
@@ -304,7 +304,7 @@ let prepareHandler (wrapHandler: 'a -> RecordHandler<'b>) handlerArgs =
         let preparedHandler = wrapHandler args.Handler
 
         let variablesByName =
-            prepareVariablesByName (listenedExpression, extraArgs.PassSubstitutionAs, extraArgs.PassKnowledgeBaseAs)
+            prepareVariablesByName (listenedExpression, extraArgs.PassSubstitutionAs, extraArgs.PassContextAs)
 
         debug <| sprintf "prepared variablesByName: %O" variablesByName
 
@@ -312,7 +312,7 @@ let prepareHandler (wrapHandler: 'a -> RecordHandler<'b>) handlerArgs =
             (preparedHandler.HandlerArguments,
              variablesByName,
              extraArgs.PassSubstitutionAs,
-             extraArgs.PassKnowledgeBaseAs)
+             extraArgs.PassContextAs)
 
         { ExtractArgsByName = extractArgsByName handlerArgs
           Language = lang
@@ -321,6 +321,6 @@ let prepareHandler (wrapHandler: 'a -> RecordHandler<'b>) handlerArgs =
           InputArgs = preparedHandler.HandlerArguments
           VariablesByName = Some variablesByName
           PassSubstitutionAs = extraArgs.PassSubstitutionAs
-          PassKnowledgeBaseAs = extraArgs.PassKnowledgeBaseAs
+          PassContextAs = extraArgs.PassContextAs
           IsPure = args.IsPure
           Safety = args.Safety }

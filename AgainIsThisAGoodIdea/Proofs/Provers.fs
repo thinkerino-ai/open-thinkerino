@@ -6,46 +6,45 @@ open AITools.Logic.Unification
 open AITools.Logic.Utils
 open AITools.Utils.AsyncTools
 open AITools.Utils.Logger
-open FSharp.Reflection
 
 
-type Prover = Component<ProverHandlerFunction<Map<string, obj>>>
+type Prover<'context> = Component<ProverHandlerFunction<Map<string, obj>, 'context>, 'context>
 /// A handler function for a prover
-and ProverHandlerFunction<'input> =
+and ProverHandlerFunction<'input, 'context> =
     /// A simple handler that returns a boolean
     | Predicate of ('input -> bool)
     /// A simple handler that returns a boolean under some premises
-    | PremisedPredicate of ('input -> bool * Proof seq)
+    | PremisedPredicate of ('input -> bool * Proof<'context> seq)
     /// A simple handler that returns a boolean for some substitution
     | Satisfier of (((((('input -> bool * Substitution))))))
     /// A simple handler that returns a boolean for some substitution and some premises
-    | PremisedSatisfier of (((((('input -> bool * Substitution * Proof seq))))))
+    | PremisedSatisfier of (((((('input -> bool * Substitution * Proof<'context> seq))))))
     /// An async predicate
     | AsyncPredicate of ('input -> Async<bool>)
     /// An async PremisedPredicate
-    | AsyncPremisedPredicate of ('input -> Async<bool * Proof seq>)
+    | AsyncPremisedPredicate of ('input -> Async<bool * Proof<'context> seq>)
     /// An async satisfier
     | AsyncSatisfier of ('input -> Async<bool * Substitution>)
     /// An async premised satisfier
-    | AsyncPremisedSatisfier of ('input -> Async<bool * Substitution * Proof seq>)
+    | AsyncPremisedSatisfier of ('input -> Async<bool * Substitution * Proof<'context> seq>)
     /// A handler returning several boolean and substitution pairs
     | MultiSatisfier of ('input -> (bool * Substitution) seq)
     /// A handler returning several boolean, substitution and premise triples
-    | MultiPremisedSatisfier of ('input -> (bool * Substitution * Proof seq) seq)
+    | MultiPremisedSatisfier of ('input -> (bool * Substitution * Proof<'context> seq) seq)
     /// A handler that uses a data Source to return booleans
     | AsyncSourcePredicate of ('input -> bool Source)
     /// A handler that uses a data Source to return booleans and premises
-    | AsyncSourcePremisedPredicate of ('input -> (bool * (Proof seq)) Source)
+    | AsyncSourcePremisedPredicate of ('input -> (bool * (Proof<'context> seq)) Source)
     /// A handler that uses a data Source to return several boolean and substitution pairs
     | AsyncSourceSatisfier of ('input -> (bool * Substitution) Source)
     /// A handler that uses a data Source to return several boolean, substitution and premise triples
-    | AsyncSourcePremisedSatisfier of ('input -> (bool * Substitution * Proof seq) Source)
+    | AsyncSourcePremisedSatisfier of ('input -> (bool * Substitution * Proof<'context> seq) Source)
 
-and Proof =
-    { InferenceRule: Prover
+and Proof<'context> =
+    { InferenceRule: Prover<'context>
       Conclusion: Expression
       Substitution: Substitution
-      Premises: Proof seq }
+      Premises: Proof<'context> seq }
 
     override this.ToString() =
         sprintf "%s \n-> %O (%O)" (this.Premises |> Seq.map string |> String.concat " and ") this.Conclusion this.InferenceRule
@@ -97,9 +96,9 @@ let makeProverRecordHandler rawHandler =
 let makeProver handlerDescriptor =
     prepareHandler makeProverRecordHandler handlerDescriptor
 
-// TODO I really don't like that "knowledgeBase" is part of this signature
-let prove (prover: Prover) (expression, previousSubstitution, knowledgeBase) return' =
-    // TODO
+
+let prove (prover: Prover<'context>) (expression, previousSubstitution, context: 'context) return' =
+    // TODO remove the following if I implement hypotheses "virtually" (meaning that I embed hypotheses right in the formula being proven)
     // if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
     //     raise UnsafeOperationException("Unsafe prover cannot be used in hypothetical scenarios")
     debug <| sprintf "prove function for prover %O and expression %O" prover expression
@@ -108,7 +107,7 @@ let prove (prover: Prover) (expression, previousSubstitution, knowledgeBase) ret
 
     let unifier =
         Substitution.Unify(expression, normalizedListenedExpression, previousSubstitution)
-//ERROR CONTINUARE DA QUI, IL NORMALIZATION MAPPING PER QUALCHE MOTIVO USA UNA VARIABILE DIVERSA DA QUELLA NEL VARIABLES BY NAME
+
     debug <| sprintf "%O and %O unify with %O" expression normalizedListenedExpression unifier
     async {
         // TODO try catch here, so that if the handler fail we can return an error (or maybe the caller should watch for failures?)
@@ -121,12 +120,12 @@ let prove (prover: Prover) (expression, previousSubstitution, knowledgeBase) ret
                 prover.ExtractArgsByName
                     (expression,
                      unifier,
-                     knowledgeBase,
+                     context,
                      normalizationMapping,
                      prover.VariablesByName,
                      prover.InputArgs,
                      prover.PassSubstitutionAs,
-                     prover.PassKnowledgeBaseAs)
+                     prover.PassContextAs)
 
             //debug <| sprintf "args by name are %O" argsByName
             match prover.Handler with

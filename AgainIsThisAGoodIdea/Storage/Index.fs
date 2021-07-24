@@ -69,7 +69,6 @@ let extendKeySlice (slice: KeySlice<'a> option) (element: KeyElement<'a>) =
                       yield element
                    }) }
 
-// TODO rename to projectSlice since it operates on slices
 let projectSlice (previousSlice: KeySlice<'a>) (projectionSlice: KeySlice<'a>) (currentSlice: KeySlice<'a>) =
     let mutable iCurrent = 0
 
@@ -204,7 +203,6 @@ type AbstruseIndex<'keyItem, 'item, 'subindexItem when 'subindexItem :> Abstruse
             let furtherAbstrusion =
                 Array.ofSeq
                 <| this.SubindexTree.Retrieve(Some slice, useWildcard = false)
-            // TODO I should not use Seq.isEmpty, since it reads the first element of the sequence (so it would take more time than necessary)
 
             let destination =
                 if furtherAbstrusion.Length = 0 then

@@ -10,7 +10,7 @@ let VarExpr = Variable >> Var
 (* 
     TODO this only works for two nested levels (e.g. [a; [b]]), 
     but gives compilation error with three or more (e.g. [a; [b; [c;]]]), 
-    I should probably switch to a parsing function 
+    I should probably switch to a parsing function or reflection on tuples
 *)
 let rec makeExpr (expression: obj seq) =
     let converter (item: obj) =
@@ -136,17 +136,21 @@ let normalizeVariables (variableSource: Source<_,_>) expression=
 
     (inner expression), variableMapping
 
+/// <summary>
 /// Retrieves all variables in an expression.
 /// Multiple occurrences of the same variable will be returned multiple times
+/// </summary>
 let rec allVariablesIn expression =
     match expression with
     | Var v -> seq {v}
     | Expr children -> Seq.collect allVariablesIn children
     | _ -> Seq.empty
 
+/// <summary>
 /// Maps all variables in a formula using their names as the key
 /// Homonymous variables are not allowed, but the same variable can be repeated.
 /// Anonymous variables are not allowed.
+/// </summary>
 let mapVariablesByName expression =
     let mutable result = Map.empty
 
