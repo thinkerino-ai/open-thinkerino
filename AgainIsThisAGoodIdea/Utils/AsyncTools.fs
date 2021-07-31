@@ -110,11 +110,11 @@ let foreachResultParallel bufferSize (source: Source<_>) body =
 
 /// Runs a source and yields each result synchronously (i.e. bridges the sync and async world)
 let broker bufferSize source =
-    let cts = new System.Threading.CancellationTokenSource()
-    let channel = AsyncChannel(bufferSize)
-    Async.Start (runThenSignalStop source channel, cts.Token)
-    let mutable childrenCount = 1
     seq {
+        let cts = new System.Threading.CancellationTokenSource()
+        let channel = AsyncChannel(bufferSize)
+        Async.Start (runThenSignalStop source channel, cts.Token)
+        let mutable childrenCount = 1
         try
             while childrenCount > 0 do
                 match channel.Get() with

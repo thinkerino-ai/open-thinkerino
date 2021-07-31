@@ -159,17 +159,24 @@ let prepareVariablesByName (expression, passSubstitutionAs: string option, passC
     else
         result
 
-let validateRawArgumentNames (inputArgs, passSubstitutionAs, passContextAs) =
-    // the handler must accept a expression, a substitution and, possibly a kb
+let validateRawArgumentNames (inputArgs, passSubstitutionAs, passContextAs: string option) =
+    // the handler must accept an expression, a substitution and possibly a kb
+    let inputSet = set inputArgs
+
     if not
-        (Array.contains
-            inputArgs
-             [| set [ Some "expression"
-                      Some passSubstitutionAs ]
-                set [ Some "expression"
-                      Some passSubstitutionAs
-                      passContextAs ] |]) then
-        failwithf "The handler has the wrong argument names %A!" inputArgs
+        (
+            Array.contains inputSet.Count [| 2; 3 |]
+            && inputSet.Contains "expression"
+            && inputSet.Contains passSubstitutionAs
+            && (passContextAs.IsNone || inputSet.Contains(passContextAs.Value))
+        )
+    then
+        let expected = 
+            match passContextAs with
+            | Some s -> [|"expression"; passSubstitutionAs; s|]
+            | None -> [|"expression"; passSubstitutionAs|]
+        failwithf "The handler has the wrong argument names %A! expected %A" inputArgs expected
+
 
 let validateMappedArgumentNames (inputArgs, variablesByName, passSubstitutionAs, passContextAs) =
     let unlistenedArgNames =
@@ -278,12 +285,7 @@ let prepareHandler (wrapHandler: 'a -> RecordHandler<'b>) handlerArgs =
         let listenedExpression, _ = renewVariables lang args.Expression
         let preparedHandler = wrapHandler args.Handler
 
-        let argSet =
-            (preparedHandler.HandlerArguments
-             |> Array.map Some
-             |> set)
-
-        validateRawArgumentNames (argSet, extraArgs.PassSubstitutionAs, extraArgs.PassContextAs)
+        validateRawArgumentNames (preparedHandler.HandlerArguments, extraArgs.PassSubstitutionAs, extraArgs.PassContextAs)
 
         { ExtractArgsByName = extractArgsByName handlerArgs
           Language = lang

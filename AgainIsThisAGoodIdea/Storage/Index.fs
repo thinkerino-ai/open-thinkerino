@@ -24,12 +24,21 @@ type KeySlice<'a> =
         |> String.concat ", "
         |> sprintf "[%s]"
 
+    static member Wildcard with get () =
+        let elements = ImmutableArray.CreateRange([KeyElement<'a>.Wildcard])
+        {Elements=elements}
+
 type Key<'a> =
     { Slices: KeySlice<'a> ImmutableArray }
     override this.ToString() =
         this.Slices
         |> Seq.map string
         |> String.concat "\n"
+
+    static member Wildcard with get () =
+        let slices = ImmutableArray.CreateRange([KeySlice<'a>.Wildcard])
+        {Slices=slices}
+
 
 
 let makeKey expr =
