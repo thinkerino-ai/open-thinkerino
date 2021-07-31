@@ -16,6 +16,7 @@
     <Compile Include="Storage/Implementations/Dummy.fs" />
     <Compile Include="Proofs/Components.fs" />
     <Compile Include="Proofs/Provers.fs" />
+    <Compile Include="Proofs/Listeners.fs" />
     <Compile Include="Proofs/KnowledgeBase.fs" />
   </ItemGroup>
   <ItemGroup>

@@ -40,6 +40,7 @@ and ProverHandlerFunction<'input, 'context> =
     /// A handler that uses a data Source to return several boolean, substitution and premise triples
     | AsyncSourcePremisedSatisfier of ('input -> (bool * Substitution * Proof<'context> seq) Source)
 
+
 and Proof<'context> =
     { InferenceRule: Prover<'context>
       Conclusion: Expression
@@ -101,21 +102,18 @@ let prove (prover: Prover<'context>) (expression, previousSubstitution, context:
     // TODO remove the following if I implement hypotheses "virtually" (meaning that I embed hypotheses right in the formula being proven)
     // if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
     //     raise UnsafeOperationException("Unsafe prover cannot be used in hypothetical scenarios")
-    debug <| sprintf "prove function for prover %O and expression %O" prover expression
     let normalizedListenedExpression, normalizationMapping =
         renewVariables prover.Language prover.ListenedExpression
 
     let unifier =
         Substitution.Unify(expression, normalizedListenedExpression, previousSubstitution)
 
-    debug <| sprintf "%O and %O unify with %O" expression normalizedListenedExpression unifier
     async {
         // TODO try catch here, so that if the handler fail we can return an error (or maybe the caller should watch for failures?)
         match unifier with
         | None -> ()
         | Some unifier ->
             // TODO handle failures
-            debug <| sprintf "mapping args by name"
             let argsByName =
                 prover.ExtractArgsByName
                     (expression,
@@ -127,7 +125,6 @@ let prove (prover: Prover<'context>) (expression, previousSubstitution, context:
                      prover.PassSubstitutionAs,
                      prover.PassContextAs)
 
-            //debug <| sprintf "args by name are %O" argsByName
             match prover.Handler with
             | Predicate handler ->
                 let truth = handler argsByName
