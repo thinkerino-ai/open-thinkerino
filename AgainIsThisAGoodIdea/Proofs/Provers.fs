@@ -1,6 +1,6 @@
 module AITools.Proofs.Components.Provers
 
-open AITools.Proofs.Components.Components
+open AITools.Proofs.Components.Base
 open AITools.Logic.Core
 open AITools.Logic.Unification
 open AITools.Logic.Utils

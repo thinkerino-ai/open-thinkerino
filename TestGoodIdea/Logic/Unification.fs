@@ -5,55 +5,56 @@ open AITools.Logic.Unification
 open AITools.Logic.Utils
 open AITools.Logic.Core
 open Xunit
+open System
 
 [<Fact>]
 let ``Headed binding representation works correctly`` () =
-    let language = Language()
-    let x = makeNamed language Variable "x"
-    let y = makeNamed language Variable "y"
-    let a = makeNamed language Constant "a"
-    let b = makeNamed language Constant "b"
+    let lang = Language(Guid("abc00000-0000-0000-0000-000000000042"), true)
+    let x = makeNamed lang Variable "x"
+    let y = makeNamed lang Variable "y"
+    let a = makeNamed lang Constant "a"
+    let b = makeNamed lang Constant "b"
 
     let e = makeExpr [ a; b ]
 
     let binding = Binding(set [ x; y ], Some e)
-
-    Assert.Equal("{?x1, ?y2 -> (a3, b4)}", string binding)
+    
+    Assert.Equal("{?x.1-abc, ?y.2-abc -> (a.3-abc, b.4-abc)}", string binding)
 
 [<Fact>]
 let ``Headless binding representation works correctly`` () =
-    let language = Language()
-    let x = makeNamed language Variable "x"
-    let y = makeNamed language Variable "y"
+    let lang = Language(Guid("abc00000-0000-0000-0000-000000000042"), true)
+    let x = makeNamed lang Variable "x"
+    let y = makeNamed lang Variable "y"
 
     let binding = Binding(set [ x; y ], None)
 
-    Assert.Equal("{?x1, ?y2 -> _}", string binding)
+    Assert.Equal("{?x.1-abc, ?y.2-abc -> _}", string binding)
 
 
 [<Fact>]
 let ``Substitution representation works correctly`` () =
-    let language = Language()
+    let lang = Language(Guid("abc00000-0000-0000-0000-000000000042"), true)
 
-    let x = makeNamed language Variable "x"
-    let y = makeNamed language Variable "y"
-    let z = makeNamed language Variable "z"
+    let x = makeNamed lang Variable "x"
+    let y = makeNamed lang Variable "y"
+    let z = makeNamed lang Variable "z"
 
-    let a = makeNamed language ConstExpr "a"
+    let a = makeNamed lang ConstExpr "a"
 
     let subst =
         Substitution
             ([ Binding(set [ x; y ], Some a)
                Binding(set [ z ], None) ])
 
-    Assert.Equal("[{?x1, ?y2 -> a4}, {?z3 -> _}]", string subst)
+    Assert.Equal("[{?x.1-abc, ?y.2-abc -> a.4-abc}, {?z.3-abc -> _}]", string subst)
 
 [<Fact>]
 let ``Recursive substitutions are impossible`` () =
-    let language = Language()
+    let lang = Language()
 
-    let x = makeNamed language Variable "x"
-    let a = makeNamed language Constant "a"
+    let x = makeNamed lang Variable "x"
+    let a = makeNamed lang Constant "a"
 
     let e = makeExpr [ x; a ]
 
@@ -62,14 +63,14 @@ let ``Recursive substitutions are impossible`` () =
 
 [<Fact>]
 let ``Substitutions are applied recursively`` () =
-    let language = Language()
+    let lang = Language()
 
-    let x = makeNamed language Variable "x"
-    let y = makeNamed language Variable "y"
+    let x = makeNamed lang Variable "x"
+    let y = makeNamed lang Variable "y"
 
-    let a = makeNamed language ConstExpr "a"
-    let b = makeNamed language ConstExpr "b"
-    let c = makeNamed language ConstExpr "c"
+    let a = makeNamed lang ConstExpr "a"
+    let b = makeNamed lang ConstExpr "b"
+    let c = makeNamed lang ConstExpr "c"
 
     let s =
         Substitution
@@ -82,20 +83,20 @@ let ``Substitutions are applied recursively`` () =
 
 [<Fact>]
 let ``Different constants do not unify`` () =
-    let language = Language()
-    let a = makeNamed language ConstExpr "a"
-    let b = makeNamed language ConstExpr "b"
+    let lang = Language()
+    let a = makeNamed lang ConstExpr "a"
+    let b = makeNamed lang ConstExpr "b"
 
     Assert.Equal(None, Substitution.Unify(a, b))
 
 
 [<Fact>]
 let ``Equal expressions unify`` () =
-    let language = Language()
-    let a = makeNamed language ConstExpr "a"
-    let b = makeNamed language ConstExpr "b"
-    let c = makeNamed language ConstExpr "c"
-    let d = makeNamed language ConstExpr "d"
+    let lang = Language()
+    let a = makeNamed lang ConstExpr "a"
+    let b = makeNamed lang ConstExpr "b"
+    let c = makeNamed lang ConstExpr "c"
+    let d = makeNamed lang ConstExpr "d"
 
     let e1 = makeExpr [ a; [ b; c ]; d ]
     let e2 = makeExpr [ a; [ b; c ]; d ]
@@ -108,11 +109,11 @@ let ``Equal expressions unify`` () =
 
 [<Fact>]
 let ``Different expressions do not unify`` () =
-    let language = Language()
-    let a = makeNamed language ConstExpr "a"
-    let b = makeNamed language ConstExpr "b"
-    let c = makeNamed language ConstExpr "c"
-    let d = makeNamed language ConstExpr "d"
+    let lang = Language()
+    let a = makeNamed lang ConstExpr "a"
+    let b = makeNamed lang ConstExpr "b"
+    let c = makeNamed lang ConstExpr "c"
+    let d = makeNamed lang ConstExpr "d"
 
     let e1 = makeExpr [ a; [ b; c ]; d ]
     let e2 = makeExpr [ a; [ b; c ]; a ]
@@ -122,14 +123,14 @@ let ``Different expressions do not unify`` () =
 
 [<Fact>]
 let ``Complex unifiable expression actually do unify`` () =
-    let language = Language()
-    let v1 = makeNamed language Variable "v1"
-    let v2 = makeNamed language Variable "v2"
+    let lang = Language()
+    let v1 = makeNamed lang Variable "v1"
+    let v2 = makeNamed lang Variable "v2"
 
-    let a = makeNamed language ConstExpr "a"
-    let b = makeNamed language ConstExpr "b"
-    let c = makeNamed language ConstExpr "c"
-    let d = makeNamed language ConstExpr "d"
+    let a = makeNamed lang ConstExpr "a"
+    let b = makeNamed lang ConstExpr "b"
+    let c = makeNamed lang ConstExpr "c"
+    let d = makeNamed lang ConstExpr "d"
 
     let exprD = makeExpr [ d ]
 
@@ -146,13 +147,13 @@ let ``Complex unifiable expression actually do unify`` () =
 
 [<Fact>]
 let ``Unification fails when the same variable gets unified with incompatible expressions`` () =
-    let language = Language()
-    let v1 = make language Variable
+    let lang = Language()
+    let v1 = make lang Variable
 
-    let a = makeNamed language ConstExpr "a"
-    let b = makeNamed language ConstExpr "b"
-    let c = makeNamed language ConstExpr "c"
-    let d = makeNamed language ConstExpr "d"
+    let a = makeNamed lang ConstExpr "a"
+    let b = makeNamed lang ConstExpr "b"
+    let c = makeNamed lang ConstExpr "c"
+    let d = makeNamed lang ConstExpr "d"
 
     let exprD = makeExpr [ d ]
 

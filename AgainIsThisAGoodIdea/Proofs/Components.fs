@@ -1,4 +1,4 @@
-module AITools.Proofs.Components.Components
+module AITools.Proofs.Components.Base
 
 open AITools.Logic.Language
 open AITools.Logic.Utils

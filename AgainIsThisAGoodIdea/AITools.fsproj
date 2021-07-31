@@ -10,10 +10,12 @@
     <Compile Include="Logic/Core.fs" />
     <Compile Include="Logic/Unification.fs" />
     <Compile Include="Logic/Utils.fs" />
+    <Compile Include="Storage/Base.fs" />
     <Compile Include="Storage/Index.fs" />
     <Compile Include="Storage/Implementations/Dummy.fs" />
     <Compile Include="Proofs/Components.fs" />
     <Compile Include="Proofs/Provers.fs" />
+    <Compile Include="Proofs/KnowledgeBase.fs" />
   </ItemGroup>
   <ItemGroup>
     <!-- <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" /> -->

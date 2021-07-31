@@ -1,4 +1,5 @@
 module Tests.Logic.Core
+open System
 #nowarn "25"
 
 open AITools.Logic.Core
@@ -8,35 +9,35 @@ open AITools.Logic.Utils
 
 [<Fact>]
 let ``Named Constant representation works correctly`` () =
-    let lang = Language()
+    let lang = Language(Guid("abc00000-0000-0000-0000-000000000042"), true)
 
     let c = makeNamed lang Constant "foo"
 
-    Assert.Equal("foo1", string c)
+    Assert.Equal("foo.1-abc", string c)
 
 [<Fact>]
 let ``Unnamed Constant representation works correctly`` () =
-    let lang = Language()
+    let lang = Language(Guid("abc00000-0000-0000-0000-000000000042"), true)
 
     let c = make lang Constant
 
-    Assert.Equal("o1", string c)
+    Assert.Equal("o1-abc", string c)
 
 [<Fact>]
 let ``Named Variable representation works correctly`` () =
-    let lang = Language()
+    let lang = Language(Guid("abc00000-0000-0000-0000-000000000042"), true)
 
     let v = makeNamed lang Variable "foo"
 
-    Assert.Equal("?foo1", string v)
+    Assert.Equal("?foo.1-abc", string v)
 
 [<Fact>]
 let ``Unnamed Variable representation works correctly`` () =
-    let lang = Language()
+    let lang = Language(Guid("abc00000-0000-0000-0000-000000000042"), true)
 
     let v = make lang Variable
 
-    Assert.Equal("?v1", string v)
+    Assert.Equal("?v1-abc", string v)
 
 
 [<Fact>]
@@ -55,21 +56,20 @@ let ``String wrapper representation works correctly`` () =
 
 [<Fact>]
 let ``Simple expression representation works correctly`` () =
-    let lang = Language()
+    let lang = Language(Guid("abc00000-0000-0000-0000-000000000042"), true)
     let expr = make lang ConstExpr
 
-    Assert.Equal("o1", string expr)
+    Assert.Equal("o1-abc", string expr)
 
 [<Fact>]
 let ``Complex expression representation works correctly`` () =
-    let lang = Language()
+    let lang = Language(Guid("abc00000-0000-0000-0000-000000000042"), true)
 
     let [a; b; c] = makeMany lang ConstExpr 3
     let x = make lang VarExpr
 
     let expr = makeExpr' (a, (b,c), x)
-
-    Assert.Equal("(o1, (o2, o3), ?v4)", string expr)
+    Assert.Equal("(o1-abc, (o2-abc, o3-abc), ?v4-abc)", string expr)
 
 
 [<Fact>]

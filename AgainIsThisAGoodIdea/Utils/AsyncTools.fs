@@ -30,13 +30,14 @@ let runThenSignalStop (source: Source<_>) (channel: AsyncChannel<_>) =
             Async.StartImmediate (channel.AsyncAdd Stop, cancellationToken)
     }
 
-/// Iterates over input values and executes an asynchronous body over each
-let foreach values body =
-    async {        
-        for value in values do
-            do! body value
+// TODO I don't think this is necessary :P
+// /// Iterates over input values and executes an asynchronous body over each
+// let foreach values body =
+//     async {        
+//         for value in values do
+//             do! body value
     
-    }
+//     }
 
 /// Iterates over input values and for each result spawns a child which will run an asynchronous body over it.
 /// Note: all children are spawned immediately.
