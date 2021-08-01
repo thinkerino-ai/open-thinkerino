@@ -10,6 +10,7 @@ open AITools.Utils.AsyncTools
 open AITools.Storage.Index
 open AITools.Logic.Unification
 open System
+open AITools.Proofs.Components.Listeners
 
 
 
@@ -112,61 +113,28 @@ type KnowledgeBase(storage: ExpressionStorage) =
         // TODO buffer size
         fun return' -> foreachParallel bufferSize provers <| fun prover -> prove prover (expression, previousSubstitution, this) return'
 
-    // TODO
-    // def ponder(self, *formulas: Iterable[LogicObject], ponder_mode: PonderMode):
-    //     proving_process = self.__make_proving_process(formulas, ponder_mode)
+   
+    member this.Ponder (expressions, ?previousSubstitution, ?bufferSize) =
+        let previousSubstitution = defaultArg previousSubstitution Substitution.Empty
+        let bufferSize = defaultArg bufferSize 1
 
-    //     # TODO make buffer_size configurable
-    //     for proof in self._scheduler.schedule_generator(
-    //             process_with_loopback(input_sequence=proving_process, processor=self.__ponder_single_proof),
-    //             buffer_size=1
-    //     ):
-    //         yield proof
-
-    // def __make_proving_process(self, formulas, ponder_mode):
-    //     if ponder_mode == PonderMode.HYPOTHETICALLY:
-    //         raise NotImplementedError("This case requires hypotheses to be implemented :P")
-    //     elif ponder_mode == PonderMode.KNOWN:
-    //         # TODO make buffer_size configurable
-    //         proving_process = asynctools.multiplex(
-    //             *(self.async_prove(f, retrieve_only=True) for f in formulas),
-    //             buffer_size=1
-    //         )
-    //     elif ponder_mode == PonderMode.PROVE:
-    //         # TODO make buffer_size configurable
-    //         proving_process = asynctools.multiplex(
-    //             *(self.async_prove(f, retrieve_only=False) for f in formulas),
-    //             buffer_size=1
-    //         )
-    //     else:
-    //         raise NotImplementedError(f"Unknown ponder mode: {ponder_mode}")
-    //     return proving_process
-
-    // async def __ponder_single_proof(self, proof: Proof, *, queue: asyncio.Queue, poison_pill):
-    //     pondering_sources = []
-    //     for listener in self.get_listeners_for(proof.conclusion):
-    //         trigger_premise = Proof(
-    //             inference_rule=TriggeringFormula(),
-    //             conclusion=proof.substitution.apply_to(proof.conclusion),
-    //             substitution=proof.substitution,
-    //             premises=(proof,)
-    //         )
-    //         pondering_sources.append(listener.ponder(trigger_premise, knowledge_base=self))
-
-    //     # TODO make buffer_size configurable
-    //     pondering_process = asynctools.multiplex(
-    //         *pondering_sources,
-    //         buffer_size=1
-    //     )
-
-    //     await asynctools.push_each_to_queue(pondering_process, queue=queue, poison_pill=poison_pill)
-
-    // def get_listeners_for(self, formula):
-    //     key = make_key(formula)
-    //     yield from self._listener_storage.retrieve(key)
-
+        this.AsyncPonder (expressions, previousSubstitution, bufferSize) |> broker bufferSize
+    
+    member this.AsyncPonder (expressions, ?previousSubstitution, ?bufferSize) =
+        let previousSubstitution = defaultArg previousSubstitution Substitution.Empty
+        let bufferSize = defaultArg bufferSize 1
+        
+        fun return' -> foreachParallel bufferSize expressions <| fun expr -> async {
+            let listeners = this.GetListenersFor(expr)
+            do! foreachParallel bufferSize listeners <| fun listener ->
+                ponder listener (TriggeringExpression expr, previousSubstitution, this) return'
+        }
 
     member _.GetProversFor expression = seq{
         let key = makeKey(expression)
         yield! provers.Retrieve(key)
+    }
+    member _.GetListenersFor expression = seq{
+        let key = makeKey(expression)
+        yield! listeners.Retrieve(key)
     }
