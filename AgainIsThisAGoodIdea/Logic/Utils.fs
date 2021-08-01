@@ -47,21 +47,6 @@ let makeNamed lang symbolType name =
     let identifier = Identifier(lang, lang.GetNext())
     symbolType (identifier, Some name)
 
-let inline makeAuto lang (symbolType: _ -> ^el): ^a = 
-    // TODO I'll probably remove this, since it's all cool and stuff until you use it :P
-    // TODO optimize this with memoization of... everything :P
-    let t = typeof< ^a>
-    let n = max 1 t.GenericTypeArguments.Length
-    let tArr = Array.replicate n typeof< ^el>
-    let arr = Array.init n (fun i -> 
-        let identifier = Identifier(lang, lang.GetNext())
-        (symbolType (identifier, None)) :> obj
-    )
-    if n > 1 then
-        downcast FSharpValue.PreComputeTupleConstructor(FSharpType.MakeTupleType tArr) arr
-    else
-        downcast (arr.[0])
-
 let makeMany lang symbolType n = 
     List.init n (fun _ -> make lang symbolType)
 

@@ -126,47 +126,48 @@ let ``Expression.Contains returns true when the expression contains another Expr
 
     Assert.True(expr.Contains(element))
 
-// TODO move these to its own test file?
-[<Fact>]
-let ``makeAuto can build a single Variable correctly`` () = 
-    let lang = Language()
+// TODO remove these, makeAuto was a bad idea :P
+// // TODO move these to its own test file?
+// [<Fact>]
+// let ``makeAuto can build a single Variable correctly`` () = 
+//     let lang = Language()
 
-    let a = makeAuto lang Variable
+//     let a = makeAuto lang Variable
 
-    Assert.IsType<Variable> a
+//     Assert.IsType<Variable> a
 
-[<Fact>]
-let ``makeAuto can build a single VarExpr correctly`` () = 
-    let lang = Language()
+// [<Fact>]
+// let ``makeAuto can build a single VarExpr correctly`` () = 
+//     let lang = Language()
 
-    let a = makeAuto lang VarExpr
+//     let a = makeAuto lang VarExpr
 
-    Assert.IsAssignableFrom<Expression> a
+//     Assert.IsAssignableFrom<Expression> a
 
-[<Fact>]
-let ``makeAuto can build multiple Variables correctly`` () = 
-    let lang = Language()
+// [<Fact>]
+// let ``makeAuto can build multiple Variables correctly`` () = 
+//     let lang = Language()
 
-    let a, b, c = makeAuto lang Variable
+//     let a, b, c = makeAuto lang Variable
 
-    let _: Variable = a
-    let _: Variable = b
-    let _: Variable = c
+//     let _: Variable = a
+//     let _: Variable = b
+//     let _: Variable = c
 
-    ignore <| Assert.IsType<Variable> a
-    ignore <| Assert.IsType<Variable> b
-    ignore <| Assert.IsType<Variable> c
+//     ignore <| Assert.IsType<Variable> a
+//     ignore <| Assert.IsType<Variable> b
+//     ignore <| Assert.IsType<Variable> c
 
-[<Fact>]
-let ``makeAuto can build multiple VarExpr correctly`` () = 
-    let lang = Language()
+// [<Fact>]
+// let ``makeAuto can build multiple VarExpr correctly`` () = 
+//     let lang = Language()
 
-    let a, b, c = makeAuto lang VarExpr
+//     let a, b, c = makeAuto lang VarExpr
 
-    let _: Expression = a
-    let _: Expression = b
-    let _: Expression = c
+//     let _: Expression = a
+//     let _: Expression = b
+//     let _: Expression = c
 
-    ignore <| Assert.IsAssignableFrom<Expression> a
-    ignore <| Assert.IsAssignableFrom<Expression> b
-    ignore <| Assert.IsAssignableFrom<Expression> c
+//     ignore <| Assert.IsAssignableFrom<Expression> a
+//     ignore <| Assert.IsAssignableFrom<Expression> b
+//     ignore <| Assert.IsAssignableFrom<Expression> c
