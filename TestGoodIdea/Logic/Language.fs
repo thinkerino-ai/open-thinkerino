@@ -1,12 +1,5 @@
 module Tests.Logic.Language
 
-open AITools.Proofs.KnowledgeBase
-open AITools.Storage.Implementations.Dummy
-open AITools.Logic.Utils
-open AITools.Utils.AsyncTools
-open AITools.Logic.Core
-open AITools.Proofs.Components.Provers
-open AITools.Proofs.Components.Base
 open AITools.Logic.Language
 open Xunit
 

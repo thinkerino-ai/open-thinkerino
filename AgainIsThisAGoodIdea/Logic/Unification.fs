@@ -12,18 +12,18 @@ type Binding(variables: Set<Variable>, head: Expression option) =
         match head with
         | Some expr when variables |> Set.exists (Var >> expr.Contains) ->
             raise
-            <| System.ArgumentException("The head of a binding cannot contain any of its variables")
+            <| ArgumentException("The head of a binding cannot contain any of its variables")
         | _ -> ()
 
     do
         if Set.isEmpty variables then
             raise
-            <| System.ArgumentException("The variables of a binding cannot be the empty set")
+            <| ArgumentException("The variables of a binding cannot be the empty set")
 
-    member this.Variables = variables
-    member this.Head = head
+    member _.Variables = variables
+    member _.Head = head
 
-    member this.BoundObject =
+    member _.BoundObject =
         match head with
         | Some logicObject -> logicObject
         | None -> variables |> Set.minElement |> Var
@@ -84,10 +84,10 @@ and Substitution(bindings: Binding seq) =
             for v in mergedBinding.Variables do
                 bindingsByVariable <- bindingsByVariable.Add(v, mergedBinding)
 
-    member this.IsEmpty() = Map.isEmpty bindingsByVariable
+    member _.IsEmpty() = Map.isEmpty bindingsByVariable
 
-    member this.BindingsByVariable = bindingsByVariable
-    member this.WithBindings(otherBindings: Binding seq) =
+    member _.BindingsByVariable = bindingsByVariable
+    member _.WithBindings(otherBindings: Binding seq) =
         Seq.concat [ bindings; otherBindings ]
         |> Substitution
 
@@ -100,7 +100,7 @@ and Substitution(bindings: Binding seq) =
         | Expr arr -> arr |> Seq.map this.ApplyTo |> ImmutableArray.CreateRange |> Expr
         | _ -> expr
 
-    member this.GetBoundObjectFor(v) = bindingsByVariable.TryFind(v)
+    member _.GetBoundObjectFor(v) = bindingsByVariable.TryFind(v)
 
     static member Empty = Substitution([||])
 
