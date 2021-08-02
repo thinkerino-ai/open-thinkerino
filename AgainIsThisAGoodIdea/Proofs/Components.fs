@@ -214,7 +214,7 @@ let mapSubstitutionToFunctionArgs (variablesByName: Map<_, _> option,
             | Some mappedVariable ->
                 match substitution.GetBoundObjectFor(mappedVariable) with
                 | None -> failwithf "Variable %A is not mapped in substitution %A" mappedVariable substitution
-                | Some binding -> preparedArgs <- Map.add arg (binding.BoundObject) preparedArgs
+                | Some boundObject -> preparedArgs <- Map.add arg (boundObject) preparedArgs
 
     preparedArgs
 

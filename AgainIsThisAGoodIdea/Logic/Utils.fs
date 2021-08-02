@@ -66,6 +66,8 @@ type KeyedSource<'key, 'item when 'key: comparison>(maker) =
 
     member this.Item with get(key) = this.Get(key)
 
+let VariableSource language = KeyedSource <| makeNamed language Variable
+let VarExprSource language = KeyedSource <| makeNamed language VarExpr
 
 /// <summary>
 /// Renews the variables in an expression, returning another expression 

@@ -18,6 +18,8 @@
     <Compile Include="Proofs/Provers.fs" />
     <Compile Include="Proofs/Listeners.fs" />
     <Compile Include="Proofs/KnowledgeBase.fs" />
+    <Compile Include="Proofs/Language.fs" />
+    <Compile Include="Proofs/BuiltinProvers.fs" />
   </ItemGroup>
   <ItemGroup>
     <!-- <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" /> -->

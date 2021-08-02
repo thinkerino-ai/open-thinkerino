@@ -1,4 +1,5 @@
 module Thinkerino.Tests.Proofs.Provers
+open AITools.Proofs.Language
 
 #nowarn "25"
 
@@ -8,7 +9,7 @@ open Expecto
 open AITools.Proofs.KnowledgeBase
 open AITools.Logic.Language
 open AITools.Logic.Utils
-open AITools.Logic.Core
+open AITools.Proofs.Builtin.Provers
 
 let storageImplementations: list<_ * (unit -> ExpressionStorage)> = [
     nameof DummyExpressionStorage, fun () -> upcast new DummyExpressionStorage()
@@ -42,7 +43,7 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
         "we can retrieve known open expressions", 
             fun testKb -> 
                 let language = Language()
-                let v = KeyedSource <| makeNamed language VarExpr
+                let v = VarExprSource language
                 let [IsA; dylan; cat; hugo] = makeManyNamed language ConstExpr ["IsA"; "dylan"; "cat"; "hugo"]
 
                 let dylanIsACat = makeExpr' (IsA, dylan, cat)
@@ -68,7 +69,7 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
         "open expressions are added only once",
             fun testKb ->
                 let language = Language()
-                let v = KeyedSource <| makeNamed language VarExpr
+                let v = VarExprSource language
 
                 let [Foo; a; b] = makeManyNamed language ConstExpr ["Foo"; "a"; "b"]
                 
@@ -85,12 +86,10 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
         "expressions are normalized, so the same variables can be reused in axioms",
             fun testKb ->
                 let language = Language()
-                let v = KeyedSource <| makeNamed language VarExpr
+                let v = VarExprSource language
                 let [Foo; Bar; Baz; a; b] = makeManyNamed language ConstExpr ["Foo"; "Bar"; "Baz"; "a"; "b"]
 
-                // TODO continaure da qui
-                let Implies = makeNamed language ConstExpr "Implies"
-                //testKb.AddProver RestrictedModusPonens
+                testKb.AddProver RestrictedModusPonens
 
                 testKb.AddExpressions <| seq {
                     makeExpr' (Foo, a, b)
@@ -99,7 +98,7 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
                 }
 
                 let query = makeExpr' (Baz, a)
-                let proofs = testKb.Prove (query, retrieveOnly=true) |> List.ofSeq
+                let proofs = testKb.Prove (query, retrieveOnly=false) |> List.ofSeq
 
                 Expect.isNonEmpty proofs "there is at least a proof"
 

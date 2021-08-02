@@ -100,7 +100,8 @@ and Substitution(bindings: Binding seq) =
         | Expr arr -> arr |> Seq.map this.ApplyTo |> ImmutableArray.CreateRange |> Expr
         | _ -> expr
 
-    member _.GetBoundObjectFor(v) = bindingsByVariable.TryFind(v)
+    member _.GetBoundObjectFor(v) = 
+        bindingsByVariable.TryFind(v) |> Option.map (fun b -> b.BoundObject)
 
     static member Empty = Substitution([||])
 
@@ -138,7 +139,7 @@ and Substitution(bindings: Binding seq) =
                 | None -> None
 
             (aArr, bArr)
-            ||> Seq.fold2 folder (Some Substitution.Empty)
+            ||> Seq.fold2 folder (Some previous)
         | _ -> None
 
     override this.ToString() =
