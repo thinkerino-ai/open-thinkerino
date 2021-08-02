@@ -169,6 +169,7 @@ let validateRawArgumentNames (inputArgs, passSubstitutionAs, passContextAs: stri
             && inputSet.Contains "expression"
             && inputSet.Contains passSubstitutionAs
             && (passContextAs.IsNone || inputSet.Contains(passContextAs.Value))
+            && (passContextAs.IsSome || inputSet.Count = 2)
         )
     then
         let expected = 

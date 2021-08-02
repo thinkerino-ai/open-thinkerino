@@ -1,6 +1,6 @@
-﻿module Tests.Main
+﻿module Thinkerino.Tests.Main
 open Expecto
 
 [<EntryPoint>]
 let main argv =
-    Tests.runTestsInAssembly defaultConfig argv
+    runTestsInAssembly defaultConfig argv

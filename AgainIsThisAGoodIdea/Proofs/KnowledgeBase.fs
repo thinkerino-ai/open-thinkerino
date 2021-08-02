@@ -19,7 +19,7 @@ type KnowledgeBase(storage: ExpressionStorage) =
     let language = Language()
     
     let makeVarWithIntName (lang, intName: int option) = Variable (lang, Option.map string intName)
-    let variableSource = Source<_,_> <| makeNamed language makeVarWithIntName
+    let variableSource = KeyedSource<_,_> <| makeNamed language makeVarWithIntName
 
     let provers = DummyAbstruseIndex()
     let listeners = DummyAbstruseIndex()
@@ -36,7 +36,8 @@ type KnowledgeBase(storage: ExpressionStorage) =
             make language VarExpr,
             AsyncSourceSatisfier retrieveKnowledge,
             Some false,
-            HandlerSafety.Safe
+            HandlerSafety.Safe,
+            passContextAs="kb"
         )
 
     // TODO
@@ -52,7 +53,7 @@ type KnowledgeBase(storage: ExpressionStorage) =
     //     self._storage.rollback()
 
     /// Retrieves all expressions from the Storage which are unifiable with the given one.
-    /// No proof is searched, so either a formula is **IN** the storate or nothing will be returned
+    /// No proof is searched, so either a expression is **IN** the storate or nothing will be returned
     member private _.Retrieve expression previouSubstitution = seq {
         (* note: this is not async (while the Python version was), because right now there is neither need nor support for it in the Storage :P
             it was not necessary in Python either, but... you know... :P I'm a dummy dum dum *)
@@ -65,10 +66,12 @@ type KnowledgeBase(storage: ExpressionStorage) =
             | None -> ()
     }
 
-    /// Adds all of the given formulas to the currently known formulas, after normalization
-    member _.AddFormulas =       
+    /// Adds all of the given expressions to the currently known expressions, after normalization
+    member _.AddExpressions =       
         Seq.map (normalizeVariables variableSource >> fst) 
         >> storage.Add
+    member _.AddExpression =       
+        normalizeVariables variableSource >> fst >> Seq.singleton >> storage.Add
 
     member _.AddProver (prover: Prover<_>) =
         let key = makeKey prover.ListenedExpression

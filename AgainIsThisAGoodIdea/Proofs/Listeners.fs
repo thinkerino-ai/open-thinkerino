@@ -114,7 +114,7 @@ let ponder (listener: Listener<'context>) (trigger, previousSubstitution, contex
         | Pondering pond -> pond.Conclusion
         | Proof proof -> proof.Conclusion
     
-    // TODO remove the following if I implement hypotheses "virtually" (meaning that I embed hypotheses right in the formula being pondered)
+    // TODO remove the following if I implement hypotheses "virtually" (meaning that I embed hypotheses right in the expression being pondered)
     // if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
     //         raise UnsafeOperationException("Unsafe listener cannot be used in hypothetical scenarios")
 

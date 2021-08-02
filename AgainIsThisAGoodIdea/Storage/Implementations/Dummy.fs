@@ -25,6 +25,8 @@ type DummyExpressionStorage() =
 
     override _.Size with get () = objects.Count
 
+    override _.Dispose () = ()
+
 type DummyTrieIndex<'keyItem, 'item when 'keyItem: equality>() =
     inherit TrieIndex<'keyItem, 'item>()
 
@@ -88,3 +90,5 @@ type DummyIndexedExpressionStorage() =
         Key.Wildcard 
         |> objects.Retrieve 
         |> Seq.length
+
+    override _.Dispose () = ()

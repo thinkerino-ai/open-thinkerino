@@ -5,8 +5,6 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AITools", "AgainIsThisAGoodIdea\AITools.fsproj", "{E114959C-665A-4762-B6CA-C1DC0C7B31CC}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "XTests", "TestGoodIdea\XTests.fsproj", "{592E9421-C748-4F55-B8EB-E00C7FCBCE2A}"
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Tests", "TestExpecto\Tests.fsproj", "{4EB023EB-F5B7-48F0-AA86-AF843A24429A}"
 EndProject
 Global

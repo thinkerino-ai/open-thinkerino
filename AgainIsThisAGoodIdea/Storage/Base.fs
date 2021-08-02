@@ -9,7 +9,9 @@ open AITools.Logic.Unification
 // from aitools.logic.unification import Substitution
 
 [<AbstractClass>]
-type ExpressionStorage()=
+type ExpressionStorage() =
+    interface System.IDisposable with
+        member x.Dispose () = x.Dispose()
     
     // TODO
     // def supports_transactions(self):
@@ -33,6 +35,8 @@ type ExpressionStorage()=
     abstract Add: Expression seq -> unit
     abstract SearchUnifiable: Expression -> (Expression * Substitution) seq
     abstract Size: int with get
+    
+    abstract Dispose: unit -> unit
     
 
 // TODO

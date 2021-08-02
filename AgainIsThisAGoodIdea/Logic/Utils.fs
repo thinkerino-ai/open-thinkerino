@@ -53,7 +53,7 @@ let makeMany lang symbolType n =
 let makeManyNamed lang symbolType names =
     List.map (makeNamed lang symbolType) names
 
-type Source<'key, 'item when 'key: comparison>(maker) =
+type KeyedSource<'key, 'item when 'key: comparison>(maker) =
     let mutable existing = Map.empty
 
     let makeForKey (key) =
@@ -61,8 +61,10 @@ type Source<'key, 'item when 'key: comparison>(maker) =
         existing <- existing.Add(key, res)
         res
 
-    member this.Get(key: 'key): 'item = 
+    member _.Get(key: 'key): 'item = 
         existing.TryFind key |> Option.defaultWith (fun () -> makeForKey key)
+
+    member this.Item with get(key) = this.Get(key)
 
 
 /// <summary>
@@ -100,11 +102,11 @@ let renewVariables language expression =
 /// </summary>
 /// <remarks>
 /// Replacements are all anonymous (names are not preserved).
-/// The main purpose of this function is to allow handling of formulas 
-/// which only differ by "uniform variable replacement" (i.e. each variable in a formula
+/// The main purpose of this function is to allow handling of expressions 
+/// which only differ by "uniform variable replacement" (i.e. each variable in an expression
 /// corresponds to exactly one variable in the other).
 /// </remarks>
-let normalizeVariables (variableSource: Source<_,_>) expression=
+let normalizeVariables (variableSource: KeyedSource<_,_>) expression=
     let mutable variableMapping = Map.empty
 
     let rec inner expr =
@@ -132,7 +134,7 @@ let rec allVariablesIn expression =
     | _ -> Seq.empty
 
 /// <summary>
-/// Maps all variables in a formula using their names as the key
+/// Maps all variables in an expression using their names as the key
 /// Homonymous variables are not allowed, but the same variable can be repeated.
 /// Anonymous variables are not allowed.
 /// </summary>
