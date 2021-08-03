@@ -37,7 +37,8 @@ type KnowledgeBase(storage: ExpressionStorage) =
             AsyncSourceSatisfier retrieveKnowledge,
             HandlerPurity.Impure,
             HandlerSafety.Safe,
-            passContextAs="kb"
+            PassSubstitutionAs "substitution",
+            PassContextAs "kb"
         )
 
     // TODO

@@ -40,7 +40,8 @@ let RestrictedModusPonens: Prover<KnowledgeBase> =
         AsyncSourcePremisedSatisfier restrictedModusPonens,
         HandlerPurity.Impure,
         HandlerSafety.Safe,
-        passContextAs="kb"
+        PassSubstitutionAs "substitution",
+        PassContextAs "kb"
     )
 
 

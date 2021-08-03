@@ -15,6 +15,14 @@ type HandlerPurity =
     | Pure = 0
     | Impure = 1
 
+type HandlerSubstitutionArgument =
+    | PassSubstitutionAs of string
+    | NoSubstitution
+
+type HandlerContextArgument =
+    | PassContextAs of string
+    | NoContext
+
 type RecordHandler<'handler> =
     { HandlerFunction: 'handler
       HandlerArguments: string array }
@@ -26,12 +34,12 @@ type BaseHandlerDescriptor<'handler> =
       Safety: HandlerSafety }
 
 type RawHandlerExtraArguments =
-    { PassSubstitutionAs: string
-      PassContextAs: string option }
+    { PassSubstitutionAs: HandlerSubstitutionArgument
+      PassContextAs: HandlerContextArgument }
 
 type MappedHandlerExtraArguments =
-    { PassSubstitutionAs: string option
-      PassContextAs: string option }
+    { PassSubstitutionAs: HandlerSubstitutionArgument
+      PassContextAs: HandlerContextArgument }
 
 let makeMappedHandlerDescriptor ctor (expression, handler, passSubstitutionAs, passContextAs, purity, safety) =
     ctor
@@ -51,24 +59,24 @@ type HandlerDescriptor<'handler> =
     | MapNoVariables of BaseHandlerDescriptor<'handler> * MappedHandlerExtraArguments
 
     // TODO these are fun and all but I don't really like how they came out
-    static member MakeRaw(expression, handler: 'handler, purity, safety, ?passSubstitutionAs, ?passContextAs) =
+    static member MakeRaw(expression, handler: 'handler, purity, safety, passSubstitutionAs, passContextAs) =
         Raw
         <| ({ Handler = handler
               Expression = expression
               Purity = purity
               Safety = safety },
-            { PassSubstitutionAs = Option.defaultValue "substitution" passSubstitutionAs
+            { PassSubstitutionAs = passSubstitutionAs
               PassContextAs = passContextAs })
 
-    static member MakeMap(expression, handler: 'handler, purity, safety, ?passSubstitutionAs, ?passContextAs) =
+    static member MakeMap(expression, handler: 'handler, purity, safety, passSubstitutionAs, passContextAs) =
         makeMappedHandlerDescriptor Map (expression, handler, passSubstitutionAs, passContextAs, purity, safety)
 
     static member MakeMapUnwrapped(expression,
                                    handler: 'handler,
                                    purity,
                                    safety,
-                                   ?passSubstitutionAs,
-                                   ?passContextAs) =
+                                   passSubstitutionAs,
+                                   passContextAs) =
         makeMappedHandlerDescriptor
             MapUnwrapped
             (expression, handler, passSubstitutionAs, passContextAs, purity, safety)
@@ -77,8 +85,8 @@ type HandlerDescriptor<'handler> =
                                            handler: 'handler,
                                            purity,
                                            safety,
-                                           ?passSubstitutionAs,
-                                           ?passContextAs) =
+                                           passSubstitutionAs,
+                                           passContextAs) =
         makeMappedHandlerDescriptor
             MapUnwrappedRequired
             (expression, handler, passSubstitutionAs, passContextAs, purity, safety)
@@ -87,8 +95,8 @@ type HandlerDescriptor<'handler> =
                                               handler: 'handler,
                                               purity,
                                               safety,
-                                              ?passSubstitutionAs,
-                                              ?passContextAs) =
+                                              passSubstitutionAs,
+                                              passContextAs) =
         makeMappedHandlerDescriptor
             MapUnwrappedNoVariables
             (expression, handler, passSubstitutionAs, passContextAs, purity, safety)
@@ -97,15 +105,15 @@ type HandlerDescriptor<'handler> =
                                      handler: 'handler,
                                      purity,
                                      safety,
-                                     ?passSubstitutionAs,
-                                     ?passContextAs) =
+                                     passSubstitutionAs,
+                                     passContextAs) =
         makeMappedHandlerDescriptor
             MapNoVariables
             (expression, handler, passSubstitutionAs, passContextAs, purity, safety)
 
 
 type ArgumentExtractor<'context> =
-    Expression * Substitution * 'context * Map<Variable, Variable> * option<Map<string, Variable>> * seq<string> * option<string> * option<string> -> Map<string, obj>
+    Expression * Substitution * 'context * Map<Variable, Variable> * option<Map<string, Variable>> * seq<string> * HandlerSubstitutionArgument * HandlerContextArgument -> Map<string, obj>
 
 type Component<'handler, 'context> =
     { ExtractArgsByName: ArgumentExtractor<'context>
@@ -114,8 +122,8 @@ type Component<'handler, 'context> =
       Handler: 'handler
       InputArgs: string seq
       VariablesByName: Map<string, Variable> option
-      PassSubstitutionAs: string option
-      PassContextAs: string option
+      PassSubstitutionAs: HandlerSubstitutionArgument
+      PassContextAs: HandlerContextArgument
       Purity: HandlerPurity
       Safety: HandlerSafety }
 
@@ -148,50 +156,53 @@ let makeRecordHandler (handlerFunc: 'input -> 'output) =
       HandlerArguments = inputArgs }
 
 
-let prepareVariablesByName (expression, passSubstitutionAs: string option, passContextAs: string option) =
+let prepareVariablesByName (expression, passSubstitutionAs, passContextAs) =
     let result = (mapVariablesByName expression)
-    if passSubstitutionAs.IsSome
-       && result.ContainsKey passSubstitutionAs.Value then
+    match passSubstitutionAs, passContextAs with
+    | PassSubstitutionAs s, _ when result.ContainsKey s ->
         failwithf
             "Argument passSubstitutionAs conflicts with variable name \"%s\", they cannot be equal"
-            passSubstitutionAs.Value
-    elif passContextAs.IsSome
-         && result.ContainsKey passContextAs.Value then
+            s
+    | _, PassContextAs s when result.ContainsKey s ->
         failwithf
             "Argument passContextAs conflicts with variable name \"%s\", they cannot be equal"
-            passContextAs.Value
-    else
-        result
+            s
+    | _ -> result
 
-let validateRawArgumentNames (inputArgs, passSubstitutionAs, passContextAs: string option) =
+let validateRawArgumentNames (inputArgs, passSubstitutionAs, passContextAs) =
     // the handler must accept an expression, a substitution and possibly a kb
     let inputSet = set inputArgs
 
-    if not
-        (
-            Array.contains inputSet.Count [| 2; 3 |]
-            && inputSet.Contains "expression"
-            && inputSet.Contains passSubstitutionAs
-            && (passContextAs.IsNone || inputSet.Contains(passContextAs.Value))
-            && (passContextAs.IsSome || inputSet.Count = 2)
-        )
-    then
-        let expected = 
-            match passContextAs with
-            | Some s -> [|"expression"; passSubstitutionAs; s|]
-            | None -> [|"expression"; passSubstitutionAs|]
-        failwithf "The handler has the wrong argument names %A! expected %A" inputArgs expected
+    match passSubstitutionAs with 
+    | NoSubstitution -> failwith "You need to specify a name for the substitution, but you didn't!"
+    | PassSubstitutionAs subst -> 
+        if not
+            (
+                Array.contains inputSet.Count [| 2; 3 |]
+                && inputSet.Contains "expression"
+                && inputSet.Contains subst
+                && match passContextAs with
+                    | PassContextAs s -> inputSet.Contains(s)
+                    | NoContext -> inputSet.Count = 2
+            )
+        then
+            let expected = 
+                match passContextAs with
+                | PassContextAs ctx -> ["expression"; subst; ctx]
+                | NoContext -> ["expression"; subst]
+            failwithf "The handler has the wrong argument names %A! expected %A" inputArgs expected
 
 
 let validateMappedArgumentNames (inputArgs, variablesByName, passSubstitutionAs, passContextAs) =
     let unlistenedArgNames =
-        Array.filter (fun name ->
-            not (Map.containsKey name variablesByName)
-            && not
-                (Array.contains
-                    (Some name)
-                     [| passSubstitutionAs
-                        passContextAs |])) inputArgs
+        Array.filter 
+            (fun name ->
+                not (Map.containsKey name variablesByName)
+                && not
+                    (PassSubstitutionAs name = passSubstitutionAs
+                    || PassContextAs name = passContextAs)
+            ) 
+            inputArgs
 
     if not (Array.isEmpty unlistenedArgNames) then
         failwithf
@@ -271,13 +282,13 @@ let extractArgsByName argumentMode
     // TODO this is a job for a maybe monad but I'm too lazy
     let argsWithMaybeSubstitution =
         match passSubstitutionAs with
-        | None -> baseArgs
-        | Some name -> Map.add name (unifier :> obj) baseArgs
+        | NoSubstitution -> baseArgs
+        | PassSubstitutionAs name -> Map.add name (unifier :> obj) baseArgs
 
     let argsWithMaybeContext =
         match passContextAs with
-        | None -> argsWithMaybeSubstitution
-        | Some name -> Map.add name (context :> obj) argsWithMaybeSubstitution
+        | NoContext -> argsWithMaybeSubstitution
+        | PassContextAs name -> Map.add name (context :> obj) argsWithMaybeSubstitution
 
     argsWithMaybeContext
 
@@ -298,7 +309,7 @@ let prepareHandler (wrapHandler: 'a -> RecordHandler<'b>) handlerArgs =
           Handler = preparedHandler.HandlerFunction
           InputArgs = preparedHandler.HandlerArguments
           VariablesByName = None
-          PassSubstitutionAs = Some extraArgs.PassSubstitutionAs
+          PassSubstitutionAs = extraArgs.PassSubstitutionAs
           PassContextAs = extraArgs.PassContextAs
           Purity = args.Purity
           Safety = args.Safety }
