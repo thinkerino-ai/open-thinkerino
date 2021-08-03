@@ -46,9 +46,9 @@ let proverTestMakers: (KnowledgeBase -> Test) list = [
                 proofs
                 (fun p -> p.Conclusion = expr)
                 "the conclusion should be the expression"
-                // TODO test_retrieve_known_expression_transactional
-        // TODO test_retrieve_known_expression_rollback
         }
+        // TODO test_retrieve_known_expression_transactional
+        // TODO test_retrieve_known_expression_rollback
         fun testKb -> test "we can retrieve known open expressions" {
             let language = Language()
             let v = VarExprSource language
@@ -318,7 +318,7 @@ let proverTestMakers: (KnowledgeBase -> Test) list = [
             
         // TODO wait... what? what is this test? the name makes no sense, but the original was test_custom_prover_in_open_formula
         }
-        fun testKb -> test "custom provers work with open formulas" {
+        fun testKb -> test "custom provers work with open expressions" {
             let language = Language()
             let v = VarExprSource language
             let c = ConstExprSource language

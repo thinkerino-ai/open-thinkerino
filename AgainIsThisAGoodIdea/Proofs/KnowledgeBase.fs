@@ -78,10 +78,10 @@ type KnowledgeBase(storage: ExpressionStorage) =
         let key = makeKey prover.ListenedExpression
         provers.Add(key, prover)
     
-    // TODO
-    // member _.AddListener (listener: Listener<_>) =
-    //     let key = makeKey listener.ListenedExpression
-    //     Listeners.Add(key, listener)
+    
+    member _.AddListener (listener: Listener<_>) =
+        let key = makeKey listener.ListenedExpression
+        listeners.Add(key, listener)
 
     member _.Size with get() = storage.Size
 
