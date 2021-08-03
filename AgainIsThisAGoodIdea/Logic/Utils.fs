@@ -3,6 +3,7 @@ module AITools.Logic.Utils
 open AITools.Logic.Core
 open System.Collections.Immutable
 open FSharp.Reflection
+open System
 
 let ConstExpr = Constant >> Const
 let VarExpr = Variable >> Var
@@ -37,7 +38,35 @@ let rec makeExpr' expr: Expression =
         |> ImmutableArray.CreateRange
         |> Expr
     else
-        (expr) :?> Expression
+        if expr :? Expression 
+            then (expr) :?> Expression
+            else Wrap expr
+
+type Expression with
+    member parent.E([<ParamArray>] children: obj[]) =     
+        children
+        |> Seq.append [parent]
+        |> Seq.map makeExpr'
+        |> ImmutableArray.CreateRange
+        |> Expr
+    
+
+    member parent.Item with get(children: obj) =
+        let t = children.GetType()
+
+        let children =
+            if FSharpType.IsTuple t then
+                children
+                |> FSharpValue.GetTupleFields
+            else
+                (if children :? Expression 
+                    then [|children|]
+                    else [|Wrap children|])
+        children
+        |> Seq.append [parent]
+        |> Seq.map makeExpr'
+        |> ImmutableArray.CreateRange
+        |> Expr
 
 let make lang symbolType =
     let identifier = Identifier(lang, lang.GetNext())
@@ -66,8 +95,11 @@ type KeyedSource<'key, 'item when 'key: comparison>(maker) =
 
     member this.Item with get(key) = this.Get(key)
 
+    static member (?) (src: KeyedSource<_,_>, key) = src.Get key
+
 let VariableSource language = KeyedSource <| makeNamed language Variable
 let VarExprSource language = KeyedSource <| makeNamed language VarExpr
+let ConstExprSource language = KeyedSource <| makeNamed language ConstExpr
 
 /// <summary>
 /// Renews the variables in an expression, returning another expression 

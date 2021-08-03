@@ -21,10 +21,10 @@ let private restrictedModusPonens (input:{|expression: _; substitution:_; kb: Kn
     match input.expression with
     | Expr children when children.Length > 0 && children.[0] = Implies -> ()
     | _ ->
-        let rulePattern = [|Implies; Var(v.["premise"]); input.expression|] |> ImmutableArray.CreateRange |> Expr
+        let rulePattern = [|Implies; Var(v?premise); input.expression|] |> ImmutableArray.CreateRange |> Expr
         let ruleProofs = input.kb.AsyncProve (rulePattern, false, input.substitution, bufferSize)
         do! foreachResultParallel bufferSize ruleProofs <| fun ruleProof -> async{
-            match ruleProof.Substitution.GetBoundObjectFor(v.["premise"]) with
+            match ruleProof.Substitution.GetBoundObjectFor(v?premise) with
             | Some premise -> 
                 let premiseProofs = input.kb.AsyncProve(premise, false, ruleProof.Substitution, bufferSize)
                 do! foreachResultParallel bufferSize premiseProofs <| fun premiseProof ->

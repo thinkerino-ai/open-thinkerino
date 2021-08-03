@@ -54,7 +54,7 @@ type KnowledgeBase(storage: ExpressionStorage) =
 
     /// Retrieves all expressions from the Storage which are unifiable with the given one.
     /// No proof is searched, so either a expression is **IN** the storate or nothing will be returned
-    member private _.Retrieve expression previouSubstitution = seq {
+    member _.Retrieve expression previouSubstitution = seq {
         (* note: this is not async (while the Python version was), because right now there is neither need nor support for it in the Storage :P
             it was not necessary in Python either, but... you know... :P I'm a dummy dum dum *)
         for expr, _ in storage.SearchUnifiable expression do
@@ -66,6 +66,7 @@ type KnowledgeBase(storage: ExpressionStorage) =
             | None -> ()
     }
 
+    member _.KnowledgeRetriever = knowledgeRetriever
     /// Adds all of the given expressions to the currently known expressions, after normalization
     member _.AddExpressions =       
         Seq.map (normalizeVariables variableSource >> fst) 
