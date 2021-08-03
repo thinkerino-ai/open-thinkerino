@@ -35,7 +35,7 @@ let listenerTestMakers: (KnowledgeBase -> Test) list = [
             let listenedExpression = Is.[v?cat, cat]
             let listener = 
                 makeListener
-                <| HandlerDescriptor.MakeMap (listenedExpression, Action catsMeow, true, HandlerSafety.Safe)
+                <| HandlerDescriptor.MakeMap (listenedExpression, Action catsMeow, HandlerPurity.Pure, HandlerSafety.Safe)
 
             testKb.AddListener listener
 

@@ -11,6 +11,10 @@ type HandlerSafety =
     | TotallyUnsafe = 0
     | Safe = 1
 
+type HandlerPurity =
+    | Pure = 0
+    | Impure = 1
+
 type RecordHandler<'handler> =
     { HandlerFunction: 'handler
       HandlerArguments: string array }
@@ -18,7 +22,7 @@ type RecordHandler<'handler> =
 type BaseHandlerDescriptor<'handler> =
     { Handler: 'handler
       Expression: Expression
-      IsPure: bool
+      Purity: HandlerPurity
       Safety: HandlerSafety }
 
 type RawHandlerExtraArguments =
@@ -29,11 +33,11 @@ type MappedHandlerExtraArguments =
     { PassSubstitutionAs: string option
       PassContextAs: string option }
 
-let makeMappedHandlerDescriptor ctor (expression, handler, passSubstitutionAs, passContextAs, isPure, safety) =
+let makeMappedHandlerDescriptor ctor (expression, handler, passSubstitutionAs, passContextAs, purity, safety) =
     ctor
     <| ({ Handler = handler
           Expression = expression
-          IsPure = isPure
+          Purity = purity
           Safety = safety },
         { PassSubstitutionAs = passSubstitutionAs
           PassContextAs = passContextAs })
@@ -47,57 +51,57 @@ type HandlerDescriptor<'handler> =
     | MapNoVariables of BaseHandlerDescriptor<'handler> * MappedHandlerExtraArguments
 
     // TODO these are fun and all but I don't really like how they came out
-    static member MakeRaw(expression, handler: 'handler, isPure, safety, ?passSubstitutionAs, ?passContextAs) =
+    static member MakeRaw(expression, handler: 'handler, purity, safety, ?passSubstitutionAs, ?passContextAs) =
         Raw
         <| ({ Handler = handler
               Expression = expression
-              IsPure = Option.defaultValue true isPure
+              Purity = purity
               Safety = safety },
             { PassSubstitutionAs = Option.defaultValue "substitution" passSubstitutionAs
               PassContextAs = passContextAs })
 
-    static member MakeMap(expression, handler: 'handler, isPure, safety, ?passSubstitutionAs, ?passContextAs) =
-        makeMappedHandlerDescriptor Map (expression, handler, passSubstitutionAs, passContextAs, isPure, safety)
+    static member MakeMap(expression, handler: 'handler, purity, safety, ?passSubstitutionAs, ?passContextAs) =
+        makeMappedHandlerDescriptor Map (expression, handler, passSubstitutionAs, passContextAs, purity, safety)
 
     static member MakeMapUnwrapped(expression,
                                    handler: 'handler,
-                                   isPure,
+                                   purity,
                                    safety,
                                    ?passSubstitutionAs,
                                    ?passContextAs) =
         makeMappedHandlerDescriptor
             MapUnwrapped
-            (expression, handler, passSubstitutionAs, passContextAs, isPure, safety)
+            (expression, handler, passSubstitutionAs, passContextAs, purity, safety)
 
     static member MakeMapUnwrappedRequired(expression,
                                            handler: 'handler,
-                                           isPure,
+                                           purity,
                                            safety,
                                            ?passSubstitutionAs,
                                            ?passContextAs) =
         makeMappedHandlerDescriptor
             MapUnwrappedRequired
-            (expression, handler, passSubstitutionAs, passContextAs, isPure, safety)
+            (expression, handler, passSubstitutionAs, passContextAs, purity, safety)
 
     static member MakeMapUnwrappedNoVariables(expression,
                                               handler: 'handler,
-                                              isPure,
+                                              purity,
                                               safety,
                                               ?passSubstitutionAs,
                                               ?passContextAs) =
         makeMappedHandlerDescriptor
             MapUnwrappedNoVariables
-            (expression, handler, passSubstitutionAs, passContextAs, isPure, safety)
+            (expression, handler, passSubstitutionAs, passContextAs, purity, safety)
 
     static member MakeMapNoVariables(expression,
                                      handler: 'handler,
-                                     isPure,
+                                     purity,
                                      safety,
                                      ?passSubstitutionAs,
                                      ?passContextAs) =
         makeMappedHandlerDescriptor
             MapNoVariables
-            (expression, handler, passSubstitutionAs, passContextAs, isPure, safety)
+            (expression, handler, passSubstitutionAs, passContextAs, purity, safety)
 
 
 type ArgumentExtractor<'context> =
@@ -112,7 +116,7 @@ type Component<'handler, 'context> =
       VariablesByName: Map<string, Variable> option
       PassSubstitutionAs: string option
       PassContextAs: string option
-      IsPure: bool
+      Purity: HandlerPurity
       Safety: HandlerSafety }
 
     override x.ToString() = x.ListenedExpression.ToString()
@@ -296,7 +300,7 @@ let prepareHandler (wrapHandler: 'a -> RecordHandler<'b>) handlerArgs =
           VariablesByName = None
           PassSubstitutionAs = Some extraArgs.PassSubstitutionAs
           PassContextAs = extraArgs.PassContextAs
-          IsPure = args.IsPure
+          Purity = args.Purity
           Safety = args.Safety }
     | Map (args, extraArgs)
     | MapUnwrapped (args, extraArgs)
@@ -325,5 +329,5 @@ let prepareHandler (wrapHandler: 'a -> RecordHandler<'b>) handlerArgs =
           VariablesByName = Some variablesByName
           PassSubstitutionAs = extraArgs.PassSubstitutionAs
           PassContextAs = extraArgs.PassContextAs
-          IsPure = args.IsPure
+          Purity = args.Purity
           Safety = args.Safety }

@@ -35,7 +35,7 @@ type KnowledgeBase(storage: ExpressionStorage) =
         <| HandlerDescriptor.MakeRaw(
             make language VarExpr,
             AsyncSourceSatisfier retrieveKnowledge,
-            Some false,
+            HandlerPurity.Impure,
             HandlerSafety.Safe,
             passContextAs="kb"
         )

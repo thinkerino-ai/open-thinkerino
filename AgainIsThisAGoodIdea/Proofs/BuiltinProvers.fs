@@ -38,7 +38,7 @@ let RestrictedModusPonens: Prover<KnowledgeBase> =
     makeProver <| HandlerDescriptor.MakeRaw(
         make language VarExpr,
         AsyncSourcePremisedSatisfier restrictedModusPonens,
-        Some false,
+        HandlerPurity.Impure,
         HandlerSafety.Safe,
         passContextAs="kb"
     )

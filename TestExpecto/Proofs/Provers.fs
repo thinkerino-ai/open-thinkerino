@@ -251,7 +251,7 @@ let proverTestMakers: (KnowledgeBase -> Test) list = [
 
             let prover = 
                 makeProver 
-                <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, Predicate isEven, true, HandlerSafety.Safe)
+                <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, Predicate isEven, HandlerPurity.Pure, HandlerSafety.Safe)
 
             testKb.AddProver prover
 
@@ -281,7 +281,7 @@ let proverTestMakers: (KnowledgeBase -> Test) list = [
 
             let failing = 
                 makeProver 
-                <| HandlerDescriptor.MakeMapUnwrapped (listenedExpression, Predicate failingProver, true, HandlerSafety.Safe)
+                <| HandlerDescriptor.MakeMapUnwrapped (listenedExpression, Predicate failingProver, HandlerPurity.Pure, HandlerSafety.Safe)
 
             testKb.AddProver failing
 
@@ -305,10 +305,10 @@ let proverTestMakers: (KnowledgeBase -> Test) list = [
             
             let evenProver = 
                 makeProver 
-                <| HandlerDescriptor.MakeMapUnwrappedRequired (IsEven.[v?n], Predicate isEven, true, HandlerSafety.Safe)
+                <| HandlerDescriptor.MakeMapUnwrappedRequired (IsEven.[v?n], Predicate isEven, HandlerPurity.Pure, HandlerSafety.Safe)
             let multipleOf4Prover = 
                 makeProver 
-                <| HandlerDescriptor.MakeMapUnwrappedRequired (IsMultipleOf4.[v?n], Predicate isEven, true, HandlerSafety.Safe, passContextAs="kb")
+                <| HandlerDescriptor.MakeMapUnwrappedRequired (IsMultipleOf4.[v?n], Predicate isEven, HandlerPurity.Pure, HandlerSafety.Safe, passContextAs="kb")
 
             testKb.AddProver evenProver
             testKb.AddProver multipleOf4Prover
@@ -330,7 +330,7 @@ let proverTestMakers: (KnowledgeBase -> Test) list = [
 
             let prover = 
                 makeProver 
-                <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, Predicate isEven, true, HandlerSafety.Safe)
+                <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, Predicate isEven, HandlerPurity.Pure, HandlerSafety.Safe)
 
             testKb.AddProver prover
             testKb.AddProver RestrictedModusPonens
@@ -351,7 +351,7 @@ let proverTestMakers: (KnowledgeBase -> Test) list = [
 
             let prover = 
                 makeProver 
-                <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, MaybePredicate isPrime, true, HandlerSafety.Safe)
+                <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, MaybePredicate isPrime, HandlerPurity.Pure, HandlerSafety.Safe)
 
             testKb.AddProver prover
 
@@ -384,10 +384,10 @@ let proverTestMakers: (KnowledgeBase -> Test) list = [
 
             let prover1 = 
                 makeProver 
-                <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, MaybePredicate primeProver_012345, true, HandlerSafety.Safe)
+                <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, MaybePredicate primeProver_012345, HandlerPurity.Pure, HandlerSafety.Safe)
             let prover2 = 
                 makeProver 
-                <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, MaybePredicate primeProver_456789, true, HandlerSafety.Safe)
+                <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, MaybePredicate primeProver_456789, HandlerPurity.Pure, HandlerSafety.Safe)
 
             testKb.AddProver prover1
             testKb.AddProver prover2
