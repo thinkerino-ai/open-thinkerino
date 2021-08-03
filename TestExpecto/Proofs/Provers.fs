@@ -29,6 +29,8 @@ let isKnownExpressionProofOf (kb: KnowledgeBase) expression (proof: Proof<_>) =
 let isEven (input: {| n: _ |}) = 
     input.n % 2 = 0
 
+exception SomeException
+
 let testWithImplementation (name, impl: unit -> ExpressionStorage) =
     let setupImplementation test () =
             use storage = impl()
@@ -271,6 +273,36 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
 
                 // this means we can't prove it, not that we can prove it to be false
                 Expect.hasLength proofs3 0 "there is no proof that 3 is even"
+
+        "custom prover failure is propagated to the caller",
+            fun testKb ->
+                let language = Language()
+
+                let v = VarExprSource language
+                let c = ConstExprSource language
+
+                let IsA = c?IsA
+                let cat = c?cat
+                let dylan = c?dylan
+
+                let failingProver (input:{|cat: _|}) =
+                    raise SomeException
+
+                let listenedExpression = IsA.[v?cat, cat]
+
+                let failing = 
+                    makeProver 
+                    <| HandlerDescriptor.MakeMapUnwrapped (listenedExpression, Predicate failingProver, true, HandlerSafety.Safe)
+
+                testKb.AddProver failing
+
+                testKb.AddExpression <|
+                    IsA.[dylan, cat]
+
+                Expect.throwsT<SomeException>
+                    (fun () -> testKb.Prove(IsA.[dylan, cat], false) |> List.ofSeq |> ignore)
+                    "the proving process throws the prover's exception"
+                
 
     ]
     |> List.ofSeq

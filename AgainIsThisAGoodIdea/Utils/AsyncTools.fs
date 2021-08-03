@@ -9,6 +9,7 @@ open AITools.Utils.AsyncChannel
 type ServiceMessage<'result> =
     | Start
     | Stop
+    | Failure of exn
     | Result of 'result
 
 /// A function used to rturn a value inside a data source
@@ -26,8 +27,9 @@ let runThenSignalStop (source: Source<_>) (channel: AsyncChannel<_>) =
         let! cancellationToken = Async.CancellationToken
         try
             do! source (channel |> toReturnFunc)
-        finally
             Async.StartImmediate (channel.AsyncAdd Stop, cancellationToken)
+        with
+        | e -> Async.StartImmediate (channel.AsyncAdd (Failure e), cancellationToken)
     }
 
 // TODO I don't think this is necessary :P
@@ -52,8 +54,9 @@ let foreachParallel bufferSize values body =
                     (async {
                         try
                             do! body value
-                        finally
                             Async.StartImmediate (channel.AsyncAdd Stop, cancellationToken)
+                        with
+                        | e -> Async.StartImmediate (channel.AsyncAdd (Failure e), cancellationToken)
                      })
                 |> Async.Ignore
         while childrenCount > 0 do
@@ -61,6 +64,7 @@ let foreachParallel bufferSize values body =
 
             match msg with
             | Stop -> childrenCount <- childrenCount - 1
+            | Failure e -> raise e
             | _ -> failwith "Why did this receive anything but a Stop?"
     
     }
@@ -79,6 +83,7 @@ let foreachResult bufferSize (source: Source<_>) body =
             | Result value -> do! body value
             | Start -> childrenCount <- childrenCount + 1 // TODO does this ever happen? o.o
             | Stop -> childrenCount <- childrenCount - 1
+            | Failure e -> raise e
     }
 
 /// Reads input from a source and for each value starts a child which will run an asynchronous body over it.
@@ -96,14 +101,16 @@ let foreachResultParallel bufferSize (source: Source<_>) body =
             match msg with
             | Start -> childrenCount <- childrenCount + 1 // TODO does this ever happen?
             | Stop -> childrenCount <- childrenCount - 1
+            | Failure e -> raise e
             | Result value ->
                 childrenCount <- childrenCount + 1
                 do! Async.StartChild
                         (async {
                             try
                                 do! body value
-                            finally
                                 Async.StartImmediate (channel.AsyncAdd Stop, cancellationToken)
+                            with
+                            | e -> Async.StartImmediate (channel.AsyncAdd (Failure e), cancellationToken)
                          })
                     |> Async.Ignore
     }
@@ -121,6 +128,7 @@ let broker bufferSize source =
                 | Stop -> childrenCount <- childrenCount - 1
                 | Start -> failwith "Wait, why are you sending a Start to the broker?"
                 | Result res -> yield res
+                | Failure e -> raise e
         finally
             cts.Cancel()
             cts.Dispose()
