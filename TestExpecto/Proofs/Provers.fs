@@ -38,14 +38,14 @@ let isPrime (input: {|n: _|}) =
 exception SomeException
 
 let testWithImplementation (name, impl: unit -> ExpressionStorage) =
-    let setupImplementation test () =
-            use storage = impl()
-            let kb = KnowledgeBase(storage)
-            test kb
+    let withImplementation test =
+        use storage = impl()
+        let kb = KnowledgeBase(storage)
+        test kb
 
-    testFixture setupImplementation [
-        "we can retrieve known expressions", 
-            fun testKb -> 
+    testList $"test provers with {name}" [
+        test "we can retrieve known expressions" {
+            withImplementation <| fun testKb -> 
                 let language = Language()
                 let [IsA; dylan; cat] = makeManyNamed language ConstExpr ["IsA"; "dylan"; "cat"]
                 let expr = makeExpr' (IsA, dylan, cat)
@@ -60,8 +60,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
                     "the conclusion should be the expression"
         // TODO test_retrieve_known_expression_transactional
         // TODO test_retrieve_known_expression_rollback
-        "we can retrieve known open expressions", 
-            fun testKb -> 
+        }
+        test "we can retrieve known open expressions" {
+            withImplementation <| fun testKb -> 
                 let language = Language()
                 let v = VarExprSource language
                 let [IsA; dylan; cat; hugo] = makeManyNamed language ConstExpr ["IsA"; "dylan"; "cat"; "hugo"]
@@ -86,8 +87,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
                     (fun p -> p.Conclusion = hugoIsACat)
                     "it should be known that hugo is a cat"
 
-        "open expressions are added only once",
-            fun testKb ->
+        }
+        test "open expressions are added only once" {
+            withImplementation <| fun testKb ->
                 let language = Language()
                 let v = VarExprSource language
 
@@ -103,8 +105,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
 
                 Expect.equal (testKb.Size) 3 "there should be three items"
         
-        "expressions are normalized, so the same variables can be reused in axioms",
-            fun testKb ->
+        }
+        test "expressions are normalized, so the same variables can be reused in axioms" {
+            withImplementation <| fun testKb ->
                 let language = Language()
                 let v = VarExprSource language
                 let [Foo; Bar; Baz; a; b] = makeManyNamed language ConstExpr ["Foo"; "Bar"; "Baz"; "a"; "b"]
@@ -122,8 +125,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
 
                 Expect.isNonEmpty proofs "there is at least a proof"
         
-        "proofs can be repeated",
-            fun testKb ->
+        }
+        test "proofs can be repeated" {
+            withImplementation <| fun testKb ->
                 let language = Language()
                 let v = VarExprSource language
                 let [IsNatural; successor] = makeManyNamed language ConstExpr ["IsNatural"; "successor"]
@@ -144,8 +148,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
 
                 Expect.isNonEmpty proofs "there is at least a proof the second time"
 
-        "known expressions can be proven without additional provers",
-            fun testKb ->
+        }
+        test "known expressions can be proven without additional provers" {
+            withImplementation <| fun testKb ->
                 let language = Language()
 
                 let [IsA; dylan; cat] = makeManyNamed language ConstExpr ["IsA"; "dylan"; "cat"]
@@ -159,8 +164,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
                 Expect.hasLength proofs 1 "there is at least a proof"
                 Expect.all proofs (isKnownExpressionProofOf testKb query) "it is a known-fact proof of the query"
         
-        "the knowledge base can prove an open expression",
-            fun testKb ->
+        }
+        test "the knowledge base can prove an open expression" {
+            withImplementation <| fun testKb ->
                 let language = Language()
                 let v = VariableSource language
                 let [IsA; dylan; cat; hugo] = makeManyNamed language ConstExpr ["IsA"; "dylan"; "cat"; "hugo"]
@@ -187,8 +193,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
         //     IsA, cat, animal = constants('IsA, cat, animal', language=language)
         //     assert (IsA(v._x, cat) << Implies >> IsA(v._x, animal)) == (Implies(IsA(v._x, cat), IsA(v._x, animal)))
 
-        "the knowledge base can perform simple deduction",
-            fun testKb ->
+        }
+        test "the knowledge base can perform simple deduction" {
+            withImplementation <| fun testKb ->
                 let language = Language()
                 let v = VarExprSource language
                 let [IsA; dylan; cat; animal] = makeManyNamed language ConstExpr ["IsA"; "dylan"; "cat"; "animal"]
@@ -228,8 +235,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
 
         //     assert len(proofs) == 1
 
-        "the knowledge base can perform a deduction chain",
-            fun testKb ->
+        }
+        test "the knowledge base can perform a deduction chain" {
+            withImplementation <| fun testKb ->
                 let language = Language()
                 let v = VarExprSource language
                 let c = ConstExprSource language
@@ -256,8 +264,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
                 Expect.hasLength proofs 1 "there is exactly 1 proof"
                 Expect.hasLength (proofs.Head.Premises) 2 "the proof has 2 premises"
 
-        "custom provers can receive arbitrary values",
-            fun testKb ->
+        }
+        test "custom provers can receive arbitrary values" {
+            withImplementation <| fun testKb ->
                 let language = Language()
                 let v = VarExprSource language
                 let c = ConstExprSource language
@@ -280,8 +289,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
                 // this means we can't prove it, not that we can prove it to be false
                 Expect.hasLength proofs3 0 "there is no proof that 3 is even"
 
-        "custom prover failure is propagated to the caller",
-            fun testKb ->
+        }
+        test "custom prover failure is propagated to the caller" {
+            withImplementation <| fun testKb ->
                 let language = Language()
 
                 let v = VarExprSource language
@@ -309,8 +319,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
                     (fun () -> testKb.Prove(IsA.[dylan, cat], false) |> List.ofSeq |> ignore)
                     "the proving process throws the prover's exception"
 
-        "custom provers can be chained",
-            fun testKb ->
+        }
+        test "custom provers can be chained" {
+            withImplementation <| fun testKb ->
 
                 let language = Language()
                 let v = VarExprSource language
@@ -336,8 +347,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
                 Expect.hasLength proofs 1 "there is exactly 1 proof that 20 is multiple of 4"
                 
         // TODO wait... what? what is this test? the name makes no sense, but the original was test_custom_prover_in_open_formula
-        "custom provers work with open formulas",
-            fun testKb ->
+        }
+        test "custom provers work with open formulas" {
+            withImplementation <| fun testKb ->
                 let language = Language()
                 let v = VarExprSource language
                 let c = ConstExprSource language
@@ -360,8 +372,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
                 let proofs = testKb.Prove (IsNice.[32], false)
                 Expect.hasLength proofs 1 "there is exactly 1 proof that 32 is nice"
 
-        "if a prover returns no response, no proof is found",
-            fun testKb ->
+        }
+        test "if a prover returns no response, no proof is found" {
+            withImplementation <| fun testKb ->
                 let language = Language()
                 let v = VarExprSource language
                 let c = ConstExprSource language
@@ -383,8 +396,9 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
                 
                 let proofs10 = testKb.Prove (IsPrime.[10], false)
                 Expect.hasLength proofs10 0 "there is no proof that 10 is prime"
-        "if a multiple custom provers can prove something, multiple proofs are found",
-            fun testKb ->
+        }
+        test "if a multiple custom provers can prove something, multiple proofs are found" {
+            withImplementation <| fun testKb ->
                 let language = Language()
                 let v = VarExprSource language
                 let c = ConstExprSource language
@@ -430,7 +444,7 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
                 Expect.isEmpty 
                     (testKb.Prove (IsPrime.[11], false))
                     "there is no proof that 11 is prime"
-
+            }
         // TODO
         // def test_closed_world_assumption(test_knowledge_base):
         //     language = Language()
@@ -469,8 +483,6 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
         // def test_many_more_cases():
         //     raise NotImplementedError("Implement all possible input modes")
     ]
-    |> List.ofSeq
-    |> testList name
 
 [<Tests>]
 let tests = 
