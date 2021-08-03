@@ -3,6 +3,7 @@ open AITools.Proofs.Language
 open AITools.Proofs.Components.Provers
 open Microsoft.FSharp.Core.LanguagePrimitives
 open AITools.Proofs.Components.Base
+open AITools.Utils.AsyncTools
 
 #nowarn "25"
 
@@ -28,6 +29,11 @@ let isKnownExpressionProofOf (kb: KnowledgeBase) expression (proof: Proof<_>) =
 
 let isEven (input: {| n: _ |}) = 
     input.n % 2 = 0
+
+let isPrime (input: {|n: _|}) =
+    if List.contains input.n [2; 3; 5; 7] then Some true
+    else if List.contains input.n [4; 6; 8] then Some false
+    else None
 
 exception SomeException
 
@@ -261,7 +267,7 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
 
                 let prover = 
                     makeProver 
-                    <| HandlerDescriptor.MakeMapUnwrapped (listenedExpression, Predicate isEven, true, HandlerSafety.Safe)
+                    <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, Predicate isEven, true, HandlerSafety.Safe)
 
                 testKb.AddProver prover
 
@@ -302,8 +308,166 @@ let testWithImplementation (name, impl: unit -> ExpressionStorage) =
                 Expect.throwsT<SomeException>
                     (fun () -> testKb.Prove(IsA.[dylan, cat], false) |> List.ofSeq |> ignore)
                     "the proving process throws the prover's exception"
-                
 
+        "custom provers can be chained",
+            fun testKb ->
+
+                let language = Language()
+                let v = VarExprSource language
+                let c = ConstExprSource language
+
+                let IsEven = c?IsEven
+                let IsMultipleOf4 = c?IsMultipleOf4
+
+                let isMultipleOf4 (input: {|m: _; kb: KnowledgeBase|}) return' =
+                   foreachResult 1 (input.kb.AsyncProve(IsEven.[input.m/2], false)) return'
+                
+                let evenProver = 
+                    makeProver 
+                    <| HandlerDescriptor.MakeMapUnwrappedRequired (IsEven.[v?n], Predicate isEven, true, HandlerSafety.Safe)
+                let multipleOf4Prover = 
+                    makeProver 
+                    <| HandlerDescriptor.MakeMapUnwrappedRequired (IsMultipleOf4.[v?n], Predicate isEven, true, HandlerSafety.Safe, passContextAs="kb")
+
+                testKb.AddProver evenProver
+                testKb.AddProver multipleOf4Prover
+
+                let proofs = testKb.Prove (IsMultipleOf4.[20], false) |> List.ofSeq
+                Expect.hasLength proofs 1 "there is exactly 1 proof that 20 is multiple of 4"
+                
+        // TODO wait... what? what is this test? the name makes no sense, but the original was test_custom_prover_in_open_formula
+        "custom provers work with open formulas",
+            fun testKb ->
+                let language = Language()
+                let v = VarExprSource language
+                let c = ConstExprSource language
+
+                let IsEven = c?IsEven
+                let IsNice = c?IsNice
+                
+                let listenedExpression = IsEven.[v?n]
+
+                let prover = 
+                    makeProver 
+                    <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, Predicate isEven, true, HandlerSafety.Safe)
+
+                testKb.AddProver prover
+                testKb.AddProver RestrictedModusPonens
+
+                // I don't actually like even numbers, unless they are powers of 2
+                testKb.AddExpression <| Implies.[IsEven.[v?x], IsNice.[v?x]]
+
+                let proofs = testKb.Prove (IsNice.[32], false)
+                Expect.hasLength proofs 1 "there is exactly 1 proof that 32 is nice"
+
+        "if a prover returns no response, no proof is found",
+            fun testKb ->
+                let language = Language()
+                let v = VarExprSource language
+                let c = ConstExprSource language
+
+                let IsPrime = c?IsPrime
+                let listenedExpression = IsPrime.[v?n]
+
+                let prover = 
+                    makeProver 
+                    <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, MaybePredicate isPrime, true, HandlerSafety.Safe)
+
+                testKb.AddProver prover
+
+                let proofs2 = testKb.Prove (IsPrime.[2], false)
+                Expect.hasLength proofs2 1 "there is exactly 1 proof that 2 is prime"
+
+                let proofs8 = testKb.Prove (IsPrime.[8], false)
+                Expect.hasLength proofs8 0 "there is no proof that 8 is prime"
+                
+                let proofs10 = testKb.Prove (IsPrime.[10], false)
+                Expect.hasLength proofs10 0 "there is no proof that 10 is prime"
+        "if a multiple custom provers can prove something, multiple proofs are found",
+            fun testKb ->
+                let language = Language()
+                let v = VarExprSource language
+                let c = ConstExprSource language
+
+                let primeProver_012345 (input: {|n: _|}) =
+                    if List.contains input.n [2; 3; 5] then Some true
+                    else if List.contains input.n [0; 1; 4] then Some false
+                    else None
+                
+                let primeProver_456789 (input: {|n: _|}) =
+                    if List.contains input.n [5; 7] then Some true
+                    else if List.contains input.n [4; 6; 8; 9] then Some false
+                    else None
+
+                let IsPrime = c?IsPrime
+                let listenedExpression = IsPrime.[v?n]
+
+                let prover1 = 
+                    makeProver 
+                    <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, MaybePredicate primeProver_012345, true, HandlerSafety.Safe)
+                let prover2 = 
+                    makeProver 
+                    <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, MaybePredicate primeProver_456789, true, HandlerSafety.Safe)
+
+                testKb.AddProver prover1
+                testKb.AddProver prover2
+                
+                Expect.hasLength 
+                    (testKb.Prove (IsPrime.[2], false))
+                    1 
+                    "there is exactly 1 proof that 2 is prime"
+
+                Expect.hasLength 
+                    (testKb.Prove (IsPrime.[7], false))
+                    1 
+                    "there is exactly 1 proof that 7 is prime"
+
+                Expect.hasLength 
+                    (testKb.Prove (IsPrime.[5], false))
+                    2
+                    "there are exactly 2 proofs that 5 is prime"
+
+                Expect.isEmpty 
+                    (testKb.Prove (IsPrime.[11], false))
+                    "there is no proof that 11 is prime"
+
+        // TODO
+        // def test_closed_world_assumption(test_knowledge_base):
+        //     language = Language()
+        //     v = VariableSource(language=language)
+
+        //     IsPrime = MagicPredicate(language=language)
+
+        //     prover = Prover(
+        //         listened_formula=IsPrime(v.n), handler=is_prime, argument_mode=HandlerArgumentMode.MAP_UNWRAPPED_REQUIRED,
+        //         pass_substitution_as=..., pure=True, safety=HandlerSafety.SAFE
+        //     )
+
+        //     test_knowledge_base.add_prover(prover)
+        //     test_knowledge_base.add_prover(RestrictedModusPonens)
+
+        //     assert not any(test_knowledge_base.prove(Not(IsPrime(4))))
+
+        //     test_knowledge_base.add_prover(ClosedWorldAssumption)
+
+        //     assert any(test_knowledge_base.prove(Not(IsPrime(4))))
+
+
+        // @pytest.mark.xfail(reason="me == lazy")
+        // def test_result_order():
+        //     # TODO this test should use "complex" chains and show that results are generated breadth-first-ish
+        //     raise NotImplementedError()
+
+
+        // @pytest.mark.xfail(reason="me == lazy")
+        // def test_handler_result_types():
+        //     # TODO this should actually be several tests that check every possible type returned by a handler (sync and async)
+        //     raise NotImplementedError()
+
+
+        // @pytest.mark.xfail(reason="Come on, we can bring coverage up :P")
+        // def test_many_more_cases():
+        //     raise NotImplementedError("Implement all possible input modes")
     ]
     |> List.ofSeq
     |> testList name

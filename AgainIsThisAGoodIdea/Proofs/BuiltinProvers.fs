@@ -42,3 +42,20 @@ let RestrictedModusPonens: Prover<KnowledgeBase> =
         HandlerSafety.Safe,
         passContextAs="kb"
     )
+
+
+// async def closed_world_assumption(formula: LogicObject, substitution: Substitution, kb: KnowledgeBase):
+//     language = Language()
+//     v = VariableSource(language=language)
+//     match = Substitution.unify(formula, Not(v.P))
+//     if match is not None:
+//         try:
+//             await kb.async_prove(match.get_bound_object_for(v.P)).__anext__()
+//         except StopAsyncIteration:
+//             return TruthSubstitution(True, substitution)
+
+
+// ClosedWorldAssumption = Prover(
+//     listened_formula=Variable(language=language), handler=closed_world_assumption, argument_mode=HandlerArgumentMode.RAW,
+//     pass_substitution_as=..., pass_knowledge_base_as='kb', pure=True, safety=HandlerSafety.SAFE
+// )

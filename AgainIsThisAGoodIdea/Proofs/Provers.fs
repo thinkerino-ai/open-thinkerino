@@ -13,6 +13,8 @@ type Prover<'context> = Component<ProverHandlerFunction<Map<string, obj>, 'conte
 and ProverHandlerFunction<'input, 'context> =
     /// A simple handler that returns a boolean
     | Predicate of ('input -> bool)
+    /// A simple handler that maybe returns a boolean
+    | MaybePredicate of ('input -> bool option)
     /// A simple handler that returns a boolean under some premises
     | PremisedPredicate of ('input -> bool * Proof<'context> seq)
     /// A simple handler that returns a boolean for some substitution
@@ -21,6 +23,8 @@ and ProverHandlerFunction<'input, 'context> =
     | PremisedSatisfier of (((((('input -> bool * Substitution * Proof<'context> seq))))))
     /// An async predicate
     | AsyncPredicate of ('input -> Async<bool>)
+    /// An async MaybePredicate
+    | AsyncMaybePredicate of ('input -> Async<bool option>)
     /// An async PremisedPredicate
     | AsyncPremisedPredicate of ('input -> Async<bool * Proof<'context> seq>)
     /// An async satisfier
@@ -58,6 +62,7 @@ let makeProverRecordHandler rawHandler =
 
     match rawHandler with
     | Predicate rawHandler -> makeRecordHandler rawHandler |> wrapFunc Predicate
+    | MaybePredicate rawHandler -> makeRecordHandler rawHandler |> wrapFunc MaybePredicate
     | PremisedPredicate rawHandler -> makeRecordHandler rawHandler |> wrapFunc PremisedPredicate
     | Satisfier rawHandler -> makeRecordHandler rawHandler |> wrapFunc Satisfier
     | PremisedSatisfier rawHandler ->
@@ -66,6 +71,9 @@ let makeProverRecordHandler rawHandler =
     | AsyncPredicate rawHandler ->
         makeRecordHandler rawHandler
         |> wrapFunc AsyncPredicate
+    | AsyncMaybePredicate rawHandler ->
+        makeRecordHandler rawHandler
+        |> wrapFunc AsyncMaybePredicate
     | AsyncPremisedPredicate rawHandler ->
         makeRecordHandler rawHandler
         |> wrapFunc AsyncPremisedPredicate
@@ -134,7 +142,15 @@ let prove (prover: Prover<'context>) (expression, previousSubstitution, context:
                               Conclusion = unifier.ApplyTo(expression)
                               Substitution = unifier
                               Premises = Seq.empty }
-            
+            | MaybePredicate handler ->
+                match handler argsByName with
+                | Some true ->
+                    do! return'
+                            { InferenceRule = prover
+                              Conclusion = unifier.ApplyTo(expression)
+                              Substitution = unifier
+                              Premises = Seq.empty }
+                | _ -> ()
             | PremisedPredicate handler ->
                 let truth, premises = handler argsByName
                 if truth then
@@ -168,6 +184,15 @@ let prove (prover: Prover<'context>) (expression, previousSubstitution, context:
                               Conclusion = unifier.ApplyTo(expression)
                               Substitution = unifier
                               Premises = Seq.empty }
+            | AsyncMaybePredicate handler ->
+                match! handler argsByName with
+                | Some true ->
+                    do! return'
+                            { InferenceRule = prover
+                              Conclusion = unifier.ApplyTo(expression)
+                              Substitution = unifier
+                              Premises = Seq.empty }
+                | _ -> ()
             | AsyncPremisedPredicate handler ->
                 let! truth, premises = handler argsByName
 
