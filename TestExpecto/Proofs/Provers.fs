@@ -410,7 +410,150 @@ let proverTestMakers: (KnowledgeBase -> Test) list = [
             Expect.isEmpty 
                 (testKb.Prove (IsPrime.[11], false))
                 "there is no proof that 11 is prime"
-            }
+        }
+
+        /////////////////////////////////////////////////////////
+
+        fun testKb -> test "custom Raw provers are not called when argument types are incompatible with the handler" {
+            let language = Language()
+            let v = VarExprSource language
+            let c = ConstExprSource language
+
+            let IsEven, foo = c?IsEven, c?foo
+            let listenedExpression = IsEven.[v?n]
+
+            let handler (input: {|expression: int; substitution: int|}) = true
+
+            let prover = 
+                makeProver 
+                <| HandlerDescriptor.MakeRaw (listenedExpression, Predicate handler, HandlerPurity.Pure, HandlerSafety.Safe, PassSubstitutionAs "substitution", NoContext)
+
+            testKb.AddProver prover
+
+            let proofs = testKb.Prove (IsEven.[foo], false)
+            Expect.isEmpty proofs "no proof is found, but we still get here (no exception)"
+        }
+        fun testKb -> test "custom Map provers are not called when argument types are incompatible with the handler" {
+            let language = Language()
+            let v = VarExprSource language
+            let c = ConstExprSource language
+
+            let IsEven, foo = c?IsEven, c?foo
+            let listenedExpression = IsEven.[v?n]
+
+            let prover = 
+                makeProver 
+                <| HandlerDescriptor.MakeMap (listenedExpression, Predicate isEven, HandlerPurity.Pure, HandlerSafety.Safe, NoSubstitution, NoContext)
+
+            testKb.AddProver prover
+
+            let proofs = testKb.Prove (IsEven.[foo], false)
+            Expect.isEmpty proofs "no proof is found, but we still get here (no exception)"
+        }
+        fun testKb -> test "custom MapUnwrapped provers are not called when argument types are incompatible with the handler" {
+            let language = Language()
+            let v = VarExprSource language
+            let c = ConstExprSource language
+
+            let IsEven, foo = c?IsEven, c?foo
+            let listenedExpression = IsEven.[v?n]
+
+            let prover = 
+                makeProver 
+                <| HandlerDescriptor.MakeMapUnwrapped (listenedExpression, Predicate isEven, HandlerPurity.Pure, HandlerSafety.Safe, NoSubstitution, NoContext)
+
+            testKb.AddProver prover
+
+            let proofs = testKb.Prove (IsEven.[foo], false)
+            Expect.isEmpty proofs "no proof is found, but we still get here (no exception)"
+        }
+        fun testKb -> test "custom MapUnwrappedRequired provers are not called when argument types are incompatible with the handler" {
+            let language = Language()
+            let v = VarExprSource language
+            let c = ConstExprSource language
+
+            let IsEven, foo = c?IsEven, c?foo
+            let listenedExpression = IsEven.[v?n]
+
+            let prover = 
+                makeProver 
+                <| HandlerDescriptor.MakeMapUnwrappedRequired (listenedExpression, Predicate isEven, HandlerPurity.Pure, HandlerSafety.Safe, NoSubstitution, NoContext)
+
+            testKb.AddProver prover
+
+            let proofs = testKb.Prove (IsEven.[foo], false)
+            Expect.isEmpty proofs "no proof is found, but we still get here (no exception)"
+        }
+        fun testKb -> test "custom MapUnwrappedNoVariables provers are not called when argument types are incompatible with the handler" {
+            let language = Language()
+            let v = VarExprSource language
+            let c = ConstExprSource language
+
+            let IsEven, foo = c?IsEven, c?foo
+            let listenedExpression = IsEven.[v?n]
+
+            let prover = 
+                makeProver 
+                <| HandlerDescriptor.MakeMapUnwrappedNoVariables (listenedExpression, Predicate isEven, HandlerPurity.Pure, HandlerSafety.Safe, NoSubstitution, NoContext)
+
+            testKb.AddProver prover
+
+            let proofs = testKb.Prove (IsEven.[foo], false)
+            Expect.isEmpty proofs "no proof is found, but we still get here (no exception)"
+        }
+        fun testKb -> test "custom MapUnwrappedNoVariables provers are not called when a variable is passed as input" {
+            let language = Language()
+            let v = VarExprSource language
+            let c = ConstExprSource language
+
+            let IsEven, foo = c?IsEven, c?foo
+            let listenedExpression = IsEven.[v?n]
+
+            let prover = 
+                makeProver 
+                <| HandlerDescriptor.MakeMapUnwrappedNoVariables (listenedExpression, Predicate isEven, HandlerPurity.Pure, HandlerSafety.Safe, NoSubstitution, NoContext)
+
+            testKb.AddProver prover
+            
+            let proofs = testKb.Prove (IsEven.[v?x], false)
+            Expect.isEmpty proofs "no proof is found, but we still get here (no exception)"
+        }
+        fun testKb -> test "custom MapNoVariables provers are not called when argument types are incompatible with the handler" {
+            let language = Language()
+            let v = VarExprSource language
+            let c = ConstExprSource language
+
+            let IsEven, foo = c?IsEven, c?foo
+            let listenedExpression = IsEven.[v?n]
+
+            let prover = 
+                makeProver 
+                <| HandlerDescriptor.MakeMapNoVariables (listenedExpression, Predicate isEven, HandlerPurity.Pure, HandlerSafety.Safe, NoSubstitution, NoContext)
+
+            testKb.AddProver prover
+
+            let proofs = testKb.Prove (IsEven.[foo], false)
+            Expect.isEmpty proofs "no proof is found, but we still get here (no exception)"
+        }
+        fun testKb -> test "custom MapNoVariables provers are not called when a variable is passed as input" {
+            let language = Language()
+            let v = VarExprSource language
+            let c = ConstExprSource language
+
+            let IsEven, foo = c?IsEven, c?foo
+            let listenedExpression = IsEven.[v?n]
+
+            let prover = 
+                makeProver 
+                <| HandlerDescriptor.MakeMapNoVariables (listenedExpression, Predicate isEven, HandlerPurity.Pure, HandlerSafety.Safe, NoSubstitution, NoContext)
+
+            testKb.AddProver prover
+
+            let proofs = testKb.Prove (IsEven.[v?x], false)
+            Expect.isEmpty proofs "no proof is found, but we still get here (no exception)"
+        }
+        
+        //////////////////////////////////////////////////////////
         // TODO
         // def test_closed_world_assumption(test_knowledge_base):
         //     language = Language()
@@ -438,7 +581,6 @@ let proverTestMakers: (KnowledgeBase -> Test) list = [
         //     raise NotImplementedError("Implement all possible input modes")
     
     ]
-    
 
 [<Tests>]
 let tests = 

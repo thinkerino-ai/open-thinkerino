@@ -6,6 +6,9 @@ open AITools.Utils.Logger
 open FSharp.Reflection
 open AITools.Logic.Unification
 open AITools.Logic.Core
+open System
+
+exception InvalidHandlerArgumentTypeException of string
 
 type HandlerSafety =
     | TotallyUnsafe = 0
@@ -150,7 +153,11 @@ let makeRecordHandler (handlerFunc: 'input -> 'output) =
         input |> func
 
     // a new handler function, which now accepts a Map and then calls the original handlerFunc
-    let convertedFunc = handler handlerFunc
+    let convertedFunc input = 
+        try
+            handler handlerFunc input
+        with
+        | :? InvalidCastException -> raise <| InvalidHandlerArgumentTypeException "Invalid argument types for record"
 
     { HandlerFunction = convertedFunc
       HandlerArguments = inputArgs }
@@ -258,7 +265,7 @@ let extractArgsByName argumentMode
                 match v with
                 | Var _ -> true
                 | _ -> false) argsByName.Value then
-                failwith "Unexpected variable!"
+                raise <| InvalidHandlerArgumentTypeException "Unexpected variable!"
             else
                 Map.map (fun _ v -> v :> obj) argsByName.Value
         | MapUnwrapped _ ->
@@ -270,11 +277,11 @@ let extractArgsByName argumentMode
             Map.map (fun _ v ->
                 match v with
                 | Wrap o -> o
-                | _ -> failwith "Unexpected unwrapped object") argsByName.Value
+                | _ -> raise <| InvalidHandlerArgumentTypeException "Unexpected unwrapped object") argsByName.Value
         | MapUnwrappedNoVariables _ ->
             Map.map (fun _ v ->
                 match v with
-                | Var _ -> failwith "Unexpected variable!"
+                | Var _ -> raise <| InvalidHandlerArgumentTypeException "Unexpected variable!"
                 | Wrap o -> o
                 | _ -> v :> obj) argsByName.Value
 

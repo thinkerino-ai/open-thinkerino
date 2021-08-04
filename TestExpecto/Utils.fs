@@ -12,10 +12,10 @@ let storageImplementations: list<_ * (unit -> ExpressionStorage)> = [
 
 let runWithKb testFactories = [
     for name, makeStorage in storageImplementations do
-        let provideKb factory =
+        let provideKb makeTest =
             use storage = makeStorage()
             let kb = KnowledgeBase(storage)
-            factory kb
+            makeTest kb
         yield testFactories
         |> List.map provideKb
         |> testList $"with storage: {name}"

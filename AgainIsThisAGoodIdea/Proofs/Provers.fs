@@ -117,163 +117,165 @@ let prove (prover: Prover<'context>) (expression, previousSubstitution, context:
         Substitution.Unify(expression, normalizedListenedExpression, previousSubstitution)
 
     async {
-        // TODO try catch here, so that if the handler fail we can return an error (or maybe the caller should watch for failures?)
-        match unifier with
-        | None -> ()
-        | Some unifier ->
-            // TODO handle failures
-            let argsByName =
-                prover.ExtractArgsByName
-                    (expression,
-                     unifier,
-                     context,
-                     normalizationMapping,
-                     prover.VariablesByName,
-                     prover.InputArgs,
-                     prover.PassSubstitutionAs,
-                     prover.PassContextAs)
+        try
+            match unifier with
+            | None -> ()
+            | Some unifier ->
+                // TODO handle failures
+                let argsByName =
+                    prover.ExtractArgsByName
+                        (expression,
+                         unifier,
+                         context,
+                         normalizationMapping,
+                         prover.VariablesByName,
+                         prover.InputArgs,
+                         prover.PassSubstitutionAs,
+                         prover.PassContextAs)
 
-            match prover.Handler with
-            | Predicate handler ->
-                let truth = handler argsByName
-                if truth then
-                    do! return'
-                            { InferenceRule = prover
-                              Conclusion = unifier.ApplyTo(expression)
-                              Substitution = unifier
-                              Premises = Seq.empty }
-            | MaybePredicate handler ->
-                match handler argsByName with
-                | Some true ->
-                    do! return'
-                            { InferenceRule = prover
-                              Conclusion = unifier.ApplyTo(expression)
-                              Substitution = unifier
-                              Premises = Seq.empty }
-                | _ -> ()
-            | PremisedPredicate handler ->
-                let truth, premises = handler argsByName
-                if truth then
-                    do! return'
-                            { InferenceRule = prover
-                              Conclusion = unifier.ApplyTo(expression)
-                              Substitution = unifier
-                              Premises = premises }
-            | Satisfier handler ->
-                let truth, substitution = handler argsByName
-                if truth then
-                    do! return'
-                            { InferenceRule = prover
-                              Conclusion = substitution.ApplyTo(expression)
-                              Substitution = substitution
-                              Premises = Seq.empty }
-            | PremisedSatisfier handler ->
-                let truth, substitution, premises = handler argsByName
-                if truth then
-                    do! return'
-                            { InferenceRule = prover
-                              Conclusion = substitution.ApplyTo(expression)
-                              Substitution = substitution
-                              Premises = premises }
-            | AsyncPredicate handler ->
-                let! truth = handler argsByName
-
-                if truth then
-                    do! return'
-                            { InferenceRule = prover
-                              Conclusion = unifier.ApplyTo(expression)
-                              Substitution = unifier
-                              Premises = Seq.empty }
-            | AsyncMaybePredicate handler ->
-                match! handler argsByName with
-                | Some true ->
-                    do! return'
-                            { InferenceRule = prover
-                              Conclusion = unifier.ApplyTo(expression)
-                              Substitution = unifier
-                              Premises = Seq.empty }
-                | _ -> ()
-            | AsyncPremisedPredicate handler ->
-                let! truth, premises = handler argsByName
-
-                if truth then
-                    do! return'
-                            { InferenceRule = prover
-                              Conclusion = unifier.ApplyTo(expression)
-                              Substitution = unifier
-                              Premises = premises }
-            | AsyncSatisfier handler ->
-                let! truth, substitution = handler argsByName
-
-                if truth then
-                    do! return'
-                            { InferenceRule = prover
-                              Conclusion = substitution.ApplyTo(expression)
-                              Substitution = substitution
-                              Premises = Seq.empty }
-            | AsyncPremisedSatisfier handler ->
-                let! truth, substitution, premises = handler argsByName
-
-                if truth then
-                    do! return'
-                            { InferenceRule = prover
-                              Conclusion = substitution.ApplyTo(expression)
-                              Substitution = substitution
-                              Premises = premises }
-            | MultiSatisfier handler ->
-                for truth, substitution in handler argsByName do
+                match prover.Handler with
+                | Predicate handler ->
+                    let truth = handler argsByName
+                    if truth then
+                        do! return'
+                                { InferenceRule = prover
+                                  Conclusion = unifier.ApplyTo(expression)
+                                  Substitution = unifier
+                                  Premises = Seq.empty }
+                | MaybePredicate handler ->
+                    match handler argsByName with
+                    | Some true ->
+                        do! return'
+                                { InferenceRule = prover
+                                  Conclusion = unifier.ApplyTo(expression)
+                                  Substitution = unifier
+                                  Premises = Seq.empty }
+                    | _ -> ()
+                | PremisedPredicate handler ->
+                    let truth, premises = handler argsByName
+                    if truth then
+                        do! return'
+                                { InferenceRule = prover
+                                  Conclusion = unifier.ApplyTo(expression)
+                                  Substitution = unifier
+                                  Premises = premises }
+                | Satisfier handler ->
+                    let truth, substitution = handler argsByName
                     if truth then
                         do! return'
                                 { InferenceRule = prover
                                   Conclusion = substitution.ApplyTo(expression)
                                   Substitution = substitution
                                   Premises = Seq.empty }
-            | MultiPremisedSatisfier handler ->
-                for truth, substitution, premises in handler argsByName do
+                | PremisedSatisfier handler ->
+                    let truth, substitution, premises = handler argsByName
                     if truth then
                         do! return'
                                 { InferenceRule = prover
                                   Conclusion = substitution.ApplyTo(expression)
                                   Substitution = substitution
                                   Premises = premises }
-            | AsyncSourcePredicate handler ->
-                do! handler argsByName (fun truth ->
-                        async {
-                            if truth then
-                                do! return'
-                                        { InferenceRule = prover
-                                          Conclusion = unifier.ApplyTo(expression)
-                                          Substitution = unifier
-                                          Premises = Seq.empty }
-                        })
-            | AsyncSourcePremisedPredicate handler ->
-                do! handler argsByName (fun (truth, premises) ->
-                        async {
-                            if truth then
-                                do! return'
-                                        { InferenceRule = prover
-                                          Conclusion = unifier.ApplyTo(expression)
-                                          Substitution = unifier
-                                          Premises = premises }
-                        })
-            | AsyncSourceSatisfier handler ->
-                do! handler argsByName (fun (truth, substitution) ->
-                        async {
-                            if truth then
-                                do! return'
-                                        { InferenceRule = prover
-                                          Conclusion = substitution.ApplyTo(expression)
-                                          Substitution = substitution
-                                          Premises = Seq.empty }
-                        })
-            | AsyncSourcePremisedSatisfier handler ->
-                do! handler argsByName (fun (truth, substitution, premises) ->
-                        async {
-                            if truth then
-                                do! return'
-                                        { InferenceRule = prover
-                                          Conclusion = substitution.ApplyTo(expression)
-                                          Substitution = substitution
-                                          Premises = premises }
-                        })
+                | AsyncPredicate handler ->
+                    let! truth = handler argsByName
+
+                    if truth then
+                        do! return'
+                                { InferenceRule = prover
+                                  Conclusion = unifier.ApplyTo(expression)
+                                  Substitution = unifier
+                                  Premises = Seq.empty }
+                | AsyncMaybePredicate handler ->
+                    match! handler argsByName with
+                    | Some true ->
+                        do! return'
+                                { InferenceRule = prover
+                                  Conclusion = unifier.ApplyTo(expression)
+                                  Substitution = unifier
+                                  Premises = Seq.empty }
+                    | _ -> ()
+                | AsyncPremisedPredicate handler ->
+                    let! truth, premises = handler argsByName
+
+                    if truth then
+                        do! return'
+                                { InferenceRule = prover
+                                  Conclusion = unifier.ApplyTo(expression)
+                                  Substitution = unifier
+                                  Premises = premises }
+                | AsyncSatisfier handler ->
+                    let! truth, substitution = handler argsByName
+
+                    if truth then
+                        do! return'
+                                { InferenceRule = prover
+                                  Conclusion = substitution.ApplyTo(expression)
+                                  Substitution = substitution
+                                  Premises = Seq.empty }
+                | AsyncPremisedSatisfier handler ->
+                    let! truth, substitution, premises = handler argsByName
+
+                    if truth then
+                        do! return'
+                                { InferenceRule = prover
+                                  Conclusion = substitution.ApplyTo(expression)
+                                  Substitution = substitution
+                                  Premises = premises }
+                | MultiSatisfier handler ->
+                    for truth, substitution in handler argsByName do
+                        if truth then
+                            do! return'
+                                    { InferenceRule = prover
+                                      Conclusion = substitution.ApplyTo(expression)
+                                      Substitution = substitution
+                                      Premises = Seq.empty }
+                | MultiPremisedSatisfier handler ->
+                    for truth, substitution, premises in handler argsByName do
+                        if truth then
+                            do! return'
+                                    { InferenceRule = prover
+                                      Conclusion = substitution.ApplyTo(expression)
+                                      Substitution = substitution
+                                      Premises = premises }
+                | AsyncSourcePredicate handler ->
+                    do! handler argsByName (fun truth ->
+                            async {
+                                if truth then
+                                    do! return'
+                                            { InferenceRule = prover
+                                              Conclusion = unifier.ApplyTo(expression)
+                                              Substitution = unifier
+                                              Premises = Seq.empty }
+                            })
+                | AsyncSourcePremisedPredicate handler ->
+                    do! handler argsByName (fun (truth, premises) ->
+                            async {
+                                if truth then
+                                    do! return'
+                                            { InferenceRule = prover
+                                              Conclusion = unifier.ApplyTo(expression)
+                                              Substitution = unifier
+                                              Premises = premises }
+                            })
+                | AsyncSourceSatisfier handler ->
+                    do! handler argsByName (fun (truth, substitution) ->
+                            async {
+                                if truth then
+                                    do! return'
+                                            { InferenceRule = prover
+                                              Conclusion = substitution.ApplyTo(expression)
+                                              Substitution = substitution
+                                              Premises = Seq.empty }
+                            })
+                | AsyncSourcePremisedSatisfier handler ->
+                    do! handler argsByName (fun (truth, substitution, premises) ->
+                            async {
+                                if truth then
+                                    do! return'
+                                            { InferenceRule = prover
+                                              Conclusion = substitution.ApplyTo(expression)
+                                              Substitution = substitution
+                                              Premises = premises }
+                            })
+        with
+        | InvalidHandlerArgumentTypeException _ -> ()
     }
