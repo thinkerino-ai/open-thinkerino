@@ -1,4 +1,4 @@
-module Thinkerino.Tests.Proofs.Provers
+module Thinkerino.Tests.Proofs.Components.Provers
 
 #nowarn "25"
 

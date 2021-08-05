@@ -1,4 +1,4 @@
-module Thinkerino.Tests.Proofs.Listeners
+module Thinkerino.Tests.Proofs.Components.Listeners
 #nowarn "25"
 
 open AITools.Proofs.Language

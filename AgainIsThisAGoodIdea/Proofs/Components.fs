@@ -162,6 +162,28 @@ let makeRecordHandler (handlerFunc: 'input -> 'output) =
     { HandlerFunction = convertedFunc
       HandlerArguments = inputArgs }
 
+// TODO this was a nice dream, but the type system didn't agree
+// /// Generates a map-based handler and the list of its arguments from a record-based handler
+// let makeFunctionHandler (handlerFunc:#obj -> #obj) =
+//     let inputType = handlerFunc.GetType()
+//     // TODO this is not really solid, is it? :P
+//     let invoke = inputType.GetMethods() |> Array.find (fun m -> m.Name = "Invoke")
+//     let inputArgs = invoke.GetParameters() |> Array.map (fun p -> p.Name)
+//     let inputArgsList = inputArgs |> List.ofArray
+//     //let boxF f (a: obj) = f <| downcast a
+//     let convertedFunc (data: Map<string, obj>) =
+//         let rec callWithArgs (f: obj) args = 
+//             match args with
+//             | [] -> f
+//             | head :: tail -> 
+//                 callWithArgs (downcast f <| data.[head]) tail
+//         try
+//             callWithArgs handlerFunc inputArgsList
+//         with
+//         | :? InvalidCastException -> raise <| InvalidHandlerArgumentTypeException "Invalid argument types for record"
+//     { HandlerFunction = convertedFunc
+//       HandlerArguments = inputArgs }
+
 
 let prepareVariablesByName (expression, passSubstitutionAs, passContextAs) =
     let result = (mapVariablesByName expression)

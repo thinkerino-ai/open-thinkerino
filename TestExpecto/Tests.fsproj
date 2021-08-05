@@ -13,8 +13,9 @@
     <Compile Include="Logic/Language.fs" />
     <Compile Include="Logic/Core.fs" />
     <Compile Include="Logic/Unification.fs" />
-    <Compile Include="Proofs/Provers.fs" />
-    <Compile Include="Proofs/Listeners.fs" />
+    <Compile Include="Proofs/Components/Base.fs" />
+    <Compile Include="Proofs/Components/Provers.fs" />
+    <Compile Include="Proofs/Components/Listeners.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 
