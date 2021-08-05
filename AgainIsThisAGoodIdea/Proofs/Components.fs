@@ -118,6 +118,7 @@ type HandlerDescriptor<'handler> =
 type ArgumentExtractor<'context> =
     Expression * Substitution * 'context * Map<Variable, Variable> * option<Map<string, Variable>> * seq<string> * HandlerSubstitutionArgument * HandlerContextArgument -> Map<string, obj>
 
+[<ReferenceEquality>]
 type Component<'handler, 'context> =
     { ExtractArgsByName: ArgumentExtractor<'context>
       Language: Language

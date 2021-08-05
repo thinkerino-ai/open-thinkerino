@@ -32,6 +32,8 @@ and ListenerHandlerFunction<'input, 'context> =
     | AsyncSatisfyingDeducer of ('input -> Async<(Expression * Substitution) option>)
     /// An async premised satisfying deducer
     | AsyncPremisedSatisfyingDeducer of ('input -> Async<(Expression * Substitution * PonderingPremise<'context> seq) option>)
+    /// A handler returning several expressions
+    | MultiDeducer of ('input -> Expression seq)
     /// A handler returning several expression and substitution pairs
     | MultiSatisfyingDeducer of ('input -> (Expression * Substitution) seq)
     /// A handler returning several expression, substitution and premise triples
@@ -85,6 +87,9 @@ let makeListenerRecordHandler rawHandler =
     | AsyncPremisedSatisfyingDeducer rawHandler ->
         makeRecordHandler rawHandler
         |> wrapFunc AsyncPremisedSatisfyingDeducer
+    | MultiDeducer rawHandler ->
+        makeRecordHandler rawHandler
+        |> wrapFunc MultiDeducer
     | MultiSatisfyingDeducer rawHandler ->
         makeRecordHandler rawHandler
         |> wrapFunc MultiSatisfyingDeducer
@@ -215,6 +220,13 @@ let ponder (listener: Listener<'context>) (trigger, previousSubstitution, contex
                               Conclusion = subst.ApplyTo(expr)
                               Substitution = subst
                               Premises = Seq.append [trigger] premises }
+            | MultiDeducer handler ->
+                for expr in handler argsByName do
+                    do! return'
+                            { InferenceRule = listener
+                              Conclusion = expr
+                              Substitution = unifier
+                              Premises = [trigger] }
             | MultiSatisfyingDeducer handler ->
                 for expr, substitution in handler argsByName do
                     do! return'
