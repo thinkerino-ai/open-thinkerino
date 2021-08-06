@@ -48,7 +48,7 @@ and ListenerHandlerFunction<'input, 'context> =
     | AsyncSourcePremisedSatisfyingDeducer of ('input -> (Expression * Substitution * PonderingPremise<'context> seq) Source)
 
 and PonderingPremise<'context> =
-    | TriggeringExpression of Expression
+    | TriggeringExpression of Expression * Substitution
     | Pondering of Pondering<'context>
     | Proof of Proof<'context>
 and Pondering<'context> =
@@ -112,12 +112,12 @@ let makeListenerRecordHandler rawHandler =
 let makeListener handlerDescriptor =
     prepareHandler makeListenerRecordHandler handlerDescriptor
     
-let ponder (listener: Listener<'context>) (trigger, previousSubstitution, context: 'context) return' =
-    let expression = 
+let ponder (listener: Listener<'context>) (trigger, context: 'context) return' =
+    let expression, previousSubstitution = 
         match trigger with
-        | TriggeringExpression expr -> expr
-        | Pondering pond -> pond.Conclusion
-        | Proof proof -> proof.Conclusion
+        | TriggeringExpression (expr, subst) -> expr, subst
+        | Pondering pond -> pond.Conclusion, pond.Substitution
+        | Proof proof -> proof.Conclusion, proof.Substitution
     
     // TODO remove the following if I implement hypotheses "virtually" (meaning that I embed hypotheses right in the expression being pondered)
     // if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:

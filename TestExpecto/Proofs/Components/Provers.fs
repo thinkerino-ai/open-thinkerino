@@ -75,7 +75,8 @@ let proverTestMakers: (KnowledgeBase -> Test) list = [
                 "it should be known that hugo is a cat"
 
         }
-        fun testKb -> test "open expressions are added only once" {
+        fun testKb -> ftest "open expressions are added only once" {
+
             let language = Language()
             let v = VarExprSource language
 
@@ -136,7 +137,7 @@ let proverTestMakers: (KnowledgeBase -> Test) list = [
 
             let [IsA; dylan; cat] = makeManyNamed language ConstExpr ["IsA"; "dylan"; "cat"]
 
-            testKb.AddExpression <|  makeExpr' (IsA, dylan, cat)
+            testKb.AddExpression <| IsA.[dylan, cat]
 
             let query = makeExpr' (IsA, dylan, cat)
             
@@ -587,3 +588,4 @@ let tests =
     proverTestMakers
     |> runWithKb
     |> testList "provers"
+    |> testSequenced

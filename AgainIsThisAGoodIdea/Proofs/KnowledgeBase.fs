@@ -69,11 +69,11 @@ type KnowledgeBase(storage: ExpressionStorage) =
 
     member _.KnowledgeRetriever = knowledgeRetriever
     /// Adds all of the given expressions to the currently known expressions, after normalization
-    member _.AddExpressions =       
-        Seq.map (normalizeVariables variableSource >> fst) 
-        >> storage.Add
-    member _.AddExpression =       
-        normalizeVariables variableSource >> fst >> Seq.singleton >> storage.Add
+    member _.AddExpressions expressions=       
+        expressions |> Seq.map (normalizeVariables variableSource >> fst) 
+        |> storage.Add
+    member _.AddExpression expression =       
+        expression |> normalizeVariables variableSource |> fst |> Seq.singleton |> storage.Add
 
     member _.AddProver (prover: Prover<_>) =
         let key = makeKey prover.ListenedExpression
@@ -129,11 +129,25 @@ type KnowledgeBase(storage: ExpressionStorage) =
         let previousSubstitution = defaultArg previousSubstitution Substitution.Empty
         let bufferSize = defaultArg bufferSize 1
         
-        fun return' -> foreachParallel bufferSize expressions <| fun expr -> async {
-            let listeners = this.GetListenersFor(expr)
-            do! foreachParallel bufferSize listeners <| fun listener ->
-                ponder listener (TriggeringExpression expr, previousSubstitution, this) return'
-        }
+        fun return' -> 
+            foreachParallel bufferSize expressions 
+            <| fun expr -> this.PonderSinglePremise (TriggeringExpression (expr, previousSubstitution), bufferSize) return'
+    
+    member private this.PonderSinglePremise (premise, bufferSize) return' = async {
+        let listeners =
+            match premise with
+            | TriggeringExpression (expr, subst) -> this.GetListenersFor(subst.ApplyTo(expr))
+            | Proof p -> this.GetListenersFor(p.Substitution.ApplyTo(p.Conclusion))
+            | Pondering p -> this.GetListenersFor(p.Substitution.ApplyTo(p.Conclusion))
+
+        
+        do! foreachParallel bufferSize listeners <| fun listener ->
+            ponder listener (premise, this) <| fun res -> async {
+                do! return' res
+                do! foreachResultParallel bufferSize (this.PonderSinglePremise(Pondering res, bufferSize)) return'
+            }
+    }
+
 
     member _.GetProversFor expression = seq{
         let key = makeKey(expression)

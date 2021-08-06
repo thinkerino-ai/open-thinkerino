@@ -105,7 +105,6 @@ let makeProverRecordHandler rawHandler =
 let makeProver handlerDescriptor =
     prepareHandler makeProverRecordHandler handlerDescriptor
 
-
 let prove (prover: Prover<'context>) (expression, previousSubstitution, context: 'context) return' =
     // TODO remove the following if I implement hypotheses "virtually" (meaning that I embed hypotheses right in the expression being proven)
     // if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
