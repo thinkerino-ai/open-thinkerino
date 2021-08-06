@@ -8,7 +8,7 @@ open Expecto
 open System
 
 [<Tests>]
-let tests =
+let unificationTests =
     testList
         "language module"
         [ test "Headed binding representation works correctly" {

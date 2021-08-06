@@ -5,7 +5,7 @@ open AITools.Logic.Language
 open System
 
 [<Tests>]
-let tests =
+let languageTests =
     testList
         "language module"
         [

@@ -10,13 +10,12 @@ let storageImplementations: list<_ * (unit -> ExpressionStorage)> = [
     nameof DummyIndexedExpressionStorage, fun () -> upcast new DummyIndexedExpressionStorage()
 ]
 
-let runWithKb testFactories = [
+let runWithKb tests = [
     for name, makeStorage in storageImplementations do
         let provideKb makeTest =
             use storage = makeStorage()
             let kb = KnowledgeBase(storage)
             makeTest kb
-        yield testFactories
-        |> List.map provideKb
+        yield tests provideKb
         |> testList $"with storage: {name}"
 ]

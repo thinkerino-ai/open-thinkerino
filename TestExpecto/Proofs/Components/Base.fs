@@ -3,7 +3,7 @@ open Expecto
 open AITools.Proofs.Components.Base
 
 [<Tests>]
-let testsMakeFunctionHandler= testList "makeRecordHandler tests" [
+let makeRecordHandlerTests= testList "makeRecordHandler tests" [
     test "when called correctly wraps the original function and extracts its arguments" {
         let foo (input:{|a:_; b:_; c:_;|}) = input.a + input.b * input.c
 

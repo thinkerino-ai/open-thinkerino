@@ -11,7 +11,7 @@ open System
 
 
 [<Tests>]
-let tests =
+let coreTests =
     testList
         "core module"
         [ test "Named Constant representation works correctly" {
