@@ -30,8 +30,6 @@ let isPrime (input: {|n: _|}) =
     else if List.contains input.n [4; 6; 8] then Some false
     else None
 
-exception SomeException
-
 let proverTestMakers (setup: (KnowledgeBase -> unit) -> unit) = [
         test "we can retrieve known expressions" { 
             setup <| fun testKb -> 

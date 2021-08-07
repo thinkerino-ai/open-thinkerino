@@ -359,6 +359,39 @@ let listenerTestMakers (setup: (KnowledgeBase -> unit) -> unit) = [
                 [B.[foo]; C.[foo]; D.[foo]]
                 "we conclude B(foo), C(foo) and D(foo)"
     }
+    test "chained listener failure is propagated to the caller" { 
+        setup <| fun testKb -> 
+            let language = Language()
+            let v = VarExprSource language
+            let c = ConstExprSource language
+            
+            let A, B, C, D, foo = c?A, c?B, c?C, c?D, c?foo
+
+            let deduceFromAB (input: {|x: _|}) =
+                Some B.[input.x]
+            let deduceFromBC (input: {|x: _|}) =
+                raise SomeException
+            let deduceFromCD (input: {|x: _|}) =
+                Some D.[input.x]
+            
+            [
+                A.[v?x], deduceFromAB
+                B.[v?x], deduceFromBC
+                C.[v?x], deduceFromCD
+            ]
+            |>List.map (
+                fun (expr, handler) -> HandlerDescriptor.MakeMap (expr, Deducer handler, HandlerPurity.Pure, HandlerSafety.Safe, NoSubstitution, NoContext)
+                >> makeListener
+                >> testKb.AddListener
+            )
+            |> ignore
+
+            Expect.throwsT<SomeException>
+                (fun () -> testKb.Ponder [A.[foo]] |> List.ofSeq |> ignore)
+                "the pondering process throws the listener's exception"
+    }
+
+    //ERROR CONTINUARE DA test_listener_chain_normalizes_listened_formula
 ]
 
 [<Tests>]

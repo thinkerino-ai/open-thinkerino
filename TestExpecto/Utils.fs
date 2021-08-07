@@ -5,6 +5,8 @@ open AITools.Storage.Implementations.Dummy
 open AITools.Proofs.KnowledgeBase
 open Expecto
 
+exception SomeException
+
 let storageImplementations: list<_ * (unit -> ExpressionStorage)> = [
     nameof DummyExpressionStorage, fun () -> upcast new DummyExpressionStorage()
     nameof DummyIndexedExpressionStorage, fun () -> upcast new DummyIndexedExpressionStorage()
