@@ -489,14 +489,15 @@ def test_listener_chain(test_knowledge_base):
     def deduce_from_c_d(_x):
         return D(_x)
 
-    test_knowledge_base.add_listener(Listener(
-        listened_formula=B(v._x), handler=deduce_from_b_c, argument_mode=HandlerArgumentMode.MAP, pure=True,
-        safety=HandlerSafety.SAFE))
 
     test_knowledge_base.add_listener(Listener(
         listened_formula=A(v._x), handler=deduce_from_a_b, argument_mode=HandlerArgumentMode.MAP, pure=True,
         safety=HandlerSafety.SAFE))
 
+    test_knowledge_base.add_listener(Listener(
+        listened_formula=B(v._x), handler=deduce_from_b_c, argument_mode=HandlerArgumentMode.MAP, pure=True,
+        safety=HandlerSafety.SAFE))
+    
     test_knowledge_base.add_listener(Listener(
         listened_formula=C(v._x), handler=deduce_from_c_d, argument_mode=HandlerArgumentMode.MAP, pure=True,
         safety=HandlerSafety.SAFE))

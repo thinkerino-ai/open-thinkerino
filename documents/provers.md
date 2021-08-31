@@ -58,7 +58,7 @@ The possible values are:
 
 With the `MAP*` options, `Variable` names in the trigger formula are matched to arguments in the handler, and it is required that **no homonymous variables are present** (although the same variable repeated is allowed) and that **all arguments in the handler must be present as variable names in the listened formula**, with the exception of the substitution (see right below the discussion of `pass_substitution_as`). Using a `VariableSource` is advised, to guarantee that a single name is associated to the same variable.
 
-With the `RAW` option, the handler must take two argument: the first named "formula" and the second named according to` pass_substitution_as`. Homonymous variables are allowed.
+With the `RAW` option, the handler must take two argument: the first named "formula" and the second named according to `pass_substitution_as`. Homonymous variables are allowed.
 
 As stated above, the `pass_substitution_as` argument determines if and how a substitution is passed to the handler, after being found by searching for proofs for a triggering formula (see [Proof Process](#Proof Process)). The possible values are:
 

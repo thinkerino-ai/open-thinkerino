@@ -108,7 +108,7 @@ The `KnowledgeBase.ponder(formulas, ponder_mode)` method starts a "pondering" pr
 4. each formula returned by the handler, with its substitution and premises (if any) is then packed in a `Proof` and yielded to the caller
 5. each returned proof by the listener is also further used for step 2
 
-The process terminates if no more formulas are available, so it can be infinite, but is asynchronous (with `async` and `await`) and lazily-generated, so unless a handler is not `asyncio`-frienly it should still easily return results.
+The process terminates if no more formulas are available, so it can be infinite, but is asynchronous (with `async` and `await`) and lazily-generated, so unless a handler is not `asyncio`-friendly it should still easily return results.
 
 The `ponder_mode` is an enumerative value of type `PonderMode` with the following options:
 

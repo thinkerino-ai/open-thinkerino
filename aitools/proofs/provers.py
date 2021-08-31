@@ -32,7 +32,7 @@ class Prover(Component):
             previous_substitution: Substitution, knowledge_base
     ) -> AsyncIterable[Proof]:
         if knowledge_base.is_hypothetical() and self.safety == HandlerSafety.TOTALLY_UNSAFE:
-            raise UnsafeOperationException("Unsafe listener cannot be used in hypothetical scenarios")
+            raise UnsafeOperationException("Unsafe prover cannot be used in hypothetical scenarios")
 
         normalized_listened_formula, normalization_mapping = normalize_variables(self.listened_formula,
                                                                                  language=self._language)

@@ -24,7 +24,7 @@ import asyncio
 import pytest
 
 from aitools.utils import asynctools
-from tests.utils.asynctools.utils import yield_then_fail, SomeException, step, await_yield_and_log
+from pytests.utils.asynctools.utils import yield_then_fail, SomeException, step, await_yield_and_log
 
 
 def test__completion__limited_queue():
