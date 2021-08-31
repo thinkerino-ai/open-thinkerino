@@ -4,7 +4,7 @@ from datetime import datetime
 
 from aitools.logic.utils import normalize_variables
 from benchmarks.storage.distributions import dummy_distribution
-from tests.implementations import storage_implementations
+from pytests.implementations import storage_implementations
 
 
 @contextmanager

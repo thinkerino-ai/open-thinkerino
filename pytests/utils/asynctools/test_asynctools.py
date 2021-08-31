@@ -1,7 +1,7 @@
 import pytest
 
 from aitools.utils import asynctools
-from tests.utils.asynctools.utils import _generate_integers, _generate_many, SomeException, yield_then_fail, push_result_to_queue
+from pytests.utils.asynctools.utils import _generate_integers, _generate_many, SomeException, yield_then_fail, push_result_to_queue
 
 
 @pytest.mark.parametrize('buffer_size', [0, 1, 2, 10])

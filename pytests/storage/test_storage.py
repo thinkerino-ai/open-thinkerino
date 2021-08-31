@@ -4,7 +4,7 @@ from aitools.logic.language import Language
 from aitools.logic.unification import Substitution
 from aitools.logic.utils import constants, VariableSource, normalize_variables
 from aitools.storage.base import LogicObjectStorage
-from tests import implementations
+from pytests import implementations
 
 
 @pytest.fixture(params=implementations.storage_implementations)

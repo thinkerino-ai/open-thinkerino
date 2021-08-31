@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 from aitools.storage.implementations.serializing import PickleSerializingLogicObjectStorage
 from aitools.storage.implementations.sqlite import SqliteNodeStorage
-from tests.implementations import _make_context_manager_from_factory_and_context_manager
+from pytests.implementations import _make_context_manager_from_factory_and_context_manager
 
 
 def __make_sqlite_connection_context_manager(path):
