@@ -1,0 +1,6 @@
+# Fable output
+lib
+
+# Build output
+build
+dist

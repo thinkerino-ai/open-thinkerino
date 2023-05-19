@@ -2,10 +2,11 @@ module Thinkerino.Logic.Unification
 
 open System
 open Thinkerino.Logic.Core
-open System.Collections.Immutable
+open Fable.Core
 
 exception UnificationFailedException of string
 
+[<AttachMembers>]
 type Binding(variables: Set<Variable>, head: Expression option) =
     // check that none of the variables are in the head
     do
@@ -67,7 +68,10 @@ type Binding(variables: Set<Variable>, head: Expression option) =
         | :? Binding as b -> this.Head = b.Head && this.Variables = b.Variables
         | _ -> false
 
-and Substitution(bindings: Binding seq) =
+
+and 
+    [<AttachMembers>]
+    Substitution(bindings: Binding seq) =
     // TODO I'm using a map here, but I might switch to a Dictionary for performance, who knows :P
     let mutable bindingsByVariable: Map<Variable, Binding> = Map.empty
 
@@ -97,20 +101,21 @@ and Substitution(bindings: Binding seq) =
             match bindingsByVariable.TryFind(v) with
             | Some binding -> this.ApplyTo(binding.BoundObject)
             | None -> expr
-        | Expr arr -> arr |> Seq.map this.ApplyTo |> ImmutableArray.CreateRange |> Expr
+        | Expr arr -> arr |> Array.map this.ApplyTo |> Expr
         | _ -> expr
 
     member _.GetBoundObjectFor(v) = 
         bindingsByVariable.TryFind(v) |> Option.map (fun b -> b.BoundObject)
 
-    static member Empty = Substitution([||])
+    // TODO I had to add a unit because of a bug in Fable
+    static member Empty () = Substitution([||])
 
     // TODO why a static member? why not just a function? :P
     static member Unify(a, b, ?previous: Substitution): Substitution option =
         let previous =
             match previous with
             | Some subst -> subst
-            | None -> Substitution.Empty
+            | None -> Substitution.Empty ()
 
         let a = previous.ApplyTo(a)
         let b = previous.ApplyTo(b)

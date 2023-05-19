@@ -1,10 +1,12 @@
 module Thinkerino.Logic.Core
 
 open Thinkerino.Logic.Language
-open System.Collections.Immutable
+open Fable.Core
 
+// TODO type Identifier<'TLanguage> = Identifier of 'TLanguage * int64
 type Identifier = Identifier of Language * int64
 
+[<AttachMembers>]
 type Variable = 
     | Variable of Identifier * name: string option
     
@@ -12,6 +14,8 @@ type Variable =
         match this with
         | Variable(Identifier(l, seqId), Some name) -> sprintf "?%s.%i-%s" name seqId (l.LanguageId.ToString().[..2])
         | Variable(Identifier(l, seqId), None) -> sprintf "?v%i-%s" seqId (l.LanguageId.ToString().[..2])
+
+[<AttachMembers>]
 type Constant = 
     | Constant of Identifier * name: string option
 
@@ -20,11 +24,12 @@ type Constant =
         | Constant(Identifier(l, seqId), Some name) -> sprintf "%s.%i-%s" name seqId (l.LanguageId.ToString().[..2])
         | Constant(Identifier(l, seqId), None) -> sprintf "o%i-%s" seqId (l.LanguageId.ToString().[..2])
 
+[<AttachMembers>]
 type Expression = 
     | Const of Constant
     | Var of Variable
     | Wrap of obj
-    | Expr of Expression ImmutableArray
+    | Expr of Expression[]
 
     member this.Contains (otherExpr: Expression) = 
         match this with

@@ -1,0 +1,5 @@
+Fake.Core.Target
+Fake.JavaScript.Npm
+MSBuild.StructuredLogger
+Fake.DotNet.Cli
+Fake.DotNet.Paket

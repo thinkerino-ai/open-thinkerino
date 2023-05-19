@@ -1,0 +1,24 @@
+source https://api.nuget.org/v3/index.json
+
+
+#storage: none
+framework: net70
+
+
+nuget Fake.Core.Target ~> 6
+nuget Fake.DotNet.Cli ~> 6
+nuget Fake.DotNet.Paket
+nuget Fake.JavaScript.Npm ~> 6
+nuget MSBuild.StructuredLogger ~> 2
+
+nuget Fable.Core ~> 4
+
+nuget Expecto ~> 9
+nuget FSharp.Core
+# TODO decide whether I still need this
+#nuget YoloDev.Expecto.TestSdk
+
+nuget Microsoft.NET.Test.Sdk ~> 17
+nuget xunit ~> 2
+nuget xunit.runner.visualstudio ~> 2
+    content: runtime, build, native, contentfiles, analyzers, buildtransitive

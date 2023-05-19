@@ -1,0 +1,24 @@
+{
+  "name": "thinkerino",
+  "version": "0.0,1",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist",
+  "scripts": {
+    "test": "jest ./src",
+    "build-lib": "dotnet fable ../thinkerino/thinkerino.fsproj -o ./lib --lang JavaScript",
+    "build-src": "rollup -c && tsc -b",
+    "clean": "rm -rf build dist lib"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "^29.1.2",
+    "jest": "^29.2.0",
+    "rollup": "^2.79.1",
+    "rollup-plugin-ts": "^3.0.2",
+    "ts-jest": "^29.0.3",
+    "typescript": "^4.8.4"
+  }
+}
