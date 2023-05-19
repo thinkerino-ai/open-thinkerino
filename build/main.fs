@@ -17,6 +17,7 @@ let initTargets () =
     Target.create "rebuild" ignore
     Target.create "retest" ignore
     Target.create "reretest" ignore
+    Target.create "release" (fun _ -> ())
 
     Thinkerino.Build.JavaScript.init ()
     Thinkerino.Build.Python.init ()
