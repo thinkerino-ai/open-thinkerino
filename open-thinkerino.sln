@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "build", "build\build.fsproj", "{0E852476-A90F-44A1-B4F7-97E6FF0E0B18}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Thinkerino", "thinkerino\Thinkerino.fsproj", "{7526795E-419C-4364-9E11-0F84A08ABE7E}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "thinkerino", "thinkerino\thinkerino.fsproj", "{7526795E-419C-4364-9E11-0F84A08ABE7E}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "tests", "tests\tests.fsproj", "{5A538C96-D604-47A4-9635-0CBDD8D76889}"
 EndProject
