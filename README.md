@@ -1,6 +1,8 @@
-# Open-Thinkerino
+# open-thinkerino
 
-This is the open-source version of Thinkerino! My main advice is... don't use it :D
+This is the open-source version of Thinkerino! What is it? Did you see it in the shadow?
+
+My main advice is... don't use it for now :D
 
 I O U one nice description :P
 
