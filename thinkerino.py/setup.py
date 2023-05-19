@@ -8,7 +8,7 @@ def read(fname):
 
 setup(
     name="thinkerino",
-    version="0.0.1",
+    version=read("VERSION"),
     author="Daniele Trebbi",
     author_email="dRain88@gmail.com",
     description=("Various symbolic AI tools"),

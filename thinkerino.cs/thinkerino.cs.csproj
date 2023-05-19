@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup Condition="'$(Configuration)' == 'Release'">
     <Compile Remove="**\*.Test.cs" />
@@ -10,6 +10,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Version>0.1.42</Version>
   </PropertyGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

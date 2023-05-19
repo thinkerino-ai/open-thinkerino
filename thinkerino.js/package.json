@@ -1,6 +1,6 @@
 {
   "name": "thinkerino",
-  "version": "0.0,1",
+  "version": "0.1.42",
   "description": "",
   "main": "dist/index.js",
   "types": "dist",
@@ -8,7 +8,8 @@
     "test": "jest ./src",
     "build-lib": "dotnet fable ../thinkerino/thinkerino.fsproj -o ./lib --lang JavaScript",
     "build-src": "rollup -c && tsc -b",
-    "clean": "rm -rf build dist lib"
+    "clean": "rm -rf build dist lib",
+    "set-version": "node .setVersion.js"
   },
   "keywords": [],
   "author": "",
