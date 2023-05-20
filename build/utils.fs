@@ -19,12 +19,17 @@ let bumpVersion (part: string) (version: string) =
             { parsedVersion with
                 Major = parsedVersion.Major + 1u
                 Minor = 0u
-                Patch = 0u }
+                Patch = 0u
+                Original = None }
         | "minor" ->
             { parsedVersion with
                 Minor = parsedVersion.Minor + 1u
-                Patch = 0u }
-        | "patch" -> { parsedVersion with Patch = parsedVersion.Patch + 1u }
+                Patch = 0u
+                Original = None }
+        | "patch" ->
+            { parsedVersion with
+                Patch = parsedVersion.Patch + 1u
+                Original = None }
         | _ -> failwith "Invalid part specified. Use 'major', 'minor', or 'patch'."
 
     newVersion.AsString

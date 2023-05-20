@@ -42,4 +42,4 @@ let init () =
     "build.net" ==> "release.net" ==> "release" |> ignore
     "calculatePatch" ?=> "bumpVersion.net" ==> "bumpPatch" |> ignore
     "calculateMinor" ?=> "bumpVersion.net" ==> "bumpMinor" |> ignore
-    "calculateMajor" ==> "bumpVersion.net" ==> "bumpMajor" |> ignore
+    "calculateMajor" ?=> "bumpVersion.net" ==> "bumpMajor" |> ignore

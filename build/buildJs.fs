@@ -59,4 +59,4 @@ let init () =
 
     "calculatePatch" ?=> "bumpVersion.js" ==> "bumpPatch" |> ignore
     "calculateMinor" ?=> "bumpVersion.js" ==> "bumpMinor" |> ignore
-    "calculateMajor" ==> "bumpVersion.js" ==> "bumpMajor" |> ignore
+    "calculateMajor" ?=> "bumpVersion.js" ==> "bumpMajor" |> ignore

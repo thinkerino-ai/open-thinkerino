@@ -35,4 +35,4 @@ let init () =
     "build.cs" ==> "release.cs" ==> "release" |> ignore
     "calculatePatch" ?=> "bumpVersion.cs" ==> "bumpPatch" |> ignore
     "calculateMinor" ?=> "bumpVersion.cs" ==> "bumpMinor" |> ignore
-    "calculateMajor" ==> "bumpVersion.cs" ==> "bumpMajor" |> ignore
+    "calculateMajor" ?=> "bumpVersion.cs" ==> "bumpMajor" |> ignore

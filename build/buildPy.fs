@@ -92,4 +92,4 @@ let init () =
     |> ignore
     "calculatePatch" ?=> "bumpVersion.py" ==> "bumpPatch" |> ignore
     "calculateMinor" ?=> "bumpVersion.py" ==> "bumpMinor" |> ignore
-    "calculateMajor" ==> "bumpVersion.py" ==> "bumpMajor" |> ignore
+    "calculateMajor" ?=> "bumpVersion.py" ==> "bumpMajor" |> ignore
