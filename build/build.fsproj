@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="utils.fs" />
+    <Compile Include="bumpVersion.fs" />
     <Compile Include="buildCs.fs" />
     <Compile Include="buildJs.fs" />
     <Compile Include="buildNet.fs" />

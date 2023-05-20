@@ -1,7 +1,11 @@
 module Thinkerino.Build.JavaScript
+
 open Fake.Core
 open Fake.Core.TargetOperators
 open Thinkerino.Build.Utils
+
+let applyVersion version =
+    Fake.JavaScript.Npm.run (sprintf "set-version %s" version) (fun o -> { o with WorkingDirectory = "./thinkerino.js" })
 
 let init () =
     Target.create "install.js" (fun _ ->
@@ -25,10 +29,13 @@ let init () =
     Target.create "retest.js" ignore
 
     Target.create "release.js" (fun _ ->
-        let semVer = getSemVer ()       
+        let semVer = getSemVer ()
 
-        Fake.JavaScript.Npm.run (sprintf "set-version %s" semVer) (fun o ->
-            { o with WorkingDirectory = "./thinkerino.js" }))
+        applyVersion semVer
+
+        // TODO npm pack
+        )
+    Target.create "bumpVersion.js" (fun _ -> FakeVar.getOrFail "newVersion" |> applyVersion)
 
     "install.js" ==> "install" |> ignore
 
@@ -46,4 +53,10 @@ let init () =
     "test.js" ==> "test" |> ignore
     "test.js" ==> "retest.js" |> ignore
     "build-src.js" ==> "retest.js" |> ignore
-    "build.js" ==> "release.js" ==> "release" |> ignore
+
+    "build.js" ==> "release.js" ==> "release"
+    |> ignore
+
+    "calculatePatch" ?=> "bumpVersion.js" ==> "bumpPatch" |> ignore
+    "calculateMinor" ?=> "bumpVersion.js" ==> "bumpMinor" |> ignore
+    "calculateMajor" ==> "bumpVersion.js" ==> "bumpMajor" |> ignore

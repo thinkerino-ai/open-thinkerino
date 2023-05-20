@@ -9,6 +9,7 @@ nuget Fake.Core.Target ~> 6
 nuget Fake.DotNet.Cli ~> 6
 nuget Fake.DotNet.Paket
 nuget Fake.JavaScript.Npm ~> 6
+nuget Fake.Tools.Git
 nuget Fake.Tools.GitVersion
 nuget MSBuild.StructuredLogger ~> 2
 

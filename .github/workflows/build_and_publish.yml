@@ -1,0 +1,59 @@
+# name: Build and Publish
+
+# on:
+#   push:
+#     tags:
+#       - 'v*.*.*'
+
+# jobs:
+#   build_and_publish:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v2
+
+#     - name: Setup .NET
+#       uses: actions/setup-dotnet@v1
+#       with:
+#         dotnet-version: 7.0.x
+
+#     - name: Setup Node.js
+#       uses: actions/setup-node@v2
+#       with:
+#         node-version: 19
+#         registry-url: https://npm.pkg.github.com/
+
+#     - name: Restore Paket dependencies
+#       run: |
+#         dotnet tool restore
+#         dotnet paket restore
+
+#     - name: Install dependencies and build projects
+#       run: |
+#         dotnet run -p build install
+#         dotnet run -p build release
+
+#     - name: Publish all packages
+#       run: |
+#         cd dist
+#         dotnet nuget push *.nupkg -k ${{ secrets.GITHUB_TOKEN }} -s https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+#         dotnet nuget push *.nupkg -k ${{ secrets.GITHUB_TOKEN }} -s https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+
+#     - name: Publish bonkerino.cs NuGet package
+#       run: |
+#         cd bonkerino.cs
+
+#     - name: Publish bonkerino.js npm package
+#       run: |
+#         cd bonkerino.js
+#         npm ci
+#         npm pack
+#         npm publish --access public --token ${{ secrets.GITHUB_TOKEN }}
+
+#     - name: Archive bonkerino.py package
+#       run: |
+#         cd bonkerino.py
+#         python setup.py sdist
+#         tar czf bonkerino.py-${{ github.sha }}.tar.gz dist
+#         echo "bonkerino.py package is archived as bonkerino.py-${{ github.sha }}.tar.gz"

@@ -4,6 +4,8 @@ open Fake.Core.TargetOperators
 open Fake.DotNet
 open Thinkerino.Build.Utils
 
+let applyVersion = Xml.pokeInnerText "thinkerino/thinkerino.fsproj" "/Project/PropertyGroup/Version"
+
 let init () =
     // TODO remove this since I switched to paket (also below)
     //Target.create "install.net" (fun _ -> DotNet.restore id "./thinkerino")
@@ -27,14 +29,17 @@ let init () =
     Target.create "release.net" (fun _ ->
         let semVer = getSemVer ()
 
-        Xml.pokeInnerText "thinkerino/thinkerino.fsproj" "/Project/PropertyGroup/Version" semVer
+        applyVersion semVer
 
         DotNet.pack id "thinkerino/thinkerino.fsproj"
     )
-
+    Target.create "bumpVersion.net" (fun _ -> FakeVar.getOrFail "newVersion" |> applyVersion)
     // "install.net" ==> "install" |> ignore
     "clean.net" ?=> "build.net" ?=> "test.net" |> ignore
     "clean.net" ==> "clean" |> ignore
     "build.net" ==> "build" |> ignore
     "test.net" ==> "test" |> ignore
     "build.net" ==> "release.net" ==> "release" |> ignore
+    "calculatePatch" ?=> "bumpVersion.net" ==> "bumpPatch" |> ignore
+    "calculateMinor" ?=> "bumpVersion.net" ==> "bumpMinor" |> ignore
+    "calculateMajor" ==> "bumpVersion.net" ==> "bumpMajor" |> ignore

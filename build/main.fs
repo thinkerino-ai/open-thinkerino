@@ -8,8 +8,6 @@
 open Fake.Core
 open Fake.Core.TargetOperators
 
-open Fake.Tools
-
 
 let initTargets () =
     Target.create "install" ignore // TODO include the paket restore (fun _ -> Paket.restore id)
@@ -21,6 +19,7 @@ let initTargets () =
     Target.create "reretest" ignore
     Target.create "release" ignore
 
+    Thinkerino.Build.BumpVersion.init ()
     Thinkerino.Build.JavaScript.init ()
     Thinkerino.Build.Python.init ()
     Thinkerino.Build.DotNet.init ()

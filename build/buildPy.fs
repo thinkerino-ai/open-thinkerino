@@ -7,6 +7,8 @@ open Fake.DotNet
 
 open Thinkerino.Build.Utils
 
+let applyVersion = File.replaceContent "thinkerino.py/VERSION" 
+
 let init () =
     Target.create "install.py" (fun _ ->
         let venvExists =
@@ -71,12 +73,14 @@ let init () =
 
     Target.create "release.py" (fun _ ->
         let semVer = getSemVer ()
-        File.replaceContent "thinkerino.py/VERSION" semVer
+        applyVersion semVer
 
-        CreateProcess.fromRawCommand "thinkerino.py/.venv/bin/python3" [ "setup.py"; "bdist" ]
+        CreateProcess.fromRawCommand "thinkerino.py/.venv/bin/python3" [ "setup.py"; "sdist" ]
         |> CreateProcess.withWorkingDirectory "thinkerino.py/"
         |> Proc.run
         |> ignore)
+
+    Target.create "bumpVersion.py" (fun _ -> FakeVar.getOrFail "newVersion" |> applyVersion)
 
     "install.py" ==> "install" |> ignore
     "clean.py" ?=> "build.py" ?=> "test.py" |> ignore
@@ -86,3 +90,6 @@ let init () =
 
     "build.py" ==> "release.py" ==> "release"
     |> ignore
+    "calculatePatch" ?=> "bumpVersion.py" ==> "bumpPatch" |> ignore
+    "calculateMinor" ?=> "bumpVersion.py" ==> "bumpMinor" |> ignore
+    "calculateMajor" ==> "bumpVersion.py" ==> "bumpMajor" |> ignore

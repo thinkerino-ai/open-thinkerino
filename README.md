@@ -17,3 +17,11 @@ dotnet run --project build reretest
 ```
 
 Possible targets for building are listed in the `build` project (each file defines some targets, though the main ones are `main.fs` and `watch.fs`), but typically you'll want one of `test`, or `watch`; `retest` runs a normal build before running tests, `reretest` runs a clean build before running tests.
+
+## Useful commands
+
+To add a dependency with paket
+
+```sh
+dotnet paket add -p projectName dependency
+```

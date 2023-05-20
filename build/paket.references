@@ -4,3 +4,4 @@ MSBuild.StructuredLogger
 Fake.DotNet.Cli
 Fake.DotNet.Paket
 Fake.Tools.GitVersion
+Fake.Tools.Git
