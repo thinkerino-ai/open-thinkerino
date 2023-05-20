@@ -5,6 +5,7 @@
     <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="utils.fs" />
     <Compile Include="buildCs.fs" />
     <Compile Include="buildJs.fs" />
     <Compile Include="buildNet.fs" />

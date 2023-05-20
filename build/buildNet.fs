@@ -2,7 +2,7 @@ module Thinkerino.Build.DotNet
 open Fake.Core
 open Fake.Core.TargetOperators
 open Fake.DotNet
-
+open Thinkerino.Build.Utils
 
 let init () =
     // TODO remove this since I switched to paket (also below)
@@ -24,8 +24,15 @@ let init () =
 
     )
 
+    Target.create "release.net" (fun _ ->
+        let semVer = getSemVer ()
+
+        Xml.pokeInnerText "thinkerino/thinkerino.fsproj" "/Project/PropertyGroup/Version" semVer
+    )
+
     // "install.net" ==> "install" |> ignore
     "clean.net" ?=> "build.net" ?=> "test.net" |> ignore
     "clean.net" ==> "clean" |> ignore
     "build.net" ==> "build" |> ignore
     "test.net" ==> "test" |> ignore
+    "build.net" ==> "release.net" ==> "release" |> ignore

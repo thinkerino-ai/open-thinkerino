@@ -5,6 +5,8 @@ open Fake.IO
 open Fake.Core.TargetOperators
 open Fake.DotNet
 
+open Thinkerino.Build.Utils
+
 let init () =
     Target.create "install.py" (fun _ ->
         let venvExists =
@@ -70,8 +72,13 @@ let init () =
         if res.ExitCode <> 0 then
             failwithf "Python tests failed: %A" (res.Result))
 
+    Target.create "release.py" (fun _ ->
+        let semVer = getSemVer ()       
+        Fake.IO.File.replaceContent "thinkerino.py/VERSION" semVer)
+
     "install.py" ==> "install" |> ignore
     "clean.py" ?=> "build.py" ?=> "test.py" |> ignore
     "clean.py" ==> "clean" |> ignore
     "build.py" ==> "build" |> ignore
     "test.py" ==> "test" |> ignore
+    "build.py" ==> "release.py" ==> "release" |> ignore

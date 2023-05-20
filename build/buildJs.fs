@@ -1,6 +1,7 @@
 module Thinkerino.Build.JavaScript
 open Fake.Core
 open Fake.Core.TargetOperators
+open Thinkerino.Build.Utils
 
 let init () =
     Target.create "install.js" (fun _ ->
@@ -23,6 +24,12 @@ let init () =
 
     Target.create "retest.js" ignore
 
+    Target.create "release.js" (fun _ ->
+        let semVer = getSemVer ()       
+
+        Fake.JavaScript.Npm.run (sprintf "set-version %s" semVer) (fun o ->
+            { o with WorkingDirectory = "./thinkerino.js" }))
+
     "install.js" ==> "install" |> ignore
 
     "clean.js"
@@ -39,3 +46,4 @@ let init () =
     "test.js" ==> "test" |> ignore
     "test.js" ==> "retest.js" |> ignore
     "build-src.js" ==> "retest.js" |> ignore
+    "build.js" ==> "release.js" ==> "release" |> ignore

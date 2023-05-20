@@ -3,6 +3,8 @@ open Fake.Core
 open Fake.Core.TargetOperators
 open Fake.DotNet
 
+open Thinkerino.Build.Utils
+
 let init () =
     // TODO remove this since I switched to paket
     // Target.create "install.cs" (fun _ -> DotNet.restore id "./thinkerino.cs")
@@ -16,8 +18,14 @@ let init () =
 
     Target.create "test.cs" (fun _ -> DotNet.test id "./thinkerino.cs" |> ignore)
 
+    Target.create "release.cs" (fun _ ->
+        let semVer = getSemVer ()
+
+        Xml.pokeInnerText "thinkerino.cs/thinkerino.cs.csproj" "/Project/PropertyGroup/Version" semVer
+    )
     // "install.cs" ==> "install" |> ignore
     "clean.cs" ?=> "build.cs" ?=> "test.cs" |> ignore
     "clean.cs" ==> "clean" |> ignore
     "build.cs" ==> "build" |> ignore
     "test.cs" ==> "test" |> ignore
+    "build.cs" ==> "release.cs" ==> "release" |> ignore
