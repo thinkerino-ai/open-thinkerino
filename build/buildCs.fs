@@ -24,7 +24,8 @@ let init () =
         let semVer = getSemVer ()
 
         applyVersion semVer
-        DotNet.pack id "thinkerino.cs/thinkerino.cs.csproj"
+        let destDir = sprintf "%s/dist/dotnet" (System.IO.Directory.GetCurrentDirectory())
+        DotNet.pack (fun p -> { p with OutputPath = Some destDir }) "thinkerino.cs/thinkerino.cs.csproj"
     )
     Target.create "bumpVersion.cs" (fun _ -> FakeVar.getOrFail "newVersion" |> applyVersion)
     // "install.cs" ==> "install" |> ignore

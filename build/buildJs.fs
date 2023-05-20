@@ -33,8 +33,13 @@ let init () =
 
         applyVersion semVer
 
-        // TODO npm pack
-        )
+        let destination = sprintf "%s/dist/javascript" (System.IO.Directory.GetCurrentDirectory())
+        Fake.IO.Directory.ensure(destination)
+        let command =
+            sprintf "pack --pack-destination=%s" destination
+
+        Fake.JavaScript.Npm.exec command (fun o -> { o with WorkingDirectory = "thinkerino.js" }))
+
     Target.create "bumpVersion.js" (fun _ -> FakeVar.getOrFail "newVersion" |> applyVersion)
 
     "install.js" ==> "install" |> ignore
@@ -57,6 +62,14 @@ let init () =
     "build.js" ==> "release.js" ==> "release"
     |> ignore
 
-    "calculatePatch" ?=> "bumpVersion.js" ==> "bumpPatch" |> ignore
-    "calculateMinor" ?=> "bumpVersion.js" ==> "bumpMinor" |> ignore
-    "calculateMajor" ?=> "bumpVersion.js" ==> "bumpMajor" |> ignore
+    "calculatePatch" ?=> "bumpVersion.js"
+    ==> "bumpPatch"
+    |> ignore
+
+    "calculateMinor" ?=> "bumpVersion.js"
+    ==> "bumpMinor"
+    |> ignore
+
+    "calculateMajor" ?=> "bumpVersion.js"
+    ==> "bumpMajor"
+    |> ignore

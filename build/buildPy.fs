@@ -75,7 +75,7 @@ let init () =
         let semVer = getSemVer ()
         applyVersion semVer
 
-        CreateProcess.fromRawCommand "thinkerino.py/.venv/bin/python3" [ "setup.py"; "sdist" ]
+        CreateProcess.fromRawCommand "thinkerino.py/.venv/bin/python3" [ "setup.py"; "sdist"; "-d"; sprintf "%s/dist/python" (System.IO.Directory.GetCurrentDirectory()) ]
         |> CreateProcess.withWorkingDirectory "thinkerino.py/"
         |> Proc.run
         |> ignore)
