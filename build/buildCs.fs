@@ -22,6 +22,7 @@ let init () =
         let semVer = getSemVer ()
 
         Xml.pokeInnerText "thinkerino.cs/thinkerino.cs.csproj" "/Project/PropertyGroup/Version" semVer
+        DotNet.pack id "thinkerino.cs/thinkerino.cs.csproj"
     )
     // "install.cs" ==> "install" |> ignore
     "clean.cs" ?=> "build.cs" ?=> "test.cs" |> ignore

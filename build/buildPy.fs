@@ -58,10 +58,7 @@ let init () =
         if res.ExitCode <> 0 then
             failwithf "Python build failed: %A" (res.Errors)
 
-        CreateProcess.fromRawCommand "thinkerino.py/.venv/bin/python3" [ "setup.py"; "bdist" ]
-        |> CreateProcess.withWorkingDirectory "thinkerino.py/"
-        |> Proc.run
-        |> ignore)
+    )
 
 
     Target.create "test.py" (fun _ ->
@@ -73,12 +70,19 @@ let init () =
             failwithf "Python tests failed: %A" (res.Result))
 
     Target.create "release.py" (fun _ ->
-        let semVer = getSemVer ()       
-        Fake.IO.File.replaceContent "thinkerino.py/VERSION" semVer)
+        let semVer = getSemVer ()
+        File.replaceContent "thinkerino.py/VERSION" semVer
+
+        CreateProcess.fromRawCommand "thinkerino.py/.venv/bin/python3" [ "setup.py"; "bdist" ]
+        |> CreateProcess.withWorkingDirectory "thinkerino.py/"
+        |> Proc.run
+        |> ignore)
 
     "install.py" ==> "install" |> ignore
     "clean.py" ?=> "build.py" ?=> "test.py" |> ignore
     "clean.py" ==> "clean" |> ignore
     "build.py" ==> "build" |> ignore
     "test.py" ==> "test" |> ignore
-    "build.py" ==> "release.py" ==> "release" |> ignore
+
+    "build.py" ==> "release.py" ==> "release"
+    |> ignore
