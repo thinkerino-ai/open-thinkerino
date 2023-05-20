@@ -2,8 +2,7 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import { helloAPI } from 'thinkerino'
-import { runTest } from 'thinkerino/dist'
+import { helloAPI, runTest } from 'thinkerino'
 
 function App() {
   const [count, setCount] = useState(0)
