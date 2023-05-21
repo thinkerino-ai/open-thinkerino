@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "test": "jest ./src",
-    "build-lib": "dotnet fable ../thinkerino/thinkerino.fsproj -o ./lib --lang JavaScript",
+    "build-lib": "dotnet fable ../thinkerino/open-thinkerino.fsproj -o ./lib --lang JavaScript",
     "build-src": "tsc -b",
     "clean": "rm -rf build dist lib",
     "set-version": "node .setVersion.js"

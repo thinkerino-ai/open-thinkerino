@@ -10,7 +10,7 @@
     <Compile Include="Test.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\thinkerino\thinkerino.fsproj" />
+    <ProjectReference Include="..\thinkerino\open-thinkerino.fsproj" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

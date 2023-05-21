@@ -55,7 +55,7 @@ let init () =
             DotNet.exec
                 (fun _ -> DotNet.Options.Create())
                 "fable"
-                "thinkerino/thinkerino.fsproj -o ./thinkerino.py/lib --lang Python"
+                "thinkerino/open-thinkerino.fsproj -o ./thinkerino.py/lib --lang Python"
 
         if res.ExitCode <> 0 then
             failwithf "Python build failed: %A" (res.Errors)

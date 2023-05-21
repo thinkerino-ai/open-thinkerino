@@ -6,7 +6,7 @@ open Fake.DotNet
 open Thinkerino.Build.Utils
 
 let applyVersion =
-    Xml.pokeInnerText "thinkerino/thinkerino.fsproj" "/Project/PropertyGroup/Version"
+    Xml.pokeInnerText "thinkerino/open-thinkerino.fsproj" "/Project/PropertyGroup/Version"
 
 let init () =
     // TODO remove this since I switched to paket (also below)
@@ -33,7 +33,7 @@ let init () =
 
         applyVersion semVer
 
-        DotNet.pack (fun p -> { p with OutputPath = Some "./dist/dotnet" }) "thinkerino/thinkerino.fsproj")
+        DotNet.pack (fun p -> { p with OutputPath = Some "./dist/dotnet" }) "thinkerino/open-thinkerino.fsproj")
 
     Target.create "bumpVersion.net" (fun _ -> FakeVar.getOrFail "newVersion" |> applyVersion)
     // "install.net" ==> "install" |> ignore

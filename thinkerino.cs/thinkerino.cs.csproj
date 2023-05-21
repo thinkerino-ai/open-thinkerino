@@ -4,7 +4,7 @@
     <Compile Remove="**\*.Test.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\thinkerino\thinkerino.fsproj" />
+    <ProjectReference Include="..\thinkerino\open-thinkerino.fsproj" />
   </ItemGroup>
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
